@@ -19,6 +19,7 @@ import java.util.function.Function;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -211,5 +212,40 @@ public class ImpServerTest implements FastTest {
                         .useServer(impServer -> {}))
                 .isInstanceOf(BindException.class)
                 .hasMessageContaining("already in use");
+    }
+
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    @DisplayName("should be able to send multiple requests to shared server")
+    void should_be_able_to_send_multiple_requests_to_shared_server() {
+        var body = "some text";
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody(body)
+                .startShared();
+
+        ImpRunnable action = () -> {
+            var httpClient = HttpClient.newHttpClient();
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", sharedServer.port())))
+                    .build();
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.body()).isEqualTo(body);
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.TEXT_PLAIN.stringValue()));
+                assertThat(headers).containsEntry("Content-Length", List.of(String.valueOf(body.length())));
+                assertThat(headers).containsKey("date");
+            });
+        };
+
+        try {
+            action.run();
+            action.run();
+            action.run();
+        } finally {
+            sharedServer.dispose();
+        }
     }
 }

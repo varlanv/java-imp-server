@@ -71,19 +71,4 @@ public final class ImpTemplateSpec {
                     .build());
         }
     }
-
-    static final class AlwaysRespondBuilder {}
-
-    public static final class End {
-
-        private final Content content;
-
-        End(Content content) {
-            this.content = content;
-        }
-
-        ImpTemplate template() {
-            return new DefaultImpTemplate(ImmutableServerConfig.builder().build());
-        }
-    }
 }
