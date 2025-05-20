@@ -1,11 +1,8 @@
 package com.varlanv.imp.commontest;
 
-import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
-
 import java.io.File;
+import java.net.URI;
+import java.net.http.HttpRequest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -13,6 +10,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import org.jspecify.annotations.NonNull;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
 
 @Execution(ExecutionMode.CONCURRENT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -81,7 +86,9 @@ public interface BaseTest {
                     Files.deleteIfExists(file);
                 } else {
                     try (var paths = Files.walk(file)) {
-                        paths.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+                        paths.sorted(Comparator.reverseOrder())
+                                .map(Path::toFile)
+                                .forEach(File::delete);
                     }
                 }
             }
@@ -155,6 +162,18 @@ public interface BaseTest {
                     return hide(e);
                 }
             };
+        }
+    }
+
+    class HttpRequestBuilderSource implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+            Stream<Function<Integer, HttpRequest.Builder>> result = Stream.of(
+                            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "TRACE", "CONNECT", "HEAD")
+                    .map(method -> port -> HttpRequest.newBuilder()
+                            .uri(supplyQuiet(() -> new URI(String.format("http://localhost:%d/", port)))));
+            return result.map(Arguments::of);
         }
     }
 

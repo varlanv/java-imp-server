@@ -2,5 +2,7 @@ package com.varlanv.imp;
 
 public interface ImpTemplate {
 
-    void start(ImpConsumer<ImpServer> consumer);
+    void useServer(ImpConsumer<ImpServer> consumer);
+
+    ImpShared startShared();
 }

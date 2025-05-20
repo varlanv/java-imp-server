@@ -1,13 +1,12 @@
 package com.varlanv.imp;
 
-import com.varlanv.imp.commontest.FastTest;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
+import com.varlanv.imp.commontest.FastTest;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 class MemoizedSupplierTest implements FastTest {
 
@@ -30,7 +29,7 @@ class MemoizedSupplierTest implements FastTest {
         var subject = MemoizedSupplier.of(() -> null);
 
         assertThatExceptionOfType(IllegalStateException.class)
-            .isThrownBy(subject::get)
-            .withMessage("Supplier returned null");
+                .isThrownBy(subject::get)
+                .withMessage("Supplier returned null");
     }
 }

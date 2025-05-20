@@ -1,15 +1,15 @@
 package com.varlanv.imp;
 
-import org.jspecify.annotations.Nullable;
-
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.jspecify.annotations.Nullable;
 
 final class MemoizedSupplier<T> {
 
     private final ImpSupplier<T> delegate;
-    @Nullable
-    private T value;
+
+    @Nullable private T value;
+
     private final Lock lock = new ReentrantLock();
 
     private MemoizedSupplier(ImpSupplier<T> delegate) {
@@ -40,5 +40,9 @@ final class MemoizedSupplier<T> {
             }
         }
         return val;
+    }
+
+    public boolean isInitialized() {
+        return value != null;
     }
 }
