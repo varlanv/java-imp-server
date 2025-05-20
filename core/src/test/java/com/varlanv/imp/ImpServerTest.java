@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.varlanv.imp.commontest.FastTest;
 import java.io.ByteArrayInputStream;
 import java.net.BindException;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -247,5 +248,45 @@ public class ImpServerTest implements FastTest {
         } finally {
             sharedServer.dispose();
         }
+    }
+
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    @DisplayName("when shared server is stopped, then dont accept further requests")
+    void when_shared_server_is_stopped_then_dont_accept_further_requests() throws Exception {
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("some text")
+                .startShared();
+        sharedServer.dispose();
+
+        var httpClient = HttpClient.newHttpClient();
+        var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", sharedServer.port())))
+                .build();
+        assertThatThrownBy(() -> httpClient.send(request, HttpResponse.BodyHandlers.ofString()))
+                .isInstanceOf(ConnectException.class);
+    }
+
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    @DisplayName("when shared server is stopped many times, then no exception thrown and server is still stopped")
+    void when_shared_server_is_stopped_many_times_then_no_exception_thrown_and_server_is_still_stopped()
+            throws Exception {
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("some text")
+                .startShared();
+        sharedServer.dispose();
+        sharedServer.dispose();
+        sharedServer.dispose();
+        sharedServer.dispose();
+
+        var httpClient = HttpClient.newHttpClient();
+        var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", sharedServer.port())))
+                .build();
+        assertThatThrownBy(() -> httpClient.send(request, HttpResponse.BodyHandlers.ofString()))
+                .isInstanceOf(ConnectException.class);
     }
 }

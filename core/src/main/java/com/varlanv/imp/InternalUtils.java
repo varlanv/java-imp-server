@@ -14,7 +14,7 @@ interface InternalUtils {
         try (var socket = new ServerSocket(0)) {
             return socket.getLocalPort();
         } catch (IOException e) {
-            return InternalUtils.hide(e);
+            return hide(e);
         }
     }
 }
