@@ -1,0 +1,35 @@
+[versions]
+junitJupiter = "5.12.2"
+junitPlatform = "1.12.2"
+assertJ = "3.27.3"
+jetbrains-annotations = "26.0.2"
+checkstyleTool = "10.18.1"
+pmdTool = "7.5.0"
+apacheCommons = "3.17.0"
+apacheCommonsIo = "2.18.0"
+cuteToolisticon = "1.7.0"
+benmanesVersion = "0.52.0"
+spotbugsVersion = "6.1.11"
+spotlessVersion = "7.0.3"
+immutablesVersion = "2.7.3"
+jSpecifyVersion = "1.0.0"
+
+[libraries]
+assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertJ" }
+junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junitJupiter" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junitPlatform" }
+junit-platform-engine = { group = "org.junit.platform", name = "junit-platform-engine", version.ref = "junitPlatform" }
+jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrains-annotations" }
+apache-commons-lang = { group = "org.apache.commons", name = "commons-lang3", version.ref = "apacheCommons" }
+apache-commons-io = { group = "commons-io", name = "commons-io", version.ref = "apacheCommonsIo" }
+toolisticon-cute = { group = "io.toolisticon.cute", name = "cute", version.ref = "cuteToolisticon" }
+benmanes-version-plugin = { group = "com.github.ben-manes.versions", name = "com.github.ben-manes.versions.gradle.plugin", version.ref = "benmanesVersion" }
+spotbugs-plugin = { group = "com.github.spotbugs.snom", name = "spotbugs-gradle-plugin", version.ref = "spotbugsVersion" }
+spotless-plugin = { group = "com.diffplug.gradle.spotless", name = "com.diffplug.gradle.spotless.gradle.plugin", version.ref = "spotlessVersion" }
+immutables-values = { group = "org.immutables", name = "value", version.ref = "immutablesVersion" }
+jSpecify = { group = "org.jspecify", name = "jspecify", version.ref = "jSpecifyVersion" }
+
+[plugins]
+internalConvention = { id = "com.varlanv.gradle.internal-gradle-convention-plugin" }
+gradlePluginPublish = { id = "com.gradle.plugin-publish", version = "1.3.1" }
+shadow = { id = "com.gradleup.shadow", version = "8.3.5" }

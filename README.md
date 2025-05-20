@@ -1,0 +1,1 @@
+Bare bones, zero dependencies, mock web server for Java.
