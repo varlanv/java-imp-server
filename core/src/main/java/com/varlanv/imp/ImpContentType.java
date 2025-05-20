@@ -3,7 +3,8 @@ package com.varlanv.imp;
 enum ImpContentType {
     APPLICATION_JSON("application/json"),
     APPLICATION_XML("application/xml"),
-    TEXT_PLAIN("text/plain");
+    TEXT_PLAIN("text/plain"),
+    OCTET_STREAM("application/octet-stream");
 
     private final String stringValue;
 

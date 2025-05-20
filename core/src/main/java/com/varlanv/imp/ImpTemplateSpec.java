@@ -56,7 +56,7 @@ public final class ImpTemplateSpec {
 
         ImpTemplate andDataStreamBody(ImpSupplier<InputStream> streamSupplier) {
             return defaultImpTemplate(
-                    ImpContentType.APPLICATION_JSON, () -> streamSupplier.get().readAllBytes());
+                    ImpContentType.OCTET_STREAM, () -> streamSupplier.get().readAllBytes());
         }
 
         private DefaultImpTemplate defaultImpTemplate(ImpContentType contentType, ImpSupplier<byte[]> bodySupplier) {
