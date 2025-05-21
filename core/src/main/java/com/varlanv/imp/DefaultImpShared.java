@@ -1,14 +1,12 @@
 package com.varlanv.imp;
 
-import com.sun.net.httpserver.HttpServer;
-
 final class DefaultImpShared implements ImpShared {
 
     private final ServerConfig config;
-    private final HttpServer httpServer;
+    private final Disposable httpServer;
     private final MutableImpStatistics statistics;
 
-    DefaultImpShared(ServerConfig config, HttpServer httpServer, MutableImpStatistics statistics) {
+    DefaultImpShared(ServerConfig config, Disposable httpServer, MutableImpStatistics statistics) {
         this.config = config;
         this.httpServer = httpServer;
         this.statistics = statistics;
@@ -21,7 +19,7 @@ final class DefaultImpShared implements ImpShared {
 
     @Override
     public void dispose() {
-        httpServer.stop(0);
+        httpServer.dispose();
     }
 
     @Override

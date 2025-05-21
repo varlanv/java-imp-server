@@ -23,7 +23,6 @@ import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.external.javadoc.CoreJavadocOptions;
-import org.gradle.external.javadoc.MinimalJavadocOptions;
 import org.gradle.jvm.toolchain.JavaLanguageVersion;
 import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.jvm.toolchain.JvmVendorSpec;
@@ -101,7 +100,7 @@ public final class InternalConventionPlugin implements Plugin<Project> {
         // -------------------- Configure repositories end --------------------
 
         project.afterEvaluate(ignore -> {
-                // Need to run these things after project evaluated, so that InternalConventionExtension values are initialized
+                // Need to run these things after a project evaluated, so that InternalConventionExtension values are initialized
                 // -------------------- Configure Java start --------------------
                 pluginManager.withPlugin(
                     "java",

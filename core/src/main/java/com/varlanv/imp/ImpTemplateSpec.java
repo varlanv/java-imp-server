@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.intellij.lang.annotations.Language;
 
 public final class ImpTemplateSpec {
@@ -43,18 +44,22 @@ public final class ImpTemplateSpec {
         }
 
         ImpTemplate andTextBody(String response) {
+            Objects.requireNonNull(response);
             return defaultImpTemplate(ImpContentType.TEXT_PLAIN, () -> response.getBytes(StandardCharsets.UTF_8));
         }
 
         ImpTemplate andJsonBody(@Language("json") String response) {
+            Objects.requireNonNull(response);
             return defaultImpTemplate(ImpContentType.APPLICATION_JSON, () -> response.getBytes(StandardCharsets.UTF_8));
         }
 
         ImpTemplate andXmlBody(@Language("xml") String response) {
+            Objects.requireNonNull(response);
             return defaultImpTemplate(ImpContentType.APPLICATION_XML, () -> response.getBytes(StandardCharsets.UTF_8));
         }
 
         ImpTemplate andDataStreamBody(ImpSupplier<InputStream> streamSupplier) {
+            Objects.requireNonNull(streamSupplier);
             return defaultImpTemplate(
                     ImpContentType.OCTET_STREAM, () -> streamSupplier.get().readAllBytes());
         }

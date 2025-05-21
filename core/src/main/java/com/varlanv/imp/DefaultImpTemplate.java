@@ -1,7 +1,5 @@
 package com.varlanv.imp;
 
-import com.sun.net.httpserver.HttpServer;
-
 final class DefaultImpTemplate implements ImpTemplate {
 
     private final ServerConfig config;
@@ -12,7 +10,7 @@ final class DefaultImpTemplate implements ImpTemplate {
 
     @Override
     public void useServer(ImpConsumer<ImpServer> consumer) {
-        HttpServer server = null;
+        Disposable server = null;
         try {
             var impStatistics = new MutableImpStatistics();
             server = buildAndStartServer(impStatistics);
@@ -21,12 +19,12 @@ final class DefaultImpTemplate implements ImpTemplate {
             InternalUtils.hide(e);
         } finally {
             if (server != null) {
-                server.stop(0);
+                server.dispose();
             }
         }
     }
 
-    private HttpServer buildAndStartServer(MutableImpStatistics impStatistics) {
+    private Disposable buildAndStartServer(MutableImpStatistics impStatistics) {
         var server = config.port().resolveToServer();
         server.createContext("/", exchange -> {
             var response = config.decision().pick(exchange);
@@ -45,7 +43,7 @@ final class DefaultImpTemplate implements ImpTemplate {
             }
         });
         server.start();
-        return server;
+        return () -> server.stop(0);
     }
 
     @Override
