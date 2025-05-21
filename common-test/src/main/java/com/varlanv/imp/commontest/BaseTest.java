@@ -2,7 +2,9 @@ package com.varlanv.imp.commontest;
 
 import java.io.File;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -188,5 +190,15 @@ public interface BaseTest {
 
     static void runQuiet(ThrowingRunnable runnable) {
         runnable.toUnchecked().run();
+    }
+
+    default <T> HttpResponse<T> sendHttpRequest(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
+        @SuppressWarnings("resource")
+        var httpClient = HttpClient.newHttpClient();
+        try {
+            return httpClient.send(request, responseBodyHandler);
+        } catch (Exception e) {
+            return hide(e);
+        }
     }
 }

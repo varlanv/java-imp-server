@@ -6,9 +6,9 @@ final class DefaultImpShared implements ImpShared {
 
     private final ServerConfig config;
     private final HttpServer httpServer;
-    private final ImpStatistics statistics;
+    private final MutableImpStatistics statistics;
 
-    DefaultImpShared(ServerConfig config, HttpServer httpServer, ImpStatistics statistics) {
+    DefaultImpShared(ServerConfig config, HttpServer httpServer, MutableImpStatistics statistics) {
         this.config = config;
         this.httpServer = httpServer;
         this.statistics = statistics;
@@ -26,6 +26,6 @@ final class DefaultImpShared implements ImpShared {
 
     @Override
     public ImpStatistics statistics() {
-        return statistics;
+        return new ImpStatistics(statistics);
     }
 }

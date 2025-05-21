@@ -3,19 +3,21 @@ package com.varlanv.imp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.varlanv.imp.commontest.BaseTest;
 import com.varlanv.imp.commontest.FastTest;
 import java.io.ByteArrayInputStream;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.DisplayName;
@@ -49,6 +51,134 @@ public class ImpServerTest implements FastTest {
                 });
     }
 
+    @Test
+    @DisplayName("When server has one hit, should add it to statistics")
+    void when_server_has_one_hit_should_add_it_to_statistics() {
+        ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("somePort")
+                .useServer(impServer -> {
+                    var request = HttpRequest.newBuilder(
+                                    new URI(String.format("http://localhost:%d/", impServer.port())))
+                            .build();
+                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+                    assertThat(impServer.statistics().hitCount()).isOne();
+                    assertThat(impServer.statistics().missCount()).isZero();
+                });
+    }
+
+    @Test
+    @DisplayName(
+            "When server has zero hits, then read statistics, then make hit - then should not modify original statistic")
+    void when_server_has_zero_hits_then_read_statistics_then_make_hit_then_should_not_modify_original_statistic() {
+        ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("somePort")
+                .useServer(impServer -> {
+                    var statistics = impServer.statistics();
+                    var request = HttpRequest.newBuilder(
+                                    new URI(String.format("http://localhost:%d/", impServer.port())))
+                            .build();
+                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+                    assertThat(statistics.hitCount()).isZero();
+                    assertThat(statistics.missCount()).isZero();
+                });
+    }
+
+    @Test
+    @DisplayName(
+            "When server has one hit, then read statistics, then make another hit - then should not modify original statistic")
+    void
+            when_server_has_one_hit_then_read_statistics_then_make_another_hit_then_should_not_modify_original_statistic() {
+        ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("somePort")
+                .useServer(impServer -> {
+                    var request = HttpRequest.newBuilder(
+                                    new URI(String.format("http://localhost:%d/", impServer.port())))
+                            .build();
+                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+                    var statistics = impServer.statistics();
+                    assertThat(statistics.hitCount()).isOne();
+                    assertThat(statistics.missCount()).isZero();
+
+                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    assertThat(statistics.hitCount()).isOne();
+                    assertThat(statistics.missCount()).isZero();
+                });
+    }
+
+    @Test
+    @DisplayName("When server has many hits, should add all to statistics")
+    void when_server_has_many_hits_should_add_all_to_statistics() {
+        ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("somePort")
+                .useServer(impServer -> {
+                    var count = 50;
+                    for (var i = 0; i < count; i++) {
+                        var request = HttpRequest.newBuilder(
+                                        new URI(String.format("http://localhost:%d/", impServer.port())))
+                                .build();
+                        sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    }
+
+                    assertThat(impServer.statistics().hitCount()).isEqualTo(count);
+                    assertThat(impServer.statistics().missCount()).isZero();
+                });
+    }
+
+    @Test
+    @DisplayName("When sanding many requests in parallel, should count all statistic")
+    void when_sanding_many_requests_in_parallel_should_count_all_statistic() {
+        ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("somePort")
+                .useServer(impServer -> {
+                    var count = 50;
+                    var latchCounter = new CountDownLatch(count);
+                    var allReadyLatch = new CountDownLatch(1);
+                    @SuppressWarnings("resource")
+                    var executorService = Executors.newFixedThreadPool(count);
+                    try {
+                        for (var i = 0; i < count; i++) {
+                            executorService.submit(() -> {
+                                try {
+                                    latchCounter.countDown();
+                                    allReadyLatch.await();
+                                    var request = HttpRequest.newBuilder(
+                                                    new URI(String.format("http://localhost:%d/", impServer.port())))
+                                            .build();
+                                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                                } catch (Exception e) {
+                                    BaseTest.hide(e);
+                                }
+                            });
+                        }
+                        if (!latchCounter.await(5, TimeUnit.SECONDS)) {
+                            throw new TimeoutException("Failed to start fixture");
+                        }
+                        allReadyLatch.countDown();
+                        executorService.shutdown();
+                        if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                            throw new TimeoutException("Failed to execute fixture");
+                        }
+                        assertThat(impServer.statistics().hitCount()).isEqualTo(count);
+                        assertThat(impServer.statistics().missCount()).isZero();
+                    } finally {
+                        executorService.shutdownNow();
+                    }
+                });
+    }
+
     @ParameterizedTest
     @ArgumentsSource(HttpRequestBuilderSource.class)
     @DisplayName("server should response with expected json data")
@@ -66,10 +196,9 @@ public class ImpServerTest implements FastTest {
                 .alwaysRespondWithStatus(200)
                 .andJsonBody(expected)
                 .useServer(impServer -> {
-                    var httpClient = HttpClient.newHttpClient();
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
-                    var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -94,10 +223,9 @@ public class ImpServerTest implements FastTest {
                 .alwaysRespondWithStatus(200)
                 .andTextBody(expected)
                 .useServer(impServer -> {
-                    var httpClient = HttpClient.newHttpClient();
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
-                    var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -122,10 +250,9 @@ public class ImpServerTest implements FastTest {
                 .alwaysRespondWithStatus(200)
                 .andDataStreamBody(() -> new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8)))
                 .useServer(impServer -> {
-                    var httpClient = HttpClient.newHttpClient();
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
-                    var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -156,10 +283,9 @@ public class ImpServerTest implements FastTest {
                 .alwaysRespondWithStatus(200)
                 .andXmlBody(expected)
                 .useServer(impServer -> {
-                    var httpClient = HttpClient.newHttpClient();
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
-                    var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -182,11 +308,10 @@ public class ImpServerTest implements FastTest {
                 .alwaysRespondWithStatus(200)
                 .andTextBody(someText)
                 .useServer(impServer -> {
-                    var httpClient = HttpClient.newHttpClient();
                     var request = HttpRequest.newBuilder(
                                     new URI(String.format("http://localhost:%d/", impServer.port())))
                             .build();
-                    var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
                     assertThat(response.body()).isEqualTo(someText);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -240,10 +365,9 @@ public class ImpServerTest implements FastTest {
                 .startShared();
 
         ImpRunnable action = () -> {
-            var httpClient = HttpClient.newHttpClient();
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", sharedServer.port())))
                     .build();
-            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
             assertThat(response.body()).isEqualTo(body);
             assertThat(response.statusCode()).isEqualTo(200);
@@ -274,10 +398,9 @@ public class ImpServerTest implements FastTest {
                 .startShared();
         sharedServer.dispose();
 
-        var httpClient = HttpClient.newHttpClient();
         var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", sharedServer.port())))
                 .build();
-        assertThatThrownBy(() -> httpClient.send(request, HttpResponse.BodyHandlers.ofString()))
+        assertThatThrownBy(() -> sendHttpRequest(request, HttpResponse.BodyHandlers.ofString()))
                 .isInstanceOf(ConnectException.class);
     }
 
@@ -296,10 +419,9 @@ public class ImpServerTest implements FastTest {
         sharedServer.dispose();
         sharedServer.dispose();
 
-        var httpClient = HttpClient.newHttpClient();
         var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", sharedServer.port())))
                 .build();
-        assertThatThrownBy(() -> httpClient.send(request, HttpResponse.BodyHandlers.ofString()))
+        assertThatThrownBy(() -> sendHttpRequest(request, HttpResponse.BodyHandlers.ofString()))
                 .isInstanceOf(ConnectException.class);
     }
 }
