@@ -91,8 +91,7 @@ public enum ImpHttpStatus {
         return description;
     }
 
-    @Nullable
-    static ImpHttpStatus forCode(int value) {
+    @Nullable static ImpHttpStatus forCode(int value) {
         if (value < 100 || value > 511) {
             return null;
         }

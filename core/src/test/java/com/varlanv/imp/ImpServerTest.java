@@ -1,14 +1,9 @@
 package com.varlanv.imp;
 
+import static org.assertj.core.api.Assertions.*;
+
 import com.varlanv.imp.commontest.BaseTest;
 import com.varlanv.imp.commontest.FastTest;
-import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ArgumentsSource;
-
 import java.io.ByteArrayInputStream;
 import java.net.BindException;
 import java.net.ConnectException;
@@ -23,8 +18,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-
-import static org.assertj.core.api.Assertions.*;
+import org.intellij.lang.annotations.Language;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 public class ImpServerTest implements FastTest {
 
@@ -203,9 +202,36 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.APPLICATION_JSON.stringValue()));
+                        assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.JSON.stringValue()));
                         assertThat(headers).containsEntry("Content-Length", List.of("19"));
+                        assertThat(headers).containsKey("date");
+                    });
+                });
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(HttpRequestBuilderSource.class)
+    @DisplayName("server should response with expected custom content type")
+    void server_should_response_with_expected_custom_content_type(
+            Function<Integer, HttpRequest.Builder> httpRequestBuilderSupplier) {
+        var expected = "some text";
+        var contentType = "some/content/type";
+
+        ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andCustomContentType(
+                        contentType, () -> new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8)))
+                .useServer(impServer -> {
+                    var request =
+                            httpRequestBuilderSupplier.apply(impServer.port()).build();
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+                    assertThat(response.body()).isEqualTo(expected);
+                    assertThat(response.statusCode()).isEqualTo(200);
+                    assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                        assertThat(headers).containsEntry("Content-Type", List.of(contentType));
+                        assertThat(headers).containsEntry("Content-Length", List.of(String.valueOf(expected.length())));
                         assertThat(headers).containsKey("date");
                     });
                 });
@@ -231,7 +257,7 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
                         assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.TEXT_PLAIN.stringValue()));
+                                .containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
                         assertThat(headers).containsEntry("Content-Length", List.of("9"));
                         assertThat(headers).containsKey("date");
                     });
@@ -258,7 +284,7 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
                         assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.OCTET_STREAM.stringValue()));
+                                .containsEntry("Content-Type", List.of(ImpContentType.OCTET_STREAM.toString()));
                         assertThat(headers).containsEntry("Content-Length", List.of(String.valueOf(expected.length())));
                         assertThat(headers).containsKey("date");
                     });
@@ -290,8 +316,7 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.APPLICATION_XML.stringValue()));
+                        assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.XML.toString()));
                         assertThat(headers).containsEntry("Content-Length", List.of(String.valueOf(expected.length())));
                         assertThat(headers).containsKey("date");
                     });
@@ -317,7 +342,7 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
                         assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.TEXT_PLAIN.stringValue()));
+                                .containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
                         assertThat(headers).containsEntry("Content-Length", List.of(String.valueOf(someText.length())));
                         assertThat(headers).containsKey("date");
                     });
@@ -372,7 +397,7 @@ public class ImpServerTest implements FastTest {
             assertThat(response.body()).isEqualTo(body);
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.TEXT_PLAIN.stringValue()));
+                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
                 assertThat(headers).containsEntry("Content-Length", List.of(String.valueOf(body.length())));
                 assertThat(headers).containsKey("date");
             });
@@ -426,13 +451,13 @@ public class ImpServerTest implements FastTest {
     }
 
     @Test
-    @DisplayName("should fail immediately if provided invalid http status")
-    void should_fail_immediately_if_provided_invalid_http_status() {
+    @DisplayName("'alwaysRespondWithStatus' should fail immediately if provided invalid http status")
+    void alwaysrespondwithstatus_should_fail_immediately_if_provided_invalid_http_status() {
         for (var invalidHttpStatusCode : List.of(-1, 1, 99, 104, 512, Integer.MAX_VALUE)) {
             assertThatExceptionOfType(IllegalArgumentException.class)
-                .as("should reject http status code [%d]", invalidHttpStatusCode)
-                .isThrownBy(() -> ImpServer.template().randomPort().alwaysRespondWithStatus(invalidHttpStatusCode))
-                .withMessage("Invalid http status code [%d]", invalidHttpStatusCode);
+                    .as("should reject http status code [%d]", invalidHttpStatusCode)
+                    .isThrownBy(() -> ImpServer.template().randomPort().alwaysRespondWithStatus(invalidHttpStatusCode))
+                    .withMessage("Invalid http status code [%d]", invalidHttpStatusCode);
         }
     }
 
@@ -441,8 +466,102 @@ public class ImpServerTest implements FastTest {
     void alwaysrespondwithstatus_should_work_all_known_status_codes() {
         for (var httpStatus : ImpHttpStatus.values()) {
             assertThatNoException()
-                .as("Should work for http status code [%d]", httpStatus.value())
-                .isThrownBy(() -> ImpServer.template().randomPort().alwaysRespondWithStatus(httpStatus.value()));
+                    .as("Should work for http status code [%d]", httpStatus.value())
+                    .isThrownBy(() -> ImpServer.template().randomPort().alwaysRespondWithStatus(httpStatus.value()));
         }
+    }
+
+    @Test
+    @DisplayName("'andTextBody' should fail immediately if provided null")
+    void andtextbody_should_fail_immediately_if_provided_null() {
+        //noinspection DataFlowIssue
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template()
+                        .randomPort()
+                        .alwaysRespondWithStatus(200)
+                        .andTextBody(null))
+                .withMessage("nulls are not supported - textBody");
+    }
+
+    @Test
+    @DisplayName("'andXmlBody' should fail immediately if provided null")
+    void andxmlbody_should_fail_immediately_if_provided_null() {
+        //noinspection DataFlowIssue
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template()
+                        .randomPort()
+                        .alwaysRespondWithStatus(200)
+                        .andXmlBody(null))
+                .withMessage("nulls are not supported - xmlBody");
+    }
+
+    @Test
+    @DisplayName("'andJsonBody' should fail immediately if provided null")
+    void andjsonbody_should_fail_immediately_if_provided_null() {
+        //noinspection DataFlowIssue
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template()
+                        .randomPort()
+                        .alwaysRespondWithStatus(200)
+                        .andJsonBody(null))
+                .withMessage("nulls are not supported - jsonBody");
+    }
+
+    @Test
+    @DisplayName("'andCustomContentType' should fail immediately if provided null contentType")
+    void andcustomcontenttype_should_fail_immediately_if_provided_null_contenttype() {
+        //noinspection DataFlowIssue
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template()
+                        .randomPort()
+                        .alwaysRespondWithStatus(200)
+                        .andCustomContentType(null, () -> new ByteArrayInputStream(new byte[0])))
+                .withMessage("null or blank strings are not supported - contentType");
+    }
+
+    @Test
+    @DisplayName("'andCustomContentType' should fail immediately if provided null streamSupplier")
+    void andcustomcontenttype_should_fail_immediately_if_provided_null_streamsupplier() {
+        //noinspection DataFlowIssue
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template()
+                        .randomPort()
+                        .alwaysRespondWithStatus(200)
+                        .andCustomContentType("someType", null))
+                .withMessage("nulls are not supported - streamSupplier");
+    }
+
+    @Test
+    @DisplayName("'andCustomContentType' should fail immediately if provided null streamSupplier and contentTypeqq")
+    void andcustomcontenttype_should_fail_immediately_if_provided_null_streamsupplier_and_contenttypeqq() {
+        //noinspection DataFlowIssue
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template()
+                        .randomPort()
+                        .alwaysRespondWithStatus(200)
+                        .andCustomContentType(null, null))
+                .withMessage("null or blank strings are not supported - contentType");
+    }
+
+    @Test
+    @DisplayName("'andCustomContentType' should fail immediately if provided empty contentType")
+    void andcustomcontenttype_should_fail_immediately_if_provided_empty_contenttype() {
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template()
+                        .randomPort()
+                        .alwaysRespondWithStatus(200)
+                        .andCustomContentType("", () -> new ByteArrayInputStream(new byte[0])))
+                .withMessage("null or blank strings are not supported - contentType");
+    }
+
+    @Test
+    @DisplayName("'andCustomContentType' should fail immediately if provided blank contentType")
+    void andcustomcontenttype_should_fail_immediately_if_provided_blank_contenttype() {
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template()
+                        .randomPort()
+                        .alwaysRespondWithStatus(200)
+                        .andCustomContentType("  ", () -> new ByteArrayInputStream(new byte[0])))
+                .withMessage("null or blank strings are not supported - contentType");
     }
 }
