@@ -1,10 +1,14 @@
 package com.varlanv.imp;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.varlanv.imp.commontest.BaseTest;
 import com.varlanv.imp.commontest.FastTest;
+import org.intellij.lang.annotations.Language;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+
 import java.io.ByteArrayInputStream;
 import java.net.BindException;
 import java.net.ConnectException;
@@ -19,12 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ArgumentsSource;
+
+import static org.assertj.core.api.Assertions.*;
 
 public class ImpServerTest implements FastTest {
 
@@ -423,5 +423,26 @@ public class ImpServerTest implements FastTest {
                 .build();
         assertThatThrownBy(() -> sendHttpRequest(request, HttpResponse.BodyHandlers.ofString()))
                 .isInstanceOf(ConnectException.class);
+    }
+
+    @Test
+    @DisplayName("should fail immediately if provided invalid http status")
+    void should_fail_immediately_if_provided_invalid_http_status() {
+        for (var invalidHttpStatusCode : List.of(-1, 1, 99, 104, 512, Integer.MAX_VALUE)) {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                .as("should reject http status code [%d]", invalidHttpStatusCode)
+                .isThrownBy(() -> ImpServer.template().randomPort().alwaysRespondWithStatus(invalidHttpStatusCode))
+                .withMessage("Invalid http status code [%d]", invalidHttpStatusCode);
+        }
+    }
+
+    @Test
+    @DisplayName("'alwaysRespondWithStatus' should work all known status codes")
+    void alwaysrespondwithstatus_should_work_all_known_status_codes() {
+        for (var httpStatus : ImpHttpStatus.values()) {
+            assertThatNoException()
+                .as("Should work for http status code [%d]", httpStatus.value())
+                .isThrownBy(() -> ImpServer.template().randomPort().alwaysRespondWithStatus(httpStatus.value()));
+        }
     }
 }

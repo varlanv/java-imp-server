@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.intellij.lang.annotations.Language;
+import org.jetbrains.annotations.Range;
 
 public final class ImpTemplateSpec {
 
@@ -28,17 +29,21 @@ public final class ImpTemplateSpec {
             this.port = port;
         }
 
-        AlwaysRespond alwaysRespondWithStatus(int status) {
-            return new AlwaysRespond(this, status);
+        AlwaysRespond alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
+            var httpStatus = ImpHttpStatus.forCode(status);
+            if (httpStatus == null) {
+                throw new IllegalArgumentException(String.format("Invalid http status code [%d]", status));
+            }
+            return new AlwaysRespond(this, httpStatus);
         }
     }
 
     public static final class AlwaysRespond {
 
         private final Content parent;
-        private final int status;
+        private final ImpHttpStatus status;
 
-        AlwaysRespond(Content parent, int status) {
+        AlwaysRespond(Content parent, ImpHttpStatus status) {
             this.parent = parent;
             this.status = status;
         }

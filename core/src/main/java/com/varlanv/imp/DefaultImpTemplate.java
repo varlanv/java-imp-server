@@ -36,7 +36,7 @@ final class DefaultImpTemplate implements ImpTemplate {
                 var responseBytes = impResponse.body().get();
                 var responseBody = exchange.getResponseBody();
                 exchange.getResponseHeaders().putAll(impResponse.headers());
-                exchange.sendResponseHeaders(impResponse.statusCode(), responseBytes.length);
+                exchange.sendResponseHeaders(impResponse.statusCode().value(), responseBytes.length);
                 responseBody.write(responseBytes);
                 responseBody.flush();
                 responseBody.close();

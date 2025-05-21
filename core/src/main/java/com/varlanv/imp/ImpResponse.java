@@ -9,7 +9,7 @@ interface ImpResponse {
 
     ImpSupplier<byte[]> body();
 
-    int statusCode();
+    ImpHttpStatus statusCode();
 
     @Value.Default
     default Map<String, List<String>> headers() {
