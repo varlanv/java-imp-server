@@ -19,14 +19,13 @@ final class Teapot implements ImpFn<HttpExchange, ImpResponse> {
     public ImpResponse unsafeApply(HttpExchange httpExchange) {
         var matchersId = candidates.stream().map(ResponseCandidate::id).collect(Collectors.toList());
         ImpSupplier<byte[]> bodySupplier = () -> String.format(
-                        "None of the matchers matched request, returning http response code [418 I'm a teapot]."
-                                + " ImpServer instance contains matchers with these ids: %s",
+                        "No matching handler for request. Returning 418 [I'm a teapot]. " + "Available matcher IDs: %s",
                         matchersId)
                 .getBytes(StandardCharsets.UTF_8);
-        return ImmutableImpResponse.builder()
-                .statusCode(ImpHttpStatus.I_AM_A_TEAPOT)
+        return ImpResponse.builder()
+                .trustedStatus(ImpHttpStatus.I_AM_A_TEAPOT)
                 .body(bodySupplier)
-                .headers(headers -> {
+                .trustedHeaders(headers -> {
                     var h = new HashMap<>(headers);
                     h.put("Content-Type", List.of(ImpContentType.PLAIN_TEXT.stringValue()));
                     return Collections.unmodifiableMap(h);

@@ -8,6 +8,8 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -207,6 +209,17 @@ public interface BaseTest {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)))
                     .build();
             return sendHttpRequest(request, responseBodyHandler);
+        } catch (Exception e) {
+            return hide(e);
+        }
+    }
+
+    default <T> HttpResponse<T> sendHttpRequestWithHeaders(
+            int port, Map<String, List<String>> headers, HttpResponse.BodyHandler<T> responseBodyHandler) {
+        try {
+            var requestBuilder = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)));
+            headers.forEach((key, valuesList) -> valuesList.forEach(value -> requestBuilder.header(key, value)));
+            return sendHttpRequest(requestBuilder.build(), responseBodyHandler);
         } catch (Exception e) {
             return hide(e);
         }

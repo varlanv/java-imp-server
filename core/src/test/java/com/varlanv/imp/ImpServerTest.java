@@ -880,8 +880,7 @@ public class ImpServerTest implements FastTest {
 
             assertThat(response.body())
                     .isEqualTo(
-                            "None of the matchers matched request, returning http response code [418 I'm a teapot]. "
-                                    + "ImpServer instance contains matchers with these ids: [%s]",
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [%s]",
                             matcherId);
             assertThat(response.statusCode()).isEqualTo(418);
             assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
@@ -912,8 +911,7 @@ public class ImpServerTest implements FastTest {
 
             assertThat(response.body())
                     .isEqualTo(
-                            "None of the matchers matched request, returning http response code [418 I'm a teapot]. "
-                                    + "ImpServer instance contains matchers with these ids: [%s]",
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [%s]",
                             matcherId);
             assertThat(response.statusCode()).isEqualTo(418);
             assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
@@ -1050,6 +1048,7 @@ public class ImpServerTest implements FastTest {
                 .rejectNonMatching();
         subject.useServer(impServer -> {
             var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            assertThat(response.body()).isEqualTo("any");
             assertThat(response.statusCode()).isEqualTo(expectedStatus);
         });
     }
@@ -1070,6 +1069,7 @@ public class ImpServerTest implements FastTest {
         subject.useServer(impServer -> {
             var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
             var responseHeaders = response.headers().map();
+            assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSizeGreaterThan(additionalHeaders.size());
             assertThat(responseHeaders).containsAllEntriesOf(additionalHeaders);
             assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
@@ -1091,10 +1091,247 @@ public class ImpServerTest implements FastTest {
         subject.useServer(impServer -> {
             var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
             var responseHeaders = response.headers().map();
+            assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(4);
             assertThat(responseHeaders).containsAllEntriesOf(exactHeaders);
             assertThat(responseHeaders).containsKey("content-length");
             assertThat(responseHeaders).containsKey("date");
+        });
+    }
+
+    @Test
+    @DisplayName("should successfuly match by headers predicate 'containsValue'")
+    void should_successfuly_match_by_headers_predicate_containsvalue() {
+        var expectedMatchValue = "value2";
+        var sentHeaders = Map.of("header1", List.of("value1", expectedMatchValue));
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching("any", request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response =
+                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var responseHeaders = response.headers().map();
+            assertThat(response.body()).isEqualTo("any");
+            assertThat(responseHeaders).hasSize(3);
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+        });
+    }
+
+    @Test
+    @DisplayName("should return error when can't match by headers predicate 'containsValue'")
+    void should_return_error_when_can_t_match_by_headers_predicate_containsvalue() {
+        var sentHeaders = Map.of("header1", List.of("value1", "value2"), "header2", List.of("value3"));
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId", request -> request.headersPredicate(h -> h.containsValue("some not existing value")))
+                .respondWithStatus(200)
+                .andTextBody("anyBody")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response =
+                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
+            assertThat(response.body())
+                    .isEqualTo(
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+        });
+    }
+
+    @Test
+    @DisplayName("should return error when can't match by headers predicate 'containsPair'")
+    void should_return_error_when_can_t_match_by_headers_predicate_containspair() {
+        var sentHeaders = Map.of("header1", List.of("value1", "value2"), "header2", List.of("value2", "value3"));
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId",
+                        request -> request.headersPredicate(h -> h.containsPair("header1", "some not existing value")))
+                .respondWithStatus(200)
+                .andTextBody("anyBody")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response =
+                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
+            assertThat(response.body())
+                    .isEqualTo(
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+        });
+    }
+
+    @Test
+    @DisplayName("should successfuly match by headers predicate 'containsPair'")
+    void should_successfuly_match_by_headers_predicate_containspair() {
+        var expectedMatchPair = Map.entry("header2", "value3");
+        var sentHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2", "value3"));
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "any",
+                        request -> request.headersPredicate(
+                                h -> h.containsPair(expectedMatchPair.getKey(), expectedMatchPair.getValue())))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response =
+                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var responseHeaders = response.headers().map();
+            assertThat(response.body()).isEqualTo("any");
+            assertThat(responseHeaders).hasSize(3);
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+        });
+    }
+
+    @Test
+    @DisplayName("should return error when can't match by headers predicate 'containsPairList'")
+    void should_return_error_when_can_t_match_by_headers_predicate_containspairlist() {
+        var sentHeaders = Map.of("header1", List.of("value1", "value2"), "header2", List.of("value2", "value3"));
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId",
+                        request -> request.headersPredicate(
+                                h -> h.containsPairList("header1", List.of("some not existing value"))))
+                .respondWithStatus(200)
+                .andTextBody("anyBody")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response =
+                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
+            assertThat(response.body())
+                    .isEqualTo(
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+        });
+    }
+
+    @Test
+    @DisplayName("should successfuly match by headers predicate 'containsPairList'")
+    void should_successfuly_match_by_headers_predicate_containspairlist() {
+        var expectedMatchPair = Map.entry("header2", List.of("value2", "value3"));
+        var sentHeaders =
+                Map.of("header1", List.of("value1"), expectedMatchPair.getKey(), expectedMatchPair.getValue());
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "any",
+                        request -> request.headersPredicate(
+                                h -> h.containsPairList(expectedMatchPair.getKey(), expectedMatchPair.getValue())))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response =
+                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var responseHeaders = response.headers().map();
+            assertThat(response.body()).isEqualTo("any");
+            assertThat(responseHeaders).hasSize(3);
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+        });
+    }
+
+    @Test
+    @DisplayName("should successfully match by headers predicate 'hasContentType'")
+    void should_successfully_match_by_headers_predicate_hascontenttype() {
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "any",
+                        request ->
+                                request.headersPredicate(h -> h.hasContentType(ImpContentType.PLAIN_TEXT.toString())))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response = sendHttpRequestWithHeaders(
+                    impServer.port(),
+                    Map.of("content-type", List.of(ImpContentType.PLAIN_TEXT.toString())),
+                    HttpResponse.BodyHandlers.ofString());
+            var responseHeaders = response.headers().map();
+            assertThat(response.body()).isEqualTo("any");
+            assertThat(responseHeaders).hasSize(3);
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+        });
+    }
+
+    @Test
+    @DisplayName("should return error when 'hasContentType' doesn't match")
+    void should_return_error_when_hascontenttype_doesn_t_match() {
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId",
+                        request -> request.headersPredicate(h -> h.hasContentType(ImpContentType.JSON.toString())))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
+            assertThat(response.body())
+                    .isEqualTo(
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+        });
+    }
+
+    @Test
+    @DisplayName("should return error when 'hasContentType' specified, but contentType is null in request")
+    void should_return_error_when_hascontenttype_specified_but_contenttype_is_null_in_request() {
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId",
+                        request -> request.headersPredicate(h -> h.hasContentType(ImpContentType.JSON.toString())))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andExactHeaders(Map.of())
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
+            assertThat(response.body())
+                    .isEqualTo(
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+        });
+    }
+
+    @Test
+    @DisplayName(
+            "should return fallback when 'hasContentType' specified, but contentType is null in request and fallback specified")
+    void
+            should_return_fallback_when_hascontenttype_specified_but_contenttype_is_null_in_request_and_fallback_specified() {
+        var fallbackStatus = ImpHttpStatus.BAD_REQUEST;
+        var fallbackBody = "fallback";
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId",
+                        request -> request.headersPredicate(h -> h.hasContentType(ImpContentType.JSON.toString())))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andExactHeaders(Map.of())
+                .fallbackForNonMatching(builder -> builder.status(fallbackStatus.value())
+                        .body(() -> fallbackBody.getBytes(StandardCharsets.UTF_8)));
+        subject.useServer(impServer -> {
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).isEqualTo(fallbackStatus.value());
+            assertThat(response.body()).isEqualTo(fallbackBody);
         });
     }
 }

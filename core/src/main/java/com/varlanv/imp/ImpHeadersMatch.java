@@ -1,10 +1,7 @@
 package com.varlanv.imp;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.Unmodifiable;
 
 public final class ImpHeadersMatch {
 
@@ -63,12 +60,5 @@ public final class ImpHeadersMatch {
             }
         }
         return false;
-    }
-
-    @Unmodifiable
-    public Map<String, List<String>> headers() {
-        var newMap = new HashMap<String, List<String>>(headers.size());
-        headers.forEach((k, v) -> newMap.put(k, List.copyOf(v)));
-        return Collections.unmodifiableMap(newMap);
     }
 }

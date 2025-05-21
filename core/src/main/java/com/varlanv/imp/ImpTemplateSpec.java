@@ -1,5 +1,6 @@
 package com.varlanv.imp;
 
+import com.sun.net.httpserver.HttpExchange;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -147,14 +148,24 @@ public final class ImpTemplateSpec {
     public static final class ContentContinue {
 
         private final OnRequestMatchingHeaders parent;
-        private final HeadersOperator responseHeadersOperator;
+        private final ImpHeadersOperator responseHeadersOperator;
 
-        ContentContinue(OnRequestMatchingHeaders parent, HeadersOperator responseHeadersOperator) {
+        ContentContinue(OnRequestMatchingHeaders parent, ImpHeadersOperator responseImpHeadersOperator) {
             this.parent = parent;
-            this.responseHeadersOperator = responseHeadersOperator;
+            this.responseHeadersOperator = responseImpHeadersOperator;
+        }
+
+        public ImpTemplate fallbackForNonMatching(
+                ImpFn<ImpResponse.BuilderStatus, ImpResponse.BuilderHeaders> builderFn) {
+            var impResponse = builderFn.apply(ImpResponse.builder()).build();
+            return buildTemplate(candidates -> exchange -> impResponse);
         }
 
         public ImpTemplate rejectNonMatching() {
+            return buildTemplate(Teapot::new);
+        }
+
+        private ImpTemplate buildTemplate(ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
             var candidates = List.of(new ResponseCandidate(
                     parent.parent.parent.matchId,
                     request -> parent.parent
@@ -162,15 +173,15 @@ public final class ImpTemplateSpec {
                             .requestMatch
                             .headersPredicate()
                             .test(new ImpHeadersMatch(request.getRequestHeaders())),
-                    () -> ImmutableImpResponse.builder()
-                            .headers(responseHeadersOperator)
-                            .statusCode(parent.parent.status)
+                    () -> ImpResponse.builder()
+                            .trustedStatus(parent.parent.status)
                             .body(parent.bodySupplier)
+                            .trustedHeaders(responseHeadersOperator)
                             .build()));
             return new DefaultImpTemplate(ImmutableServerConfig.builder()
                     .port(parent.parent.parent.parent.port)
                     .decision(new ResponseDecision(candidates))
-                    .fallback(new Teapot(candidates))
+                    .fallback(fallback.apply(candidates))
                     .build());
         }
     }
@@ -217,14 +228,14 @@ public final class ImpTemplateSpec {
             return new DefaultImpTemplate(ImmutableServerConfig.builder()
                     .port(parent.port)
                     .decision(new ResponseDecision(
-                            new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImmutableImpResponse.builder()
+                            new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
+                                    .trustedStatus(status)
                                     .body(bodySupplier)
-                                    .headers(headers -> {
+                                    .trustedHeaders(headers -> {
                                         var res = new HashMap<>(headers);
                                         res.put("Content-Type", List.of(contentType.toString()));
                                         return Collections.unmodifiableMap(res);
                                     })
-                                    .statusCode(status)
                                     .build())))
                     .fallback(new Teapot(List.of()))
                     .build());

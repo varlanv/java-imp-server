@@ -41,10 +41,12 @@ final class DefaultImpTemplate implements ImpTemplate {
             var responseBytes = impResponse.body().get();
             var responseBody = exchange.getResponseBody();
             var originalResponseHeaders = exchange.getResponseHeaders();
-            var newResponseHeaders = impResponse.headers().apply(originalResponseHeaders);
-            for (var entry : new HashSet<>(originalResponseHeaders.entrySet())) {
-                if (!newResponseHeaders.containsKey(entry.getKey())) {
-                    originalResponseHeaders.remove(entry.getKey());
+            var newResponseHeaders = impResponse.headersOperator().apply(originalResponseHeaders);
+            if (!originalResponseHeaders.isEmpty()) {
+                for (var entry : new HashSet<>(originalResponseHeaders.entrySet())) {
+                    if (!newResponseHeaders.containsKey(entry.getKey())) {
+                        originalResponseHeaders.remove(entry.getKey());
+                    }
                 }
             }
             originalResponseHeaders.putAll(newResponseHeaders);
