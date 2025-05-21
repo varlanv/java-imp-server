@@ -5,6 +5,7 @@ import java.util.Map;
 import org.immutables.value.Value;
 
 @Value.Immutable
+@Value.Style(nullableAnnotation = "org.jspecify.annotations.Nullable")
 interface ImpResponse {
 
     ImpSupplier<byte[]> body();

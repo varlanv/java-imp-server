@@ -11,38 +11,126 @@ public final class ImpTemplateSpec {
 
     public static final class Start {
 
-        Content randomPort() {
-            return new Content(new ImpPort(InternalUtils::randomPort, true));
+        ContentStart randomPort() {
+            return new ContentStart(new ImpPort(InternalUtils::randomPort, true));
         }
 
-        Content port(int port) {
-            return new Content(new ImpPort(() -> port, false));
+        ContentStart port(int port) {
+            return new ContentStart(new ImpPort(() -> port, false));
         }
     }
 
-    public static final class Content {
+    public static final class ContentStart {
 
         private final ImpPort port;
 
-        Content(ImpPort port) {
+        ContentStart(ImpPort port) {
             this.port = port;
         }
 
+        OnRequestMatchingStatus onRequestMatching(ImpConsumer<ImmutableRequestMatch.Builder> specConsumer) {
+            var builder = ImmutableRequestMatch.builder();
+            Preconditions.nonNull(specConsumer, "consumer").accept(builder);
+            return new OnRequestMatchingStatus(this, builder.build());
+        }
+
         AlwaysRespond alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
-            var httpStatus = ImpHttpStatus.forCode(status);
-            if (httpStatus == null) {
-                throw new IllegalArgumentException(String.format("Invalid http status code [%d]", status));
-            }
-            return new AlwaysRespond(this, httpStatus);
+            return new AlwaysRespond(this, Preconditions.validHttpStatusCode(status));
         }
     }
 
-    public static final class AlwaysRespond {
+    public static final class OnRequestMatchingStatus {
 
-        private final Content parent;
+        private final ContentStart parent;
+        private final RequestMatch requestMatch;
+
+        OnRequestMatchingStatus(ContentStart contentStart, RequestMatch requestMatch) {
+            this.parent = contentStart;
+            this.requestMatch = requestMatch;
+        }
+
+        OnRequestMatchingBody respondWithStatus(@Range(from = 100, to = 511) int status) {
+            return new OnRequestMatchingBody(this, requestMatch, Preconditions.validHttpStatusCode(status));
+        }
+    }
+
+    public static final class OnRequestMatchingBody {
+
+        private final OnRequestMatchingStatus parent;
+        private final RequestMatch requestMatch;
         private final ImpHttpStatus status;
 
-        AlwaysRespond(Content parent, ImpHttpStatus status) {
+        OnRequestMatchingBody(OnRequestMatchingStatus parent, RequestMatch requestMatch, ImpHttpStatus status) {
+            this.parent = parent;
+            this.requestMatch = requestMatch;
+            this.status = status;
+        }
+
+        OnRequestMatchingContentTypeHeaders andTextBody(String textBody) {
+            Preconditions.nonNull(textBody, "textBody");
+            return defaultImpTemplate(ImpContentType.PLAIN_TEXT, () -> textBody.getBytes(StandardCharsets.UTF_8));
+        }
+
+        OnRequestMatchingContentTypeHeaders andJsonBody(@Language("json") String jsonBody) {
+            Preconditions.nonNull(jsonBody, "jsonBody");
+            return defaultImpTemplate(ImpContentType.JSON, () -> jsonBody.getBytes(StandardCharsets.UTF_8));
+        }
+
+        OnRequestMatchingContentTypeHeaders andXmlBody(@Language("xml") String xmlBody) {
+            Preconditions.nonNull(xmlBody, "xmlBody");
+            return defaultImpTemplate(ImpContentType.XML, () -> xmlBody.getBytes(StandardCharsets.UTF_8));
+        }
+
+        OnRequestMatchingContentTypeHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
+            Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
+            return defaultImpTemplate(
+                    ImpContentType.OCTET_STREAM, () -> dataStreamSupplier.get().readAllBytes());
+        }
+
+        OnRequestMatchingContentTypeHeaders andCustomContentTypeStream(
+                String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
+            Preconditions.nonBlank(contentType, "contentType");
+            Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
+            return defaultImpTemplate(
+                    contentType, () -> dataStreamSupplier.get().readAllBytes());
+        }
+
+        private OnRequestMatchingContentTypeHeaders defaultImpTemplate(
+                CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
+            return new OnRequestMatchingContentTypeHeaders(this, () -> Map.entry(contentType.toString(), bodySupplier));
+        }
+    }
+
+    public static final class OnRequestMatchingContentTypeHeaders {
+
+        private final OnRequestMatchingBody parent;
+        private final ImpSupplier<Map.Entry<String, ImpSupplier<byte[]>>> bodyAndContentTypeSupplier;
+
+        public OnRequestMatchingContentTypeHeaders(
+                OnRequestMatchingBody parent,
+                ImpSupplier<Map.Entry<String, ImpSupplier<byte[]>>> bodyAndContentTypeSupplier) {
+            this.parent = parent;
+            this.bodyAndContentTypeSupplier = bodyAndContentTypeSupplier;
+        }
+
+        public ContentContinue andAdditionalHeaders(Map<String, List<String>> headers) {
+            Preconditions.noNullsInMap(headers, "headers");
+            return new ContentContinue();
+        }
+
+        public ContentContinue andNoAdditionalHeaders() {
+            return new ContentContinue();
+        }
+    }
+
+    public static final class ContentContinue {}
+
+    public static final class AlwaysRespond {
+
+        private final ContentStart parent;
+        private final ImpHttpStatus status;
+
+        AlwaysRespond(ContentStart parent, ImpHttpStatus status) {
             this.parent = parent;
             this.status = status;
         }
@@ -62,16 +150,17 @@ public final class ImpTemplateSpec {
             return defaultImpTemplate(ImpContentType.XML, () -> xmlBody.getBytes(StandardCharsets.UTF_8));
         }
 
-        ImpTemplate andDataStreamBody(ImpSupplier<InputStream> streamSupplier) {
-            Preconditions.nonNull(streamSupplier, "streamSupplier");
+        ImpTemplate andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
+            Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return defaultImpTemplate(
-                    ImpContentType.OCTET_STREAM, () -> streamSupplier.get().readAllBytes());
+                    ImpContentType.OCTET_STREAM, () -> dataStreamSupplier.get().readAllBytes());
         }
 
-        ImpTemplate andCustomContentType(String contentType, ImpSupplier<InputStream> streamSupplier) {
+        ImpTemplate andCustomContentTypeStream(String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonBlank(contentType, "contentType");
-            Preconditions.nonNull(streamSupplier, "streamSupplier");
-            return defaultImpTemplate(contentType, () -> streamSupplier.get().readAllBytes());
+            Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
+            return defaultImpTemplate(
+                    contentType, () -> dataStreamSupplier.get().readAllBytes());
         }
 
         private DefaultImpTemplate defaultImpTemplate(CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
