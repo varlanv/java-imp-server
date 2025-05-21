@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class ImpServerTest implements FastTest {
 
@@ -572,15 +573,40 @@ public class ImpServerTest implements FastTest {
     void onrequestmatching_when_null_then_throw_exception() {
         //noinspection DataFlowIssue
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.template().randomPort().onRequestMatching(null))
+                .isThrownBy(() -> ImpServer.template().randomPort().onRequestMatching("id", null))
                 .withMessage("nulls are not supported - consumer");
+    }
+
+    @Test
+    @DisplayName("'onRequestMatching' when null id then throw exception")
+    void onrequestmatching_when_null_id_then_throw_exception() {
+        //noinspection DataFlowIssue
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template().randomPort().onRequestMatching(null, b -> {}))
+                .withMessage("null or blank strings are not supported - id");
+    }
+
+    @Test
+    @DisplayName("'onRequestMatching' when empty id then throw exception")
+    void onrequestmatching_when_empty_id_then_throw_exception() {
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template().randomPort().onRequestMatching("", b -> {}))
+                .withMessage("null or blank strings are not supported - id");
+    }
+
+    @Test
+    @DisplayName("'onRequestMatching' when blank id then throw exception")
+    void onrequestmatching_when_blank_id_then_throw_exception() {
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template().randomPort().onRequestMatching("  ", b -> {}))
+                .withMessage("null or blank strings are not supported - id");
     }
 
     @Test
     @DisplayName("'onRequestMatching' when noop consumer then ok")
     void onrequestmatching_when_noop_consumer_then_ok() {
         assertThatNoException()
-                .isThrownBy(() -> ImpServer.template().randomPort().onRequestMatching(builder -> {}));
+                .isThrownBy(() -> ImpServer.template().randomPort().onRequestMatching("id", builder -> {}));
     }
 
     @Test
@@ -588,9 +614,10 @@ public class ImpServerTest implements FastTest {
     void onrequestmatching_when_consumer_sets_null_headers_predicate_then_fail_immediately() {
         //noinspection DataFlowIssue
         assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() ->
-                        ImpServer.template().randomPort().onRequestMatching(builder -> builder.headersPredicate(null)))
-                .withMessage("headersPredicate");
+                .isThrownBy(() -> ImpServer.template()
+                        .randomPort()
+                        .onRequestMatching("id", builder -> builder.headersPredicate(null)))
+                .withMessage("nulls are not supported - headersPredicate");
     }
 
     @Test
@@ -598,8 +625,7 @@ public class ImpServerTest implements FastTest {
     void onrequestmatching_when_consumer_sets_normal_headers_predicate_then_ok() {
         assertThatNoException().isThrownBy(() -> ImpServer.template()
                 .randomPort()
-                .onRequestMatching(
-                        builder -> builder.headersPredicate(p -> p.map().isEmpty())));
+                .onRequestMatching("id", builder -> builder.headersPredicate(p -> true)));
     }
 
     @Test
@@ -610,7 +636,7 @@ public class ImpServerTest implements FastTest {
                     .as("should reject http status code [%d]", invalidHttpStatusCode)
                     .isThrownBy(() -> ImpServer.template()
                             .randomPort()
-                            .onRequestMatching(r -> {})
+                            .onRequestMatching("id", r -> {})
                             .respondWithStatus(invalidHttpStatusCode))
                     .withMessage("Invalid http status code [%d]", invalidHttpStatusCode);
         }
@@ -624,7 +650,7 @@ public class ImpServerTest implements FastTest {
                     .as("Should work for http status code [%d]", httpStatus.value())
                     .isThrownBy(() -> ImpServer.template()
                             .randomPort()
-                            .onRequestMatching(r -> {})
+                            .onRequestMatching("id", r -> {})
                             .respondWithStatus(httpStatus.value()));
         }
     }
@@ -636,7 +662,7 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andTextBody(null))
                 .withMessage("nulls are not supported - textBody");
@@ -649,7 +675,7 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andJsonBody(null))
                 .withMessage("nulls are not supported - jsonBody");
@@ -662,7 +688,7 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andXmlBody(null))
                 .withMessage("nulls are not supported - xmlBody");
@@ -675,7 +701,7 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0])))
                 .withMessage("null or blank strings are not supported - contentType");
@@ -687,7 +713,7 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0])))
                 .withMessage("null or blank strings are not supported - contentType");
@@ -699,7 +725,7 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0])))
                 .withMessage("null or blank strings are not supported - contentType");
@@ -712,9 +738,22 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andCustomContentTypeStream("contentType", null))
+                .withMessage("nulls are not supported - dataStreamSupplier");
+    }
+
+    @Test
+    @DisplayName("'onRequestMatching andDataStreamBody' should reject null dataStreamBody")
+    void onrequestmatching_anddatastreambody_should_reject_null_datastreambody() {
+        //noinspection DataFlowIssue
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ImpServer.template()
+                        .randomPort()
+                        .onRequestMatching("id", r -> {})
+                        .respondWithStatus(200)
+                        .andDataStreamBody(null))
                 .withMessage("nulls are not supported - dataStreamSupplier");
     }
 
@@ -725,7 +764,7 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andCustomContentTypeStream(null, null))
                 .withMessage("null or blank strings are not supported - contentType");
@@ -738,7 +777,7 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(RuntimeException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andTextBody("")
                         .andAdditionalHeaders(null))
@@ -754,7 +793,7 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(RuntimeException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andTextBody("")
                         .andAdditionalHeaders(headers))
@@ -770,7 +809,7 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(RuntimeException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andTextBody("")
                         .andAdditionalHeaders(headers))
@@ -786,10 +825,41 @@ public class ImpServerTest implements FastTest {
         assertThatExceptionOfType(RuntimeException.class)
                 .isThrownBy(() -> ImpServer.template()
                         .randomPort()
-                        .onRequestMatching(r -> {})
+                        .onRequestMatching("id", r -> {})
                         .respondWithStatus(200)
                         .andTextBody("")
                         .andAdditionalHeaders(headers))
-                .withMessage("null values are not supported in headers, but found null values in entry [ something=null ]");
+                .withMessage(
+                        "null values are not supported in headers, but found null values in entry [ something=null ]");
+    }
+
+    @ParameterizedTest
+    @Timeout(value = 2, unit = TimeUnit.SECONDS)
+    @ValueSource(strings = {"user-agent", "User-Agent", "uSeR-AgeNT"})
+    @DisplayName("should return expected response when matched user-agent header key")
+    void should_return_expected_response_when_matched_user_agent_header_key(String contentTypeHeaderKey) {
+        var expected = "some text";
+        ImpServer.template()
+                .randomPort()
+                .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey(contentTypeHeaderKey)))
+                .respondWithStatus(200)
+                .andTextBody(expected)
+                .andNoAdditionalHeaders()
+                .rejectNonMatching()
+                .useServer(impServer -> {
+                    var request = HttpRequest.newBuilder(
+                                    new URI(String.format("http://localhost:%d/", impServer.port())))
+                            .build();
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+                    assertThat(response.body()).isEqualTo(expected);
+                    assertThat(response.statusCode()).isEqualTo(200);
+                    assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                        assertThat(headers)
+                                .containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+                        assertThat(headers).containsEntry("Content-Length", List.of("9"));
+                        assertThat(headers).containsKey("date");
+                    });
+                });
     }
 }

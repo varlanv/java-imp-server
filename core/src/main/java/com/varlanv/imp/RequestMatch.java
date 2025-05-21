@@ -1,16 +1,14 @@
 package com.varlanv.imp;
 
-import java.net.http.HttpHeaders;
-import org.immutables.value.Value;
+public final class RequestMatch {
 
-@Value.Immutable
-@Value.Style(
-        throwForNullPointer = IllegalArgumentException.class,
-        nullableAnnotation = "org.jspecify.annotations.Nullable")
-public interface RequestMatch {
+    private final ImpPredicate<ImpHeadersMatch> headersPredicate;
 
-    @Value.Default
-    default ImpPredicate<HttpHeaders> headersPredicate() {
-        return ImpPredicate.alwaysTrue();
+    public RequestMatch(ImpPredicate<ImpHeadersMatch> headersPredicate) {
+        this.headersPredicate = headersPredicate;
+    }
+
+    public ImpPredicate<ImpHeadersMatch> headersPredicate() {
+        return headersPredicate;
     }
 }

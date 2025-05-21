@@ -7,7 +7,7 @@ interface Preconditions {
 
     @SuppressWarnings("ConstantValue")
     static <K, V, M extends Map<K, V>> M noNullsInMap(M map, String fieldName) {
-        Preconditions.nonNull(map, fieldName);
+        nonNull(map, fieldName);
         for (var entry : map.entrySet()) {
             if (entry.getKey() == null) {
                 throw new IllegalArgumentException(String.format(
