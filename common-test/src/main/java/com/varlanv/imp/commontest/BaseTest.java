@@ -201,4 +201,14 @@ public interface BaseTest {
             return hide(e);
         }
     }
+
+    default <T> HttpResponse<T> sendHttpRequest(int port, HttpResponse.BodyHandler<T> responseBodyHandler) {
+        try {
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)))
+                    .build();
+            return sendHttpRequest(request, responseBodyHandler);
+        } catch (Exception e) {
+            return hide(e);
+        }
+    }
 }

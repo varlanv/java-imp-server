@@ -158,10 +158,8 @@ public final class ImpTemplateSpec {
                             .test(new ImpHeadersMatch(request.getRequestHeaders())),
                     () -> {
                         var responseEntry = parent.bodyAndContentTypeSupplier.get();
-                        var headers = new HashMap<String, List<String>>();
-                        headers.put("Content-Type", List.of(responseEntry.getKey()));
                         return ImmutableImpResponse.builder()
-                                .headers(Collections.unmodifiableMap(responseHeadersOperator.apply(headers)))
+                                .headers(responseHeadersOperator)
                                 .statusCode(parent.parent.status)
                                 .body(responseEntry.getValue())
                                 .build();
@@ -218,7 +216,11 @@ public final class ImpTemplateSpec {
                     .decision(new ResponseDecision(
                             new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImmutableImpResponse.builder()
                                     .body(bodySupplier)
-                                    .headers(Map.of("Content-Type", List.of(contentType.toString())))
+                                    .headers(headers -> {
+                                        var res = new HashMap<>(headers);
+                                        res.put("Content-Type", List.of(contentType.toString()));
+                                        return Collections.unmodifiableMap(res);
+                                    })
                                     .statusCode(status)
                                     .build())))
                     .fallback(new Teapot(List.of()))

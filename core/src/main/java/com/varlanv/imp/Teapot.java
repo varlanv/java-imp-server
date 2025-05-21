@@ -1,9 +1,11 @@
 package com.varlanv.imp;
 
 import com.sun.net.httpserver.HttpExchange;
+
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 final class Teapot implements ImpFn<HttpExchange, ImpResponse> {
@@ -25,7 +27,11 @@ final class Teapot implements ImpFn<HttpExchange, ImpResponse> {
         return ImmutableImpResponse.builder()
                 .statusCode(ImpHttpStatus.I_AM_A_TEAPOT)
                 .body(bodySupplier)
-                .headers(Map.of("Content-Type", List.of(ImpContentType.PLAIN_TEXT.stringValue())))
+                .headers(headers -> {
+                    var h = new HashMap<>(headers);
+                    h.put("Content-Type", List.of(ImpContentType.PLAIN_TEXT.stringValue()));
+                    return Collections.unmodifiableMap(h);
+                })
                 .build();
     }
 }

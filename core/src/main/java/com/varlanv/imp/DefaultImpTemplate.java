@@ -1,5 +1,11 @@
 package com.varlanv.imp;
 
+import com.sun.net.httpserver.Headers;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+
 final class DefaultImpTemplate implements ImpTemplate {
 
     private final ServerConfig config;
@@ -38,7 +44,14 @@ final class DefaultImpTemplate implements ImpTemplate {
             }
             var responseBytes = impResponse.body().get();
             var responseBody = exchange.getResponseBody();
-            exchange.getResponseHeaders().putAll(impResponse.headers());
+            var originalResponseHeaders = exchange.getResponseHeaders();
+            var newResponseHeaders = impResponse.headers().apply(originalResponseHeaders);
+            for (var entry : new HashSet<>(originalResponseHeaders.entrySet())) {
+                if (!newResponseHeaders.containsKey(entry.getKey())) {
+                    originalResponseHeaders.remove(entry.getKey());
+                }
+            }
+            originalResponseHeaders.putAll(newResponseHeaders);
             exchange.sendResponseHeaders(impResponse.statusCode().value(), responseBytes.length);
             responseBody.write(responseBytes);
             responseBody.flush();

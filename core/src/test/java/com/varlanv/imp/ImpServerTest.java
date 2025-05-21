@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -929,27 +930,26 @@ public class ImpServerTest implements FastTest {
     void should_return_expected_response_when_matched_user_agent_header_key_by_containskey_and_expect_json_body() {
         @Language("json")
         var expected = "{ \"some\": \"json\" }";
-        ImpServer.template()
+        var subject = ImpServer.template()
                 .randomPort()
                 .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
                 .respondWithStatus(200)
                 .andJsonBody(expected)
                 .andNoAdditionalHeaders()
-                .rejectNonMatching()
-                .useServer(impServer -> {
-                    var request = HttpRequest.newBuilder(
-                                    new URI(String.format("http://localhost:%d/", impServer.port())))
-                            .build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                    .build();
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
-                    assertThat(response.body()).isEqualTo(expected);
-                    assertThat(response.statusCode()).isEqualTo(200);
-                    assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.JSON.toString()));
-                        assertThat(headers).containsEntry("Content-Length", List.of(expected.length() + ""));
-                        assertThat(headers).containsKey("date");
-                    });
-                });
+            assertThat(response.body()).isEqualTo(expected);
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.JSON.toString()));
+                assertThat(headers).containsEntry("Content-Length", List.of(expected.length() + ""));
+                assertThat(headers).containsKey("date");
+            });
+        });
     }
 
     @Test
@@ -958,27 +958,26 @@ public class ImpServerTest implements FastTest {
     void should_return_expected_response_when_matched_user_agent_header_key_by_containskey_and_expect_xml_body() {
         @Language("xml")
         var expected = "<root><entry>value</entry></root>";
-        ImpServer.template()
+        var subject = ImpServer.template()
                 .randomPort()
                 .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
                 .respondWithStatus(200)
                 .andXmlBody(expected)
                 .andNoAdditionalHeaders()
-                .rejectNonMatching()
-                .useServer(impServer -> {
-                    var request = HttpRequest.newBuilder(
-                                    new URI(String.format("http://localhost:%d/", impServer.port())))
-                            .build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                    .build();
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
-                    assertThat(response.body()).isEqualTo(expected);
-                    assertThat(response.statusCode()).isEqualTo(200);
-                    assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.XML.toString()));
-                        assertThat(headers).containsEntry("Content-Length", List.of(expected.length() + ""));
-                        assertThat(headers).containsKey("date");
-                    });
-                });
+            assertThat(response.body()).isEqualTo(expected);
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.XML.toString()));
+                assertThat(headers).containsEntry("Content-Length", List.of(expected.length() + ""));
+                assertThat(headers).containsKey("date");
+            });
+        });
     }
 
     @Test
@@ -986,28 +985,26 @@ public class ImpServerTest implements FastTest {
             "should return expected response when matched user-agent header key by 'containsKey' and expect stream body")
     void should_return_expected_response_when_matched_user_agent_header_key_by_containskey_and_expect_stream_body() {
         var expected = "some-data".getBytes(StandardCharsets.UTF_8);
-        ImpServer.template()
+        var subject = ImpServer.template()
                 .randomPort()
                 .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
                 .respondWithStatus(200)
                 .andDataStreamBody(() -> new ByteArrayInputStream(expected))
                 .andNoAdditionalHeaders()
-                .rejectNonMatching()
-                .useServer(impServer -> {
-                    var request = HttpRequest.newBuilder(
-                                    new URI(String.format("http://localhost:%d/", impServer.port())))
-                            .build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                    .build();
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
-                    assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
-                    assertThat(response.statusCode()).isEqualTo(200);
-                    assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.OCTET_STREAM.toString()));
-                        assertThat(headers).containsEntry("Content-Length", List.of(expected.length + ""));
-                        assertThat(headers).containsKey("date");
-                    });
-                });
+            assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.OCTET_STREAM.toString()));
+                assertThat(headers).containsEntry("Content-Length", List.of(expected.length + ""));
+                assertThat(headers).containsKey("date");
+            });
+        });
     }
 
     @Test
@@ -1017,26 +1014,84 @@ public class ImpServerTest implements FastTest {
             should_return_expected_response_when_matched_user_agent_header_key_by_containskey_and_expect_custom_content_type() {
         var expected = "some-data".getBytes(StandardCharsets.UTF_8);
         var contentType = "customContentType";
-        ImpServer.template()
+        var subject = ImpServer.template()
                 .randomPort()
                 .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
                 .respondWithStatus(200)
                 .andCustomContentTypeStream(contentType, () -> new ByteArrayInputStream(expected))
                 .andNoAdditionalHeaders()
-                .rejectNonMatching()
-                .useServer(impServer -> {
-                    var request = HttpRequest.newBuilder(
-                                    new URI(String.format("http://localhost:%d/", impServer.port())))
-                            .build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                    .build();
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
-                    assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
-                    assertThat(response.statusCode()).isEqualTo(200);
-                    assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers).containsEntry("Content-Type", List.of(contentType));
-                        assertThat(headers).containsEntry("Content-Length", List.of(expected.length + ""));
-                        assertThat(headers).containsKey("date");
-                    });
-                });
+            assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                assertThat(headers).containsEntry("Content-Type", List.of(contentType));
+                assertThat(headers).containsEntry("Content-Length", List.of(expected.length + ""));
+                assertThat(headers).containsKey("date");
+            });
+        });
+    }
+
+    @Test
+    @DisplayName(
+            "should return expected status when matched user-agent header key by 'containsKey' and expect specific status")
+    void should_return_expected_status_when_matched_user_agent_header_key_by_containskey_and_expect_specific_status() {
+        var expectedStatus = 404;
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching("any", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                .respondWithStatus(expectedStatus)
+                .andTextBody("any")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).isEqualTo(expectedStatus);
+        });
+    }
+
+    @Test
+    @DisplayName(
+            "should return additional headers when matched user-agent header key by 'containsKey' and expect additional headers")
+    void
+            should_return_additional_headers_when_matched_user_agent_header_key_by_containskey_and_expect_additional_headers() {
+        var additionalHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2", "value3"));
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching("any", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andAdditionalHeaders(additionalHeaders)
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var responseHeaders = response.headers().map();
+            assertThat(responseHeaders).hasSizeGreaterThan(additionalHeaders.size());
+            assertThat(responseHeaders).containsAllEntriesOf(additionalHeaders);
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+        });
+    }
+
+    @Test
+    @DisplayName(
+            "should return only exact headers when matched user-agent header key by 'containsKey' and expect exact headers")
+    void should_return_only_exact_headers_when_matched_user_agent_header_key_by_containskey_and_expect_exact_headers() {
+        var exactHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2", "value3"));
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching("any", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andExactHeaders(exactHeaders)
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var responseHeaders = response.headers().map();
+            assertThat(responseHeaders).isEqualTo(exactHeaders);
+        });
     }
 }
