@@ -7,4 +7,6 @@ public interface ImpServer {
     }
 
     int port();
+
+    ImpStatistics statistics();
 }

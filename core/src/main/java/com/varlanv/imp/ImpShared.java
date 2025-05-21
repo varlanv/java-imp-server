@@ -5,4 +5,6 @@ public interface ImpShared {
     int port();
 
     void dispose();
+
+    ImpStatistics statistics();
 }

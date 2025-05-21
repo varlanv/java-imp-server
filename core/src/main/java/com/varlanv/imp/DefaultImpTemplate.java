@@ -14,8 +14,9 @@ final class DefaultImpTemplate implements ImpTemplate {
     public void useServer(ImpConsumer<ImpServer> consumer) {
         HttpServer server = null;
         try {
-            server = buildAndStartServer();
-            consumer.accept(new DefaultImpServer(config));
+            var impStatistics = new ImpStatistics();
+            server = buildAndStartServer(impStatistics);
+            consumer.accept(new DefaultImpServer(config, impStatistics));
         } catch (Exception e) {
             InternalUtils.hide(e);
         } finally {
@@ -25,11 +26,14 @@ final class DefaultImpTemplate implements ImpTemplate {
         }
     }
 
-    private HttpServer buildAndStartServer() {
+    private HttpServer buildAndStartServer(ImpStatistics impStatistics) {
         var server = config.port().resolveToServer();
         server.createContext("/", exchange -> {
             var response = config.decision().pick(exchange);
-            if (response != null) {
+            if (response == null) {
+                impStatistics.incrementMissCount();
+            } else {
+                impStatistics.incrementHitCount();
                 var impResponse = response.responseSupplier().get();
                 var responseBytes = impResponse.body().get();
                 var responseBody = exchange.getResponseBody();
@@ -46,6 +50,7 @@ final class DefaultImpTemplate implements ImpTemplate {
 
     @Override
     public ImpShared startShared() {
-        return new DefaultImpShared(config, buildAndStartServer());
+        var impStatistics = new ImpStatistics();
+        return new DefaultImpShared(config, buildAndStartServer(impStatistics), impStatistics);
     }
 }

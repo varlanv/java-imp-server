@@ -36,6 +36,19 @@ public class ImpServerTest implements FastTest {
                 .useServer(impServer -> {});
     }
 
+    @Test
+    @DisplayName("Fresh server should have zero hits and misses")
+    void fresh_server_should_have_zero_hits_and_misses() {
+        ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("")
+                .useServer(impServer -> {
+                    assertThat(impServer.statistics().hitCount()).isZero();
+                    assertThat(impServer.statistics().missCount()).isZero();
+                });
+    }
+
     @ParameterizedTest
     @ArgumentsSource(HttpRequestBuilderSource.class)
     @DisplayName("server should response with expected json data")
