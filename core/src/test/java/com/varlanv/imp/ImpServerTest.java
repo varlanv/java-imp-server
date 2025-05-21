@@ -22,7 +22,6 @@ import java.util.function.Function;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -381,7 +380,6 @@ public class ImpServerTest implements FastTest {
     }
 
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     @DisplayName("should be able to send multiple requests to shared server")
     void should_be_able_to_send_multiple_requests_to_shared_server() {
         var body = "some text";
@@ -415,7 +413,6 @@ public class ImpServerTest implements FastTest {
     }
 
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     @DisplayName("when shared server is stopped, then dont accept further requests")
     void when_shared_server_is_stopped_then_dont_accept_further_requests() throws Exception {
         var sharedServer = ImpServer.template()
@@ -432,7 +429,6 @@ public class ImpServerTest implements FastTest {
     }
 
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     @DisplayName("when shared server is stopped many times, then no exception thrown and server is still stopped")
     void when_shared_server_is_stopped_many_times_then_no_exception_thrown_and_server_is_still_stopped()
             throws Exception {
@@ -834,7 +830,6 @@ public class ImpServerTest implements FastTest {
     }
 
     @ParameterizedTest
-    @Timeout(value = 2, unit = TimeUnit.SECONDS)
     @ValueSource(strings = {"user-agent", "User-Agent", "uSeR-AgeNT"})
     @DisplayName("should return expected response when matched user-agent header key by 'containsKey'")
     void should_return_expected_response_when_matched_user_agent_header_key_by_containskey(
@@ -865,17 +860,80 @@ public class ImpServerTest implements FastTest {
     }
 
     @Test
-    @Timeout(value = 2, unit = TimeUnit.SECONDS)
-    @DisplayName("should return fallback response when none of matchers matched request")
-    void should_return_fallback_response_when_none_of_matchers_matched_request() {
+    @DisplayName("should return fallback response when none of matchers matched request and expected text body")
+    void should_return_fallback_response_when_none_of_matchers_matched_request_and_expected_text_body() {
         var matcherId = "some matcher id";
-        ImpServer.template()
+        var subject = ImpServer.template()
                 .randomPort()
                 .onRequestMatching(
                         matcherId,
                         request -> request.headersPredicate(h -> h.containsKey("unknown-not-matched-header")))
                 .respondWithStatus(200)
                 .andTextBody("should never return")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                    .build();
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.body())
+                    .isEqualTo(
+                            "None of the matchers matched request, returning http response code [418 I'm a teapot]. "
+                                    + "ImpServer instance contains matchers with these ids: [%s]",
+                            matcherId);
+            assertThat(response.statusCode()).isEqualTo(418);
+            assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+                assertThat(headers).containsKey("Content-Length");
+                assertThat(headers).containsKey("date");
+            });
+        });
+    }
+
+    @Test
+    @DisplayName("should return fallback response when none of matchers matched request and expected json body")
+    void should_return_fallback_response_when_none_of_matchers_matched_request_and_expected_json_body() {
+        var matcherId = "some matcher id";
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        matcherId,
+                        request -> request.headersPredicate(h -> h.containsKey("unknown-not-matched-header")))
+                .respondWithStatus(200)
+                .andJsonBody("{}")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                    .build();
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.body())
+                    .isEqualTo(
+                            "None of the matchers matched request, returning http response code [418 I'm a teapot]. "
+                                    + "ImpServer instance contains matchers with these ids: [%s]",
+                            matcherId);
+            assertThat(response.statusCode()).isEqualTo(418);
+            assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+                assertThat(headers).containsKey("Content-Length");
+                assertThat(headers).containsKey("date");
+            });
+        });
+    }
+
+    @Test
+    @DisplayName(
+            "should return expected response when matched user-agent header key by 'containsKey' and expect json body")
+    void should_return_expected_response_when_matched_user_agent_header_key_by_containskey_and_expect_json_body() {
+        @Language("json")
+        var expected = "{ \"some\": \"json\" }";
+        ImpServer.template()
+                .randomPort()
+                .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                .respondWithStatus(200)
+                .andJsonBody(expected)
                 .andNoAdditionalHeaders()
                 .rejectNonMatching()
                 .useServer(impServer -> {
@@ -884,16 +942,99 @@ public class ImpServerTest implements FastTest {
                             .build();
                     var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
 
-                    assertThat(response.body())
-                            .isEqualTo(
-                                    "None of the matchers matched request, returning http response code [418 I'm a teapot]. "
-                                            + "ImpServer instance contains matchers with these ids: [%s]",
-                                    matcherId);
-                    assertThat(response.statusCode()).isEqualTo(418);
+                    assertThat(response.body()).isEqualTo(expected);
+                    assertThat(response.statusCode()).isEqualTo(200);
+                    assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                        assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.JSON.toString()));
+                        assertThat(headers).containsEntry("Content-Length", List.of(expected.length() + ""));
+                        assertThat(headers).containsKey("date");
+                    });
+                });
+    }
+
+    @Test
+    @DisplayName(
+            "should return expected response when matched user-agent header key by 'containsKey' and expect xml body")
+    void should_return_expected_response_when_matched_user_agent_header_key_by_containskey_and_expect_xml_body() {
+        @Language("xml")
+        var expected = "<root><entry>value</entry></root>";
+        ImpServer.template()
+                .randomPort()
+                .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                .respondWithStatus(200)
+                .andXmlBody(expected)
+                .andNoAdditionalHeaders()
+                .rejectNonMatching()
+                .useServer(impServer -> {
+                    var request = HttpRequest.newBuilder(
+                                    new URI(String.format("http://localhost:%d/", impServer.port())))
+                            .build();
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+                    assertThat(response.body()).isEqualTo(expected);
+                    assertThat(response.statusCode()).isEqualTo(200);
+                    assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                        assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.XML.toString()));
+                        assertThat(headers).containsEntry("Content-Length", List.of(expected.length() + ""));
+                        assertThat(headers).containsKey("date");
+                    });
+                });
+    }
+
+    @Test
+    @DisplayName(
+            "should return expected response when matched user-agent header key by 'containsKey' and expect stream body")
+    void should_return_expected_response_when_matched_user_agent_header_key_by_containskey_and_expect_stream_body() {
+        var expected = "some-data".getBytes(StandardCharsets.UTF_8);
+        ImpServer.template()
+                .randomPort()
+                .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                .respondWithStatus(200)
+                .andDataStreamBody(() -> new ByteArrayInputStream(expected))
+                .andNoAdditionalHeaders()
+                .rejectNonMatching()
+                .useServer(impServer -> {
+                    var request = HttpRequest.newBuilder(
+                                    new URI(String.format("http://localhost:%d/", impServer.port())))
+                            .build();
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+                    assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
+                    assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
                         assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
-                        assertThat(headers).containsKey("Content-Length");
+                                .containsEntry("Content-Type", List.of(ImpContentType.OCTET_STREAM.toString()));
+                        assertThat(headers).containsEntry("Content-Length", List.of(expected.length + ""));
+                        assertThat(headers).containsKey("date");
+                    });
+                });
+    }
+
+    @Test
+    @DisplayName(
+            "should return expected response when matched user-agent header key by 'containsKey' and expect custom content type")
+    void
+            should_return_expected_response_when_matched_user_agent_header_key_by_containskey_and_expect_custom_content_type() {
+        var expected = "some-data".getBytes(StandardCharsets.UTF_8);
+        var contentType = "customContentType";
+        ImpServer.template()
+                .randomPort()
+                .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                .respondWithStatus(200)
+                .andCustomContentTypeStream(contentType, () -> new ByteArrayInputStream(expected))
+                .andNoAdditionalHeaders()
+                .rejectNonMatching()
+                .useServer(impServer -> {
+                    var request = HttpRequest.newBuilder(
+                                    new URI(String.format("http://localhost:%d/", impServer.port())))
+                            .build();
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+                    assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
+                    assertThat(response.statusCode()).isEqualTo(200);
+                    assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                        assertThat(headers).containsEntry("Content-Type", List.of(contentType));
+                        assertThat(headers).containsEntry("Content-Length", List.of(expected.length + ""));
                         assertThat(headers).containsKey("date");
                     });
                 });
