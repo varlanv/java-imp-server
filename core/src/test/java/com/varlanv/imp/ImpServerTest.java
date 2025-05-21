@@ -1091,7 +1091,10 @@ public class ImpServerTest implements FastTest {
         subject.useServer(impServer -> {
             var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
             var responseHeaders = response.headers().map();
-            assertThat(responseHeaders).isEqualTo(exactHeaders);
+            assertThat(responseHeaders).hasSize(4);
+            assertThat(responseHeaders).containsAllEntriesOf(exactHeaders);
+            assertThat(responseHeaders).containsKey("content-length");
+            assertThat(responseHeaders).containsKey("date");
         });
     }
 }

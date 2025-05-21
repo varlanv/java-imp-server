@@ -1,10 +1,6 @@
 package com.varlanv.imp;
 
-import com.sun.net.httpserver.Headers;
-
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
 final class DefaultImpTemplate implements ImpTemplate {
 

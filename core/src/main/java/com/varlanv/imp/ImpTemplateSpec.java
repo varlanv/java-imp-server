@@ -101,20 +101,21 @@ public final class ImpTemplateSpec {
 
         private OnRequestMatchingHeaders defaultImpTemplate(
                 CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
-            return new OnRequestMatchingHeaders(this, () -> Map.entry(contentType.toString(), bodySupplier));
+            return new OnRequestMatchingHeaders(this, contentType.toString(), bodySupplier);
         }
     }
 
     public static final class OnRequestMatchingHeaders {
 
         private final OnRequestMatchingBody parent;
-        private final ImpSupplier<Map.Entry<String, ImpSupplier<byte[]>>> bodyAndContentTypeSupplier;
+        private final String contentType;
+        private final ImpSupplier<byte[]> bodySupplier;
 
         public OnRequestMatchingHeaders(
-                OnRequestMatchingBody parent,
-                ImpSupplier<Map.Entry<String, ImpSupplier<byte[]>>> bodyAndContentTypeSupplier) {
+                OnRequestMatchingBody parent, String contentType, ImpSupplier<byte[]> bodySupplier) {
             this.parent = parent;
-            this.bodyAndContentTypeSupplier = bodyAndContentTypeSupplier;
+            this.contentType = contentType;
+            this.bodySupplier = bodySupplier;
         }
 
         public ContentContinue andAdditionalHeaders(Map<String, List<String>> headers) {
@@ -122,6 +123,7 @@ public final class ImpTemplateSpec {
             var headersCopy = Map.copyOf(headers);
             return new ContentContinue(this, existingHeaders -> {
                 var newHeaders = new HashMap<>(existingHeaders);
+                newHeaders.put("Content-Type", List.of(contentType));
                 newHeaders.putAll(headersCopy);
                 return Map.copyOf(newHeaders);
             });
@@ -134,7 +136,11 @@ public final class ImpTemplateSpec {
         }
 
         public ContentContinue andNoAdditionalHeaders() {
-            return new ContentContinue(this, headers -> headers);
+            return new ContentContinue(this, headers -> {
+                var newHeaders = new HashMap<>(headers);
+                newHeaders.put("Content-Type", List.of(contentType));
+                return Map.copyOf(newHeaders);
+            });
         }
     }
 
@@ -156,14 +162,11 @@ public final class ImpTemplateSpec {
                             .requestMatch
                             .headersPredicate()
                             .test(new ImpHeadersMatch(request.getRequestHeaders())),
-                    () -> {
-                        var responseEntry = parent.bodyAndContentTypeSupplier.get();
-                        return ImmutableImpResponse.builder()
-                                .headers(responseHeadersOperator)
-                                .statusCode(parent.parent.status)
-                                .body(responseEntry.getValue())
-                                .build();
-                    }));
+                    () -> ImmutableImpResponse.builder()
+                            .headers(responseHeadersOperator)
+                            .statusCode(parent.parent.status)
+                            .body(parent.bodySupplier)
+                            .build()));
             return new DefaultImpTemplate(ImmutableServerConfig.builder()
                     .port(parent.parent.parent.parent.port)
                     .decision(new ResponseDecision(candidates))
