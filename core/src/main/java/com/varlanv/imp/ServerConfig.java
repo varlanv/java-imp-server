@@ -1,5 +1,6 @@
 package com.varlanv.imp;
 
+import com.sun.net.httpserver.HttpExchange;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -9,4 +10,6 @@ interface ServerConfig {
     ImpPort port();
 
     ResponseDecision decision();
+
+    ImpFn<HttpExchange, ImpResponse> fallback();
 }

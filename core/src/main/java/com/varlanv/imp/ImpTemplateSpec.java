@@ -149,25 +149,27 @@ public final class ImpTemplateSpec {
         }
 
         public ImpTemplate rejectNonMatching() {
+            var candidates = List.of(new ResponseCandidate(
+                    parent.parent.parent.matchId,
+                    request -> parent.parent
+                            .parent
+                            .requestMatch
+                            .headersPredicate()
+                            .test(new ImpHeadersMatch(request.getRequestHeaders())),
+                    () -> {
+                        var responseEntry = parent.bodyAndContentTypeSupplier.get();
+                        var headers = new HashMap<String, List<String>>();
+                        headers.put("Content-Type", List.of(responseEntry.getKey()));
+                        return ImmutableImpResponse.builder()
+                                .headers(Collections.unmodifiableMap(responseHeadersOperator.apply(headers)))
+                                .statusCode(parent.parent.status)
+                                .body(responseEntry.getValue())
+                                .build();
+                    }));
             return new DefaultImpTemplate(ImmutableServerConfig.builder()
                     .port(parent.parent.parent.parent.port)
-                    .decision(new ResponseDecision(List.of(new ResponseCandidate(
-                            parent.parent.parent.matchId,
-                            request -> parent.parent
-                                    .parent
-                                    .requestMatch
-                                    .headersPredicate()
-                                    .test(new ImpHeadersMatch(request.getRequestHeaders())),
-                            () -> {
-                                var responseEntry = parent.bodyAndContentTypeSupplier.get();
-                                var headers = new HashMap<String, List<String>>();
-                                headers.put("Content-Type", List.of(responseEntry.getKey()));
-                                return ImmutableImpResponse.builder()
-                                        .headers(Collections.unmodifiableMap(responseHeadersOperator.apply(headers)))
-                                        .statusCode(parent.parent.status)
-                                        .body(responseEntry.getValue())
-                                        .build();
-                            }))))
+                    .decision(new ResponseDecision(candidates))
+                    .fallback(new Teapot(candidates))
                     .build());
         }
     }
@@ -219,6 +221,7 @@ public final class ImpTemplateSpec {
                                     .headers(Map.of("Content-Type", List.of(contentType.toString())))
                                     .statusCode(status)
                                     .build())))
+                    .fallback(new Teapot(List.of()))
                     .build());
         }
     }

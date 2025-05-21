@@ -836,8 +836,9 @@ public class ImpServerTest implements FastTest {
     @ParameterizedTest
     @Timeout(value = 2, unit = TimeUnit.SECONDS)
     @ValueSource(strings = {"user-agent", "User-Agent", "uSeR-AgeNT"})
-    @DisplayName("should return expected response when matched user-agent header key")
-    void should_return_expected_response_when_matched_user_agent_header_key(String contentTypeHeaderKey) {
+    @DisplayName("should return expected response when matched user-agent header key by 'containsKey'")
+    void should_return_expected_response_when_matched_user_agent_header_key_by_containskey(
+            String contentTypeHeaderKey) {
         var expected = "some text";
         ImpServer.template()
                 .randomPort()
@@ -858,6 +859,41 @@ public class ImpServerTest implements FastTest {
                         assertThat(headers)
                                 .containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
                         assertThat(headers).containsEntry("Content-Length", List.of("9"));
+                        assertThat(headers).containsKey("date");
+                    });
+                });
+    }
+
+    @Test
+    @Timeout(value = 2, unit = TimeUnit.SECONDS)
+    @DisplayName("should return fallback response when none of matchers matched request")
+    void should_return_fallback_response_when_none_of_matchers_matched_request() {
+        var matcherId = "some matcher id";
+        ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        matcherId,
+                        request -> request.headersPredicate(h -> h.containsKey("unknown-not-matched-header")))
+                .respondWithStatus(200)
+                .andTextBody("should never return")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching()
+                .useServer(impServer -> {
+                    var request = HttpRequest.newBuilder(
+                                    new URI(String.format("http://localhost:%d/", impServer.port())))
+                            .build();
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+
+                    assertThat(response.body())
+                            .isEqualTo(
+                                    "None of the matchers matched request, returning http response code [418 I'm a teapot]. "
+                                            + "ImpServer instance contains matchers with these ids: [%s]",
+                                    matcherId);
+                    assertThat(response.statusCode()).isEqualTo(418);
+                    assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                        assertThat(headers)
+                                .containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+                        assertThat(headers).containsKey("Content-Length");
                         assertThat(headers).containsKey("date");
                     });
                 });

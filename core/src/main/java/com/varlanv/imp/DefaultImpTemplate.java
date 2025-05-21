@@ -28,19 +28,21 @@ final class DefaultImpTemplate implements ImpTemplate {
         var server = config.port().resolveToServer();
         server.createContext("/", exchange -> {
             var response = config.decision().pick(exchange);
+            ImpResponse impResponse;
             if (response == null) {
                 impStatistics.incrementMissCount();
+                impResponse = config.fallback().apply(exchange);
             } else {
                 impStatistics.incrementHitCount();
-                var impResponse = response.responseSupplier().get();
-                var responseBytes = impResponse.body().get();
-                var responseBody = exchange.getResponseBody();
-                exchange.getResponseHeaders().putAll(impResponse.headers());
-                exchange.sendResponseHeaders(impResponse.statusCode().value(), responseBytes.length);
-                responseBody.write(responseBytes);
-                responseBody.flush();
-                responseBody.close();
+                impResponse = response.responseSupplier().get();
             }
+            var responseBytes = impResponse.body().get();
+            var responseBody = exchange.getResponseBody();
+            exchange.getResponseHeaders().putAll(impResponse.headers());
+            exchange.sendResponseHeaders(impResponse.statusCode().value(), responseBytes.length);
+            responseBody.write(responseBytes);
+            responseBody.flush();
+            responseBody.close();
         });
         server.start();
         return () -> server.stop(0);
