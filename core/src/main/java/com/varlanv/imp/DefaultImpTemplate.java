@@ -1,5 +1,7 @@
 package com.varlanv.imp;
 
+import com.sun.net.httpserver.HttpExchange;
+import java.io.IOException;
 import java.util.HashSet;
 
 final class DefaultImpTemplate implements ImpTemplate {
@@ -14,9 +16,9 @@ final class DefaultImpTemplate implements ImpTemplate {
     public void useServer(ImpConsumer<ImpServer> consumer) {
         Disposable server = null;
         try {
-            var impStatistics = new MutableImpStatistics();
-            server = buildAndStartServer(impStatistics);
-            consumer.accept(new DefaultImpServer(config, impStatistics));
+            var serverContext = new ImpServerContext(config, new MutableImpStatistics());
+            server = buildAndStartServer(new BorrowedState(serverContext, false));
+            consumer.accept(new DefaultImpServer(serverContext));
         } catch (Exception e) {
             InternalUtils.hide(e);
         } finally {
@@ -26,42 +28,58 @@ final class DefaultImpTemplate implements ImpTemplate {
         }
     }
 
-    private Disposable buildAndStartServer(MutableImpStatistics impStatistics) {
+    private Disposable buildAndStartServer(BorrowedState borrowedState) {
         var server = config.port().resolveToServer();
         server.createContext("/", exchange -> {
-            var response = config.decision().pick(exchange);
-            ImpResponse impResponse;
-            if (response == null) {
-                impStatistics.incrementMissCount();
-                impResponse = config.fallback().apply(exchange);
-            } else {
-                impStatistics.incrementHitCount();
-                impResponse = response.responseSupplier().get();
-            }
-            var responseBytes = impResponse.body().get();
-            var responseBody = exchange.getResponseBody();
-            var originalResponseHeaders = exchange.getResponseHeaders();
-            var newResponseHeaders = impResponse.headersOperator().apply(originalResponseHeaders);
-            if (!originalResponseHeaders.isEmpty()) {
-                for (var entry : new HashSet<>(originalResponseHeaders.entrySet())) {
-                    if (!newResponseHeaders.containsKey(entry.getKey())) {
-                        originalResponseHeaders.remove(entry.getKey());
-                    }
+            if (borrowedState.isShared()) {
+                try {
+                    borrowedState.lock();
+                    process(borrowedState.currentContext(), exchange);
+                } finally {
+                    borrowedState.unlock();
                 }
+            } else {
+                process(borrowedState.currentContext(), exchange);
             }
-            originalResponseHeaders.putAll(newResponseHeaders);
-            exchange.sendResponseHeaders(impResponse.statusCode().value(), responseBytes.length);
-            responseBody.write(responseBytes);
-            responseBody.flush();
-            responseBody.close();
         });
         server.start();
         return () -> server.stop(0);
     }
 
+    private void process(ImpServerContext serverContext, HttpExchange exchange) throws IOException {
+        var serverConfig = serverContext.config();
+        var response = serverConfig.decision().pick(exchange);
+        ImpResponse impResponse;
+        if (response == null) {
+            serverContext.statistics().incrementMissCount();
+            impResponse = serverConfig.fallback().apply(exchange);
+        } else {
+            serverContext.statistics().incrementHitCount();
+            impResponse = response.responseSupplier().get();
+        }
+        var responseBytes = impResponse.body().get();
+        var responseBody = exchange.getResponseBody();
+        var originalResponseHeaders = exchange.getResponseHeaders();
+        var newResponseHeaders = impResponse.headersOperator().apply(originalResponseHeaders);
+        if (!originalResponseHeaders.isEmpty()) {
+            for (var entry : new HashSet<>(originalResponseHeaders.entrySet())) {
+                if (!newResponseHeaders.containsKey(entry.getKey())) {
+                    originalResponseHeaders.remove(entry.getKey());
+                }
+            }
+        }
+        originalResponseHeaders.putAll(newResponseHeaders);
+        exchange.sendResponseHeaders(impResponse.statusCode().value(), responseBytes.length);
+        responseBody.write(responseBytes);
+        responseBody.flush();
+        responseBody.close();
+    }
+
     @Override
     public ImpShared startShared() {
-        var impStatistics = new MutableImpStatistics();
-        return new DefaultImpShared(config, buildAndStartServer(impStatistics), impStatistics);
+        var serverContext = new ImpServerContext(config, new MutableImpStatistics());
+        var borrowedState = new BorrowedState(serverContext, true);
+        var httpServer = buildAndStartServer(borrowedState);
+        return new DefaultImpShared(serverContext, httpServer, borrowedState);
     }
 }

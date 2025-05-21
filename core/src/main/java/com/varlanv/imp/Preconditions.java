@@ -21,6 +21,21 @@ interface Preconditions {
         return map;
     }
 
+    @SuppressWarnings("ConstantValue")
+    static <T, I extends Iterable<T>> I noNullsInIterable(I iterable, String fieldName) {
+        nonNull(iterable, fieldName);
+        var counter = 0;
+        for (var value : iterable) {
+            if (value == null) {
+                throw new IllegalArgumentException(String.format(
+                        "null values are not supported in %s, but found null value at position [%d]",
+                        fieldName, counter));
+            }
+            counter++;
+        }
+        return iterable;
+    }
+
     static ImpHttpStatus validHttpStatusCode(int statusCode) {
         var httpStatus = ImpHttpStatus.forCodeNullable(statusCode);
         if (httpStatus == null) {

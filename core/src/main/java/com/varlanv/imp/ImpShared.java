@@ -6,5 +6,9 @@ public interface ImpShared {
 
     void dispose();
 
+    boolean isDisposed();
+
     ImpStatistics statistics();
+
+    ImpBorrowedSpec borrow();
 }

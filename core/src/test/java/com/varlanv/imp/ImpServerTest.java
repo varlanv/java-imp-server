@@ -414,6 +414,191 @@ public class ImpServerTest implements FastTest {
     }
 
     @Test
+    @DisplayName("should be able to send request while borrowing server")
+    void should_be_able_to_send_request_while_borrowing_server() {
+        var body = "some text";
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody(body)
+                .startShared();
+
+        try {
+            var borrowedTextBody = "some borrowed text";
+            var borrowedStatus = 400;
+            var impBorrowed = sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(borrowedStatus)
+                    .andTextBody(borrowedTextBody)
+                    .andNoAdditionalHeaders();
+
+            impBorrowed.useServer(server -> {
+                var response = sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString());
+                assertThat(response.body()).isEqualTo(borrowedTextBody);
+                assertThat(response.statusCode()).isEqualTo(borrowedStatus);
+            });
+        } finally {
+            sharedServer.dispose();
+        }
+    }
+
+    @Test
+    @DisplayName("borrowed server port should be same as original server port")
+    void borrowed_server_port_should_be_same_as_original_server_port() {
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("any")
+                .startShared();
+
+        try {
+            var impBorrowed = sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(400)
+                    .andTextBody("anyBorrowed")
+                    .andNoAdditionalHeaders();
+
+            impBorrowed.useServer(server -> {
+                assertThat(server.port()).isEqualTo(sharedServer.port());
+            });
+        } finally {
+            sharedServer.dispose();
+        }
+    }
+
+    @Test
+    @DisplayName("should return to original state after borrowing closure ends")
+    void should_return_to_original_state_after_borrowing_closure_ends() {
+        var originalBody = "some text";
+        var originalStatus = 200;
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(originalStatus)
+                .andTextBody(originalBody)
+                .startShared();
+
+        try {
+            var borrowedTextBody = "some borrowed text";
+            var borrowedStatus = 400;
+            var impBorrowed = sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(borrowedStatus)
+                    .andTextBody(borrowedTextBody)
+                    .andNoAdditionalHeaders();
+            impBorrowed.useServer(server -> sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString()));
+
+            var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
+            assertThat(response.body()).isEqualTo(originalBody);
+            assertThat(response.statusCode()).isEqualTo(originalStatus);
+        } finally {
+            sharedServer.dispose();
+        }
+    }
+
+    @Test
+    @DisplayName("borrowed server should reset hits and misses inside closure")
+    void borrowed_server_should_reset_hits_and_misses_inside_closure() {
+        var originalBody = "some text";
+        var originalStatus = 200;
+        var expectedHeader = "some-header";
+        var headers = Map.of(expectedHeader, List.of("some-value"));
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .onRequestMatching("anyId", spec -> spec.headersPredicate(h -> h.containsKey(expectedHeader)))
+                .respondWithStatus(originalStatus)
+                .andTextBody(originalBody)
+                .andNoAdditionalHeaders()
+                .rejectNonMatching()
+                .startShared();
+
+        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
+        sendHttpRequestWithHeaders(sharedServer.port(), headers, HttpResponse.BodyHandlers.ofString());
+        try {
+            var borrowedTextBody = "some borrowed text";
+            var borrowedStatus = 400;
+            var impBorrowed = sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(borrowedStatus)
+                    .andTextBody(borrowedTextBody)
+                    .andNoAdditionalHeaders();
+            impBorrowed.useServer(server -> {
+                var statistics = server.statistics();
+                assertThat(statistics.hitCount()).isZero();
+                assertThat(statistics.missCount()).isZero();
+            });
+        } finally {
+            sharedServer.dispose();
+        }
+    }
+
+    @Test
+    @DisplayName("borrowed server should restore hits and misses for original server after closure")
+    void borrowed_server_should_restore_hits_and_misses_for_original_server_after_closure() {
+        var originalBody = "some text";
+        var originalStatus = 200;
+        var expectedHeader = "some-header";
+        var headers = Map.of(expectedHeader, List.of("some-value"));
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .onRequestMatching("anyId", spec -> spec.headersPredicate(h -> h.containsKey(expectedHeader)))
+                .respondWithStatus(originalStatus)
+                .andTextBody(originalBody)
+                .andNoAdditionalHeaders()
+                .rejectNonMatching()
+                .startShared();
+
+        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
+        sendHttpRequestWithHeaders(sharedServer.port(), headers, HttpResponse.BodyHandlers.ofString());
+        try {
+            sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(400)
+                    .andTextBody("some borrowed text")
+                    .andNoAdditionalHeaders()
+                    .useServer(server -> {
+                        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
+                        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
+                    });
+            var statistics = sharedServer.statistics();
+
+            assertThat(statistics.hitCount()).isEqualTo(1);
+            assertThat(statistics.missCount()).isEqualTo(1);
+        } finally {
+            sharedServer.dispose();
+        }
+    }
+
+    @Test
+    @DisplayName("borrowed server should store statistics inside and after closure")
+    void borrowed_server_should_store_statistics_inside_and_after_closure() {
+        var originalBody = "some text";
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody(originalBody)
+                .startShared();
+        try {
+            var statistics = sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(400)
+                    .andTextBody("some borrowed text")
+                    .andNoAdditionalHeaders()
+                    .useServer(server -> {
+                        assertThat(server.statistics().hitCount()).isZero();
+                        sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString());
+                        assertThat(server.statistics().hitCount()).isOne();
+                        sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString());
+                        assertThat(server.statistics().hitCount()).isEqualTo(2);
+                        assertThat(server.statistics().missCount()).isZero();
+                    });
+            assertThat(statistics.hitCount()).isEqualTo(2);
+            assertThat(statistics.missCount()).isZero();
+        } finally {
+            sharedServer.dispose();
+        }
+    }
+
+    @Test
     @DisplayName("when shared server is stopped, then dont accept further requests")
     void when_shared_server_is_stopped_then_dont_accept_further_requests() throws Exception {
         var sharedServer = ImpServer.template()

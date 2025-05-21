@@ -2,6 +2,7 @@ package com.varlanv.imp;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class ImpHeadersMatch {
 
@@ -9,6 +10,16 @@ public final class ImpHeadersMatch {
 
     public ImpHeadersMatch(Map<String, List<String>> headers) {
         this.headers = headers;
+    }
+
+    public boolean containsAllKeys(Set<String> expectedHeadersKeys) {
+        Preconditions.noNullsInIterable(expectedHeadersKeys, "expectedHeadersKeys");
+        for (var key : expectedHeadersKeys) {
+            if (!headers.containsKey(key)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean containsKey(String expectedKey) {

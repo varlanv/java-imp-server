@@ -2,21 +2,19 @@ package com.varlanv.imp;
 
 final class DefaultImpServer implements ImpServer {
 
-    private final ServerConfig config;
-    private final MutableImpStatistics statistics;
+    private final ImpServerContext context;
 
-    DefaultImpServer(ServerConfig config, MutableImpStatistics statistics) {
-        this.config = config;
-        this.statistics = statistics;
+    DefaultImpServer(ImpServerContext context) {
+        this.context = context;
     }
 
     @Override
     public int port() {
-        return config.port().value();
+        return context.config().port().value();
     }
 
     @Override
     public ImpStatistics statistics() {
-        return new ImpStatistics(statistics);
+        return new ImpStatistics(context.statistics());
     }
 }
