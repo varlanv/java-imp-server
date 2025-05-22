@@ -76,8 +76,7 @@ final class DefaultImpTemplate implements ImpTemplate {
         responseBody.close();
     }
 
-    @Override
-    public ImpShared startShared() {
+    ImpShared startShared() {
         var serverContext = new ImpServerContext(config, new MutableImpStatistics());
         var borrowedState = new BorrowedState(serverContext, true);
         var httpServer = buildAndStartServer(borrowedState);

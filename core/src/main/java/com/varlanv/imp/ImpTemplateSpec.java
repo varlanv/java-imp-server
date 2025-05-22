@@ -13,45 +13,26 @@ public final class ImpTemplateSpec {
 
     public static final class Start {
 
-        public ContentStart randomPort() {
-            return new ContentStart(new ImpPort(InternalUtils::randomPort, true));
-        }
-
-        public ContentStart port(int port) {
-            return new ContentStart(new ImpPort(() -> port, false));
-        }
-    }
-
-    public static final class ContentStart {
-
-        private final ImpPort port;
-
-        ContentStart(ImpPort port) {
-            this.port = port;
-        }
-
         public OnRequestMatchingStatus onRequestMatching(String id, ImpConsumer<RequestMatchBuilder> specConsumer) {
             Preconditions.nonNull(specConsumer, "consumer");
             Preconditions.nonBlank(id, "id");
             var builder = new RequestMatchBuilder();
             specConsumer.accept(builder);
-            return new OnRequestMatchingStatus(id, this, builder.build());
+            return new OnRequestMatchingStatus(id, builder.build());
         }
 
         public AlwaysRespondBody alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
-            return new AlwaysRespondBody(this, Preconditions.validHttpStatusCode(status));
+            return new AlwaysRespondBody(Preconditions.validHttpStatusCode(status));
         }
     }
 
     public static final class OnRequestMatchingStatus {
 
         private final String matchId;
-        private final ContentStart parent;
         private final RequestMatch requestMatch;
 
-        OnRequestMatchingStatus(String matchId, ContentStart contentStart, RequestMatch requestMatch) {
+        OnRequestMatchingStatus(String matchId, RequestMatch requestMatch) {
             this.matchId = matchId;
-            this.parent = contentStart;
             this.requestMatch = requestMatch;
         }
 
@@ -154,28 +135,58 @@ public final class ImpTemplateSpec {
             this.responseHeadersOperator = responseImpHeadersOperator;
         }
 
-        public ImpTemplate fallbackForNonMatching(
+        public ContentFinal fallbackForNonMatching(
                 ImpFn<ImpResponse.BuilderStatus, ImpResponse.BuilderHeaders> builderFn) {
             var impResponse = builderFn.apply(ImpResponse.builder()).build();
-            return buildTemplate(candidates -> exchange -> impResponse);
+            return new ContentFinal(this, candidates -> exchange -> impResponse);
         }
 
-        public ImpTemplate rejectNonMatching() {
-            return buildTemplate(Teapot::new);
+        public ContentFinal rejectNonMatching() {
+            return new ContentFinal(this, Teapot::new);
+        }
+    }
+
+    public static final class ContentFinal {
+
+        private final ContentContinue parent;
+        private final ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback;
+
+        ContentFinal(
+                ContentContinue parent, ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
+            this.parent = parent;
+            this.fallback = fallback;
         }
 
-        private ImpTemplate buildTemplate(ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
-            var requestMatch = parent.parent.parent.requestMatch;
+        public ImpTemplate onPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
+            return buildTemplate(new ImpPort(() -> port, false), fallback);
+        }
+
+        public ImpTemplate onRandomPort() {
+            return buildTemplate(new ImpPort(InternalUtils::randomPort, true), fallback);
+        }
+
+        public ImpShared startSharedOnPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
+            return buildTemplate(new ImpPort(() -> port, false), fallback).startShared();
+        }
+
+        public ImpShared startSharedOnRandomPort() {
+            return buildTemplate(new ImpPort(InternalUtils::randomPort, true), fallback)
+                    .startShared();
+        }
+
+        private DefaultImpTemplate buildTemplate(
+                ImpPort port, ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
+            var requestMatch = parent.parent.parent.parent.requestMatch;
             var candidates = List.of(new ResponseCandidate(
-                    parent.parent.parent.matchId,
+                    parent.parent.parent.parent.matchId,
                     request -> requestMatch.headersPredicate().test(new ImpHeadersMatch(request.getRequestHeaders())),
                     () -> ImpResponse.builder()
-                            .trustedStatus(parent.parent.status)
-                            .body(parent.bodySupplier)
-                            .trustedHeaders(responseHeadersOperator)
+                            .trustedStatus(parent.parent.parent.status)
+                            .body(parent.parent.bodySupplier)
+                            .trustedHeaders(parent.responseHeadersOperator)
                             .build()));
             return new DefaultImpTemplate(ImmutableServerConfig.builder()
-                    .port(parent.parent.parent.parent.port)
+                    .port(port)
                     .decision(new ResponseDecision(candidates))
                     .fallback(fallback.apply(candidates))
                     .build());
@@ -184,11 +195,9 @@ public final class ImpTemplateSpec {
 
     public static final class AlwaysRespondBody {
 
-        private final ContentStart parent;
         private final ImpHttpStatus status;
 
-        AlwaysRespondBody(ContentStart parent, ImpHttpStatus status) {
-            this.parent = parent;
+        AlwaysRespondBody(ImpHttpStatus status) {
             this.status = status;
         }
 
@@ -238,10 +247,10 @@ public final class ImpTemplateSpec {
             this.bodySupplier = bodySupplier;
         }
 
-        public ImpTemplate andAdditionalHeaders(Map<String, List<String>> headers) {
+        public AlwaysRespondFinal andAdditionalHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInMap(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return buildTemplate(existingHeaders -> {
+            return new AlwaysRespondFinal(this, existingHeaders -> {
                 var newHeaders = new HashMap<>(existingHeaders);
                 newHeaders.put("Content-Type", List.of(contentType));
                 newHeaders.putAll(headersCopy);
@@ -249,27 +258,54 @@ public final class ImpTemplateSpec {
             });
         }
 
-        public ImpTemplate andExactHeaders(Map<String, List<String>> headers) {
+        public AlwaysRespondFinal andExactHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInMap(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return buildTemplate(existingHeaders -> headersCopy);
+            return new AlwaysRespondFinal(this, existingHeaders -> headersCopy);
         }
 
-        public ImpTemplate andNoAdditionalHeaders() {
-            return buildTemplate(headers -> {
+        public AlwaysRespondFinal andNoAdditionalHeaders() {
+            return new AlwaysRespondFinal(this, headers -> {
                 var newHeaders = new HashMap<>(headers);
                 newHeaders.put("Content-Type", List.of(contentType));
                 return Map.copyOf(newHeaders);
             });
         }
+    }
 
-        private ImpTemplate buildTemplate(ImpHeadersOperator headersOperator) {
+    public static final class AlwaysRespondFinal {
+
+        private final AlwaysRespondHeaders parent;
+        private final ImpHeadersOperator headersOperator;
+
+        public AlwaysRespondFinal(AlwaysRespondHeaders parent, ImpHeadersOperator headersOperator) {
+            this.parent = parent;
+            this.headersOperator = headersOperator;
+        }
+
+        public ImpTemplate onPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
+            return buildTemplate(new ImpPort(() -> port, false));
+        }
+
+        public ImpTemplate onRandomPort() {
+            return buildTemplate(new ImpPort(InternalUtils::randomPort, true));
+        }
+
+        public ImpShared startSharedOnPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
+            return buildTemplate(new ImpPort(() -> port, false)).startShared();
+        }
+
+        public ImpShared startSharedOnRandomPort() {
+            return buildTemplate(new ImpPort(InternalUtils::randomPort, true)).startShared();
+        }
+
+        private DefaultImpTemplate buildTemplate(ImpPort port) {
             return new DefaultImpTemplate(ImmutableServerConfig.builder()
-                    .port(parent.parent.port)
+                    .port(port)
                     .decision(new ResponseDecision(
                             new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
-                                    .trustedStatus(parent.status)
-                                    .body(bodySupplier)
+                                    .trustedStatus(parent.parent.status)
+                                    .body(parent.bodySupplier)
                                     .trustedHeaders(headersOperator)
                                     .build())))
                     .fallback(new Teapot(List.of()))
