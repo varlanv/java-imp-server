@@ -36,7 +36,8 @@ includeBuild("internal-convention-plugin")
 include(
     listOf(
         ":common-test",
-        ":core"
+        ":core",
+        ":integration-test:spring"
     )
 )
 
