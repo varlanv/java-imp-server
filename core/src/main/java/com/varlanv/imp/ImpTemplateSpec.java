@@ -3,7 +3,6 @@ package com.varlanv.imp;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +38,8 @@ public final class ImpTemplateSpec {
             return new OnRequestMatchingStatus(id, this, builder.build());
         }
 
-        public AlwaysRespond alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
-            return new AlwaysRespond(this, Preconditions.validHttpStatusCode(status));
+        public AlwaysRespondBody alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
+            return new AlwaysRespondBody(this, Preconditions.validHttpStatusCode(status));
         }
     }
 
@@ -183,56 +182,95 @@ public final class ImpTemplateSpec {
         }
     }
 
-    public static final class AlwaysRespond {
+    public static final class AlwaysRespondBody {
 
         private final ContentStart parent;
         private final ImpHttpStatus status;
 
-        AlwaysRespond(ContentStart parent, ImpHttpStatus status) {
+        AlwaysRespondBody(ContentStart parent, ImpHttpStatus status) {
             this.parent = parent;
             this.status = status;
         }
 
-        public ImpTemplate andTextBody(String textBody) {
+        public AlwaysRespondHeaders andTextBody(String textBody) {
             Preconditions.nonNull(textBody, "textBody");
-            return defaultImpTemplate(ImpContentType.PLAIN_TEXT, () -> textBody.getBytes(StandardCharsets.UTF_8));
+            return defaultRespondHeaders(ImpContentType.PLAIN_TEXT, () -> textBody.getBytes(StandardCharsets.UTF_8));
         }
 
-        public ImpTemplate andJsonBody(@Language("json") String jsonBody) {
+        public AlwaysRespondHeaders andJsonBody(@Language("json") String jsonBody) {
             Preconditions.nonNull(jsonBody, "jsonBody");
-            return defaultImpTemplate(ImpContentType.JSON, () -> jsonBody.getBytes(StandardCharsets.UTF_8));
+            return defaultRespondHeaders(ImpContentType.JSON, () -> jsonBody.getBytes(StandardCharsets.UTF_8));
         }
 
-        public ImpTemplate andXmlBody(@Language("xml") String xmlBody) {
+        public AlwaysRespondHeaders andXmlBody(@Language("xml") String xmlBody) {
             Preconditions.nonNull(xmlBody, "xmlBody");
-            return defaultImpTemplate(ImpContentType.XML, () -> xmlBody.getBytes(StandardCharsets.UTF_8));
+            return defaultRespondHeaders(ImpContentType.XML, () -> xmlBody.getBytes(StandardCharsets.UTF_8));
         }
 
-        public ImpTemplate andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
+        public AlwaysRespondHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultImpTemplate(
+            return defaultRespondHeaders(
                     ImpContentType.OCTET_STREAM, () -> dataStreamSupplier.get().readAllBytes());
         }
 
-        public ImpTemplate andCustomContentTypeStream(String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
+        public AlwaysRespondHeaders andCustomContentTypeStream(
+                String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultImpTemplate(
+            return defaultRespondHeaders(
                     contentType, () -> dataStreamSupplier.get().readAllBytes());
         }
 
-        private DefaultImpTemplate defaultImpTemplate(CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
+        private AlwaysRespondHeaders defaultRespondHeaders(CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
+            return new AlwaysRespondHeaders(this, contentType.toString(), bodySupplier);
+        }
+    }
+
+    public static final class AlwaysRespondHeaders {
+
+        private final AlwaysRespondBody parent;
+        private final String contentType;
+        private final ImpSupplier<byte[]> bodySupplier;
+
+        public AlwaysRespondHeaders(AlwaysRespondBody parent, String contentType, ImpSupplier<byte[]> bodySupplier) {
+            this.parent = parent;
+            this.contentType = contentType;
+            this.bodySupplier = bodySupplier;
+        }
+
+        public ImpTemplate andAdditionalHeaders(Map<String, List<String>> headers) {
+            Preconditions.noNullsInMap(headers, "headers");
+            var headersCopy = Map.copyOf(headers);
+            return buildTemplate(existingHeaders -> {
+                var newHeaders = new HashMap<>(existingHeaders);
+                newHeaders.put("Content-Type", List.of(contentType));
+                newHeaders.putAll(headersCopy);
+                return Map.copyOf(newHeaders);
+            });
+        }
+
+        public ImpTemplate andExactHeaders(Map<String, List<String>> headers) {
+            Preconditions.noNullsInMap(headers, "headers");
+            var headersCopy = Map.copyOf(headers);
+            return buildTemplate(existingHeaders -> headersCopy);
+        }
+
+        public ImpTemplate andNoAdditionalHeaders() {
+            return buildTemplate(headers -> {
+                var newHeaders = new HashMap<>(headers);
+                newHeaders.put("Content-Type", List.of(contentType));
+                return Map.copyOf(newHeaders);
+            });
+        }
+
+        private ImpTemplate buildTemplate(ImpHeadersOperator headersOperator) {
             return new DefaultImpTemplate(ImmutableServerConfig.builder()
-                    .port(parent.port)
+                    .port(parent.parent.port)
                     .decision(new ResponseDecision(
                             new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
-                                    .trustedStatus(status)
+                                    .trustedStatus(parent.status)
                                     .body(bodySupplier)
-                                    .trustedHeaders(headers -> {
-                                        var res = new HashMap<>(headers);
-                                        res.put("Content-Type", List.of(contentType.toString()));
-                                        return Collections.unmodifiableMap(res);
-                                    })
+                                    .trustedHeaders(headersOperator)
                                     .build())))
                     .fallback(new Teapot(List.of()))
                     .build());

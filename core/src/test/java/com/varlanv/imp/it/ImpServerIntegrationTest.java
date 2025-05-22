@@ -39,6 +39,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("")
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {});
     }
 
@@ -49,6 +50,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("")
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     assertThat(impServer.statistics().hitCount()).isZero();
                     assertThat(impServer.statistics().missCount()).isZero();
@@ -62,6 +64,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("somePort")
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     var request = HttpRequest.newBuilder(
                                     new URI(String.format("http://localhost:%d/", impServer.port())))
@@ -81,6 +84,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("somePort")
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     var statistics = impServer.statistics();
                     var request = HttpRequest.newBuilder(
@@ -102,6 +106,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("somePort")
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     var request = HttpRequest.newBuilder(
                                     new URI(String.format("http://localhost:%d/", impServer.port())))
@@ -125,6 +130,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("somePort")
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     var count = 50;
                     for (var i = 0; i < count; i++) {
@@ -150,6 +156,7 @@ public class ImpServerIntegrationTest implements FastTest {
                     .randomPort()
                     .alwaysRespondWithStatus(200)
                     .andTextBody("somePort")
+                    .andNoAdditionalHeaders()
                     .useServer(impServer -> {
                         var count = 50;
                         var latchCounter = new CountDownLatch(count);
@@ -204,6 +211,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andJsonBody(expected)
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
@@ -232,6 +240,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .alwaysRespondWithStatus(200)
                 .andCustomContentTypeStream(
                         contentType, () -> new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8)))
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
@@ -258,6 +267,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody(expected)
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
@@ -284,6 +294,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andDataStreamBody(() -> new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8)))
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
@@ -316,6 +327,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andXmlBody(expected)
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
@@ -340,6 +352,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .port(port)
                 .alwaysRespondWithStatus(200)
                 .andTextBody(someText)
+                .andNoAdditionalHeaders()
                 .useServer(impServer -> {
                     var request = HttpRequest.newBuilder(
                                     new URI(String.format("http://localhost:%d/", impServer.port())))
@@ -366,6 +379,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .port(port)
                         .alwaysRespondWithStatus(200)
                         .andTextBody("some text")
+                        .andNoAdditionalHeaders()
                         .useServer(impServer -> {
                             startedLatch.countDown();
                             Thread.sleep(sleepDuration);
@@ -380,6 +394,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .port(port)
                         .alwaysRespondWithStatus(200)
                         .andTextBody("some text")
+                        .andNoAdditionalHeaders()
                         .useServer(impServer -> {}))
                 .isInstanceOf(BindException.class)
                 .hasMessageContaining("already in use");
@@ -392,6 +407,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("any")
+                .andNoAdditionalHeaders()
                 .startShared();
         try {
             assertThat(sharedServer.isDisposed()).isFalse();
@@ -409,6 +425,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("any")
+                .andNoAdditionalHeaders()
                 .startShared();
 
         sharedServer.dispose();
@@ -426,6 +443,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody(body)
+                .andNoAdditionalHeaders()
                 .startShared();
 
         ImpRunnable action = () -> {
@@ -459,6 +477,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody(body)
+                .andNoAdditionalHeaders()
                 .startShared();
 
         try {
@@ -493,6 +512,7 @@ public class ImpServerIntegrationTest implements FastTest {
                     sharedServerResponseFuture.get(3, TimeUnit.SECONDS);
                     return new ByteArrayInputStream("some body".getBytes(StandardCharsets.UTF_8));
                 })
+                .andNoAdditionalHeaders()
                 .startShared();
 
         try (var executor = Executors.newSingleThreadExecutor()) {
@@ -524,6 +544,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("any")
+                .andNoAdditionalHeaders()
                 .startShared();
 
         try {
@@ -548,6 +569,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("any")
+                .andNoAdditionalHeaders()
                 .startShared();
 
         sharedServer.dispose();
@@ -564,6 +586,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("any")
+                .andNoAdditionalHeaders()
                 .startShared();
 
         var borrowedServer = sharedServer
@@ -588,6 +611,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(originalStatus)
                 .andTextBody(originalBody)
+                .andNoAdditionalHeaders()
                 .startShared();
 
         try {
@@ -615,6 +639,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("any")
+                .andNoAdditionalHeaders()
                 .startShared();
 
         try {
@@ -639,6 +664,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("any")
+                .andNoAdditionalHeaders()
                 .startShared();
 
         try {
@@ -735,6 +761,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody(originalBody)
+                .andNoAdditionalHeaders()
                 .startShared();
         try {
             var statistics = sharedServer
@@ -764,6 +791,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("some text")
+                .andNoAdditionalHeaders()
                 .startShared();
         sharedServer.dispose();
 
@@ -781,6 +809,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 .randomPort()
                 .alwaysRespondWithStatus(200)
                 .andTextBody("some text")
+                .andNoAdditionalHeaders()
                 .startShared();
         sharedServer.dispose();
         sharedServer.dispose();
