@@ -17,7 +17,7 @@ public final class ImpBorrowedSpec {
         this.parent = parent;
     }
 
-    AlwaysRespond alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
+    public AlwaysRespond alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
         return new AlwaysRespond(this, Preconditions.validHttpStatusCode(status));
     }
 
@@ -31,28 +31,29 @@ public final class ImpBorrowedSpec {
             this.status = status;
         }
 
-        AlwaysHeaders andTextBody(String textBody) {
+        public AlwaysHeaders andTextBody(String textBody) {
             Preconditions.nonNull(textBody, "textBody");
             return defaultImpTemplate(ImpContentType.PLAIN_TEXT, () -> textBody.getBytes(StandardCharsets.UTF_8));
         }
 
-        AlwaysHeaders andJsonBody(@Language("json") String jsonBody) {
+        public AlwaysHeaders andJsonBody(@Language("json") String jsonBody) {
             Preconditions.nonNull(jsonBody, "jsonBody");
             return defaultImpTemplate(ImpContentType.JSON, () -> jsonBody.getBytes(StandardCharsets.UTF_8));
         }
 
-        AlwaysHeaders andXmlBody(@Language("xml") String xmlBody) {
+        public AlwaysHeaders andXmlBody(@Language("xml") String xmlBody) {
             Preconditions.nonNull(xmlBody, "xmlBody");
             return defaultImpTemplate(ImpContentType.XML, () -> xmlBody.getBytes(StandardCharsets.UTF_8));
         }
 
-        AlwaysHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
+        public AlwaysHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return defaultImpTemplate(
                     ImpContentType.OCTET_STREAM, () -> dataStreamSupplier.get().readAllBytes());
         }
 
-        AlwaysHeaders andCustomContentTypeStream(String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
+        public AlwaysHeaders andCustomContentTypeStream(
+                String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return defaultImpTemplate(

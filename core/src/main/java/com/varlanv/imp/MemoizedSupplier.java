@@ -28,6 +28,7 @@ final class MemoizedSupplier<T> {
                 val = value;
                 if (val == null) {
                     val = delegate.get();
+                    //noinspection ConstantValue
                     if (val == null) {
                         throw new IllegalStateException("Supplier returned null");
                     }

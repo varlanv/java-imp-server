@@ -1,6 +1,8 @@
 package com.varlanv.imp.commontest;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -23,7 +25,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 
-@Execution(ExecutionMode.SAME_THREAD)
+@Execution(ExecutionMode.CONCURRENT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public interface BaseTest {
 
@@ -221,6 +223,14 @@ public interface BaseTest {
             headers.forEach((key, valuesList) -> valuesList.forEach(value -> requestBuilder.header(key, value)));
             return sendHttpRequest(requestBuilder.build(), responseBodyHandler);
         } catch (Exception e) {
+            return hide(e);
+        }
+    }
+
+    default int randomPort() {
+        try (var socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        } catch (IOException e) {
             return hide(e);
         }
     }

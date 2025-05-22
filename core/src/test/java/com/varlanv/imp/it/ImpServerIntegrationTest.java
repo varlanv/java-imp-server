@@ -1,7 +1,8 @@
-package com.varlanv.imp;
+package com.varlanv.imp.it;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.varlanv.imp.*;
 import com.varlanv.imp.commontest.BaseTest;
 import com.varlanv.imp.commontest.FastTest;
 import java.io.ByteArrayInputStream;
@@ -23,15 +24,16 @@ import java.util.function.Function;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-public class ImpServerTest implements FastTest {
+public class ImpServerIntegrationTest implements FastTest {
 
-    @Test
+    @RepeatedTest(100)
     @DisplayName("Should be able to start server with random port")
     void should_be_able_to_start_server_with_random_port() {
         ImpServer.template()
@@ -211,7 +213,7 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.JSON.stringValue()));
+                        assertThat(headers).containsEntry("Content-Type", List.of("application/json"));
                         assertThat(headers).containsEntry("Content-Length", List.of("19"));
                         assertThat(headers).containsKey("date");
                     });
@@ -265,8 +267,7 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+                        assertThat(headers).containsEntry("Content-Type", List.of("text/plain"));
                         assertThat(headers).containsEntry("Content-Length", List.of("9"));
                         assertThat(headers).containsKey("date");
                     });
@@ -292,8 +293,7 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.OCTET_STREAM.toString()));
+                        assertThat(headers).containsEntry("Content-Type", List.of("application/octet-stream"));
                         assertThat(headers).containsEntry("Content-Length", List.of(String.valueOf(expected.length())));
                         assertThat(headers).containsKey("date");
                     });
@@ -325,7 +325,7 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.XML.toString()));
+                        assertThat(headers).containsEntry("Content-Type", List.of("application/xml"));
                         assertThat(headers).containsEntry("Content-Length", List.of(String.valueOf(expected.length())));
                         assertThat(headers).containsKey("date");
                     });
@@ -335,7 +335,7 @@ public class ImpServerTest implements FastTest {
     @Test
     @DisplayName("should be able to start server at specific port")
     void should_be_able_to_start_server_at_specific_port() {
-        var port = InternalUtils.randomPort();
+        var port = randomPort();
         var someText = "some text";
         ImpServer.template()
                 .port(port)
@@ -350,8 +350,7 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.body()).isEqualTo(someText);
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+                        assertThat(headers).containsEntry("Content-Type", List.of("text/plain"));
                         assertThat(headers).containsEntry("Content-Length", List.of(String.valueOf(someText.length())));
                         assertThat(headers).containsKey("date");
                     });
@@ -361,7 +360,7 @@ public class ImpServerTest implements FastTest {
     @Test
     @DisplayName("should throw exception when requested port is already in use")
     void should_throw_exception_when_requested_port_is_already_in_use() throws Exception {
-        var port = InternalUtils.randomPort();
+        var port = randomPort();
         var sleepDuration = Duration.ofMillis(500);
         var startedLatch = new CountDownLatch(1);
         new Thread(() -> ImpServer.template()
@@ -405,7 +404,7 @@ public class ImpServerTest implements FastTest {
             assertThat(response.body()).isEqualTo(body);
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+                assertThat(headers).containsEntry("Content-Type", List.of("text/plain"));
                 assertThat(headers).containsEntry("Content-Length", List.of(String.valueOf(body.length())));
                 assertThat(headers).containsKey("date");
             });
@@ -977,7 +976,6 @@ public class ImpServerTest implements FastTest {
     @DisplayName("'onRequestMatching andAdditionalHeaders' should reject nulls entry in map immediately")
     void onrequestmatching_andadditionalheaders_should_reject_nulls_entry_in_map_immediately() {
         var headers = new HashMap<String, List<String>>();
-        //noinspection DataFlowIssue
         headers.put(null, null);
         assertThatExceptionOfType(RuntimeException.class)
                 .isThrownBy(() -> ImpServer.template()
@@ -993,7 +991,6 @@ public class ImpServerTest implements FastTest {
     @DisplayName("'onRequestMatching andAdditionalHeaders' should reject nulls keys in map immediately")
     void onrequestmatching_andadditionalheaders_should_reject_nulls_keys_in_map_immediately() {
         var headers = new HashMap<String, List<String>>();
-        //noinspection DataFlowIssue
         headers.put(null, List.of("something"));
         assertThatExceptionOfType(RuntimeException.class)
                 .isThrownBy(() -> ImpServer.template()
@@ -1009,7 +1006,6 @@ public class ImpServerTest implements FastTest {
     @DisplayName("'onRequestMatching andAdditionalHeaders' should reject nulls values in map immediately")
     void onrequestmatching_andadditionalheaders_should_reject_nulls_values_in_map_immediately() {
         var headers = new HashMap<String, List<String>>();
-        //noinspection DataFlowIssue
         headers.put("something", null);
         assertThatExceptionOfType(RuntimeException.class)
                 .isThrownBy(() -> ImpServer.template()
@@ -1044,8 +1040,7 @@ public class ImpServerTest implements FastTest {
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
                     assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                        assertThat(headers)
-                                .containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+                        assertThat(headers).containsEntry("Content-Type", List.of("text/plain"));
                         assertThat(headers).containsEntry("Content-Length", List.of("9"));
                         assertThat(headers).containsKey("date");
                     });
@@ -1076,7 +1071,7 @@ public class ImpServerTest implements FastTest {
                             matcherId);
             assertThat(response.statusCode()).isEqualTo(418);
             assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+                assertThat(headers).containsEntry("Content-Type", List.of("text/plain"));
                 assertThat(headers).containsKey("Content-Length");
                 assertThat(headers).containsKey("date");
             });
@@ -1107,7 +1102,7 @@ public class ImpServerTest implements FastTest {
                             matcherId);
             assertThat(response.statusCode()).isEqualTo(418);
             assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+                assertThat(headers).containsEntry("Content-Type", List.of("text/plain"));
                 assertThat(headers).containsKey("Content-Length");
                 assertThat(headers).containsKey("date");
             });
@@ -1135,7 +1130,7 @@ public class ImpServerTest implements FastTest {
             assertThat(response.body()).isEqualTo(expected);
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.JSON.toString()));
+                assertThat(headers).containsEntry("Content-Type", List.of("application/json"));
                 assertThat(headers).containsEntry("Content-Length", List.of(expected.length() + ""));
                 assertThat(headers).containsKey("date");
             });
@@ -1163,7 +1158,7 @@ public class ImpServerTest implements FastTest {
             assertThat(response.body()).isEqualTo(expected);
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.XML.toString()));
+                assertThat(headers).containsEntry("Content-Type", List.of("application/xml"));
                 assertThat(headers).containsEntry("Content-Length", List.of(expected.length() + ""));
                 assertThat(headers).containsKey("date");
             });
@@ -1190,7 +1185,7 @@ public class ImpServerTest implements FastTest {
             assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                assertThat(headers).containsEntry("Content-Type", List.of(ImpContentType.OCTET_STREAM.toString()));
+                assertThat(headers).containsEntry("Content-Type", List.of("application/octet-stream"));
                 assertThat(headers).containsEntry("Content-Length", List.of(expected.length + ""));
                 assertThat(headers).containsKey("date");
             });
@@ -1264,7 +1259,7 @@ public class ImpServerTest implements FastTest {
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSizeGreaterThan(additionalHeaders.size());
             assertThat(responseHeaders).containsAllEntriesOf(additionalHeaders);
-            assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
         });
     }
 
@@ -1309,7 +1304,7 @@ public class ImpServerTest implements FastTest {
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(3);
-            assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
         });
     }
 
@@ -1381,7 +1376,7 @@ public class ImpServerTest implements FastTest {
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(3);
-            assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
         });
     }
 
@@ -1432,7 +1427,7 @@ public class ImpServerTest implements FastTest {
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(3);
-            assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
         });
     }
 
@@ -1441,10 +1436,7 @@ public class ImpServerTest implements FastTest {
     void should_successfully_match_by_headers_predicate_hascontenttype() {
         var subject = ImpServer.template()
                 .randomPort()
-                .onRequestMatching(
-                        "any",
-                        request ->
-                                request.headersPredicate(h -> h.hasContentType(ImpContentType.PLAIN_TEXT.toString())))
+                .onRequestMatching("any", request -> request.headersPredicate(h -> h.hasContentType("text/plain")))
                 .respondWithStatus(200)
                 .andTextBody("any")
                 .andNoAdditionalHeaders()
@@ -1452,12 +1444,12 @@ public class ImpServerTest implements FastTest {
         subject.useServer(impServer -> {
             var response = sendHttpRequestWithHeaders(
                     impServer.port(),
-                    Map.of("content-type", List.of(ImpContentType.PLAIN_TEXT.toString())),
+                    Map.of("content-type", List.of("text/plain")),
                     HttpResponse.BodyHandlers.ofString());
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(3);
-            assertThat(responseHeaders).containsEntry("Content-Type", List.of(ImpContentType.PLAIN_TEXT.toString()));
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
         });
     }
 
@@ -1467,8 +1459,7 @@ public class ImpServerTest implements FastTest {
         var subject = ImpServer.template()
                 .randomPort()
                 .onRequestMatching(
-                        "anyId",
-                        request -> request.headersPredicate(h -> h.hasContentType(ImpContentType.JSON.toString())))
+                        "anyId", request -> request.headersPredicate(h -> h.hasContentType("application/json")))
                 .respondWithStatus(200)
                 .andTextBody("any")
                 .andNoAdditionalHeaders()
@@ -1488,8 +1479,7 @@ public class ImpServerTest implements FastTest {
         var subject = ImpServer.template()
                 .randomPort()
                 .onRequestMatching(
-                        "anyId",
-                        request -> request.headersPredicate(h -> h.hasContentType(ImpContentType.JSON.toString())))
+                        "anyId", request -> request.headersPredicate(h -> h.hasContentType("application/json")))
                 .respondWithStatus(200)
                 .andTextBody("any")
                 .andExactHeaders(Map.of())
@@ -1513,8 +1503,7 @@ public class ImpServerTest implements FastTest {
         var subject = ImpServer.template()
                 .randomPort()
                 .onRequestMatching(
-                        "anyId",
-                        request -> request.headersPredicate(h -> h.hasContentType(ImpContentType.JSON.toString())))
+                        "anyId", request -> request.headersPredicate(h -> h.hasContentType("application/json")))
                 .respondWithStatus(200)
                 .andTextBody("any")
                 .andExactHeaders(Map.of())
