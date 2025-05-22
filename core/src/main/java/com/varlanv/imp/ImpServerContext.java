@@ -1,6 +1,6 @@
 package com.varlanv.imp;
 
-class ImpServerContext {
+final class ImpServerContext {
 
     private final ServerConfig config;
     private final MutableImpStatistics statistics;

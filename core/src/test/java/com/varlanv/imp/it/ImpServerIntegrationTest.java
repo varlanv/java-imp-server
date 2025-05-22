@@ -1831,4 +1831,15 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThat(response.body()).isEqualTo(fallbackBody);
         });
     }
+
+    @Test
+    @DisplayName("should fail-fast when attempt to reassign headers matchers")
+    void should_fail_fast_when_attempt_to_reassign_headers_matchers() {
+        var contentStart = ImpServer.template().randomPort();
+        assertThatExceptionOfType(IllegalStateException.class)
+                .isThrownBy(() -> contentStart.onRequestMatching(
+                        "anyId", request -> request.headersPredicate(h -> true).headersPredicate(h -> true)))
+                .withMessage(
+                        "Attempting to reassign 'headersPredicate'. Assign operations for 'headersPredicate' are not additive and should be done only once.");
+    }
 }

@@ -166,13 +166,10 @@ public final class ImpTemplateSpec {
         }
 
         private ImpTemplate buildTemplate(ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
+            var requestMatch = parent.parent.parent.requestMatch;
             var candidates = List.of(new ResponseCandidate(
                     parent.parent.parent.matchId,
-                    request -> parent.parent
-                            .parent
-                            .requestMatch
-                            .headersPredicate()
-                            .test(new ImpHeadersMatch(request.getRequestHeaders())),
+                    request -> requestMatch.headersPredicate().test(new ImpHeadersMatch(request.getRequestHeaders())),
                     () -> ImpResponse.builder()
                             .trustedStatus(parent.parent.status)
                             .body(parent.bodySupplier)
