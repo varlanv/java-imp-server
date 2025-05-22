@@ -1,6 +1,7 @@
 package com.varlanv.imp;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.IntSupplier;
 
 final class DefaultImpShared implements ImpShared {
 
@@ -51,6 +52,11 @@ final class DefaultImpShared implements ImpShared {
             consumer.accept(impServer);
             return impServer.statistics();
         });
+    }
+
+    IntSupplier inProgressRequestCounter() {
+        var counter = borrowedState.inProgressRequestCounter();
+        return counter::get;
     }
 
     ServerConfig config() {

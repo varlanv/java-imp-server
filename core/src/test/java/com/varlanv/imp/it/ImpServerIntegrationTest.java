@@ -19,10 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.function.Function;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.DisplayName;
@@ -478,6 +475,43 @@ public class ImpServerIntegrationTest implements FastTest {
                 assertThat(response.body()).isEqualTo(borrowedTextBody);
                 assertThat(response.statusCode()).isEqualTo(borrowedStatus);
             });
+        } finally {
+            sharedServer.dispose();
+        }
+    }
+
+    @Test
+    @DisplayName("should fail fast with exception when try to use borrowed server at the same time as another thead")
+    void should_fail_fast_with_exception_when_try_to_use_borrowed_server_at_the_same_time_as_another_thead() {
+        var sharedServerResponseFuture = new CompletableFuture<String>();
+        var sendRequestFuture = new CompletableFuture<String>();
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andDataStreamBody(() -> {
+                    sendRequestFuture.complete("");
+                    sharedServerResponseFuture.get(3, TimeUnit.SECONDS);
+                    return new ByteArrayInputStream("some body".getBytes(StandardCharsets.UTF_8));
+                })
+                .startShared();
+
+        try (var executor = Executors.newSingleThreadExecutor()) {
+            var future =
+                    executor.submit(() -> sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString()));
+            var impBorrowed = sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(400)
+                    .andTextBody("some borrowed text")
+                    .andNoAdditionalHeaders();
+            sendRequestFuture.join();
+            assertThatThrownBy(() -> impBorrowed.useServer(server -> {}))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage(
+                            "Concurrent usage of borrowed server detected. It is expected that during borrowing, only code inside `useServer`"
+                                    + " lambda will interact with the server, but before entering `useServer` lambda, there was 1 in-progress requests running on server."
+                                    + " Consider synchronizing access to server before entering `useServer` lambda, or use non-shared server instead.");
+            sharedServerResponseFuture.complete("");
+            future.cancel(true);
         } finally {
             sharedServer.dispose();
         }

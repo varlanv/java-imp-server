@@ -32,11 +32,12 @@ final class DefaultImpTemplate implements ImpTemplate {
         var server = config.port().resolveToServer();
         server.createContext("/", exchange -> {
             if (borrowedState.isShared()) {
+                var counter = borrowedState.inProgressRequestCounter();
                 try {
-                    borrowedState.lock();
+                    counter.incrementAndGet();
                     process(borrowedState.currentContext(), exchange);
                 } finally {
-                    borrowedState.unlock();
+                    counter.decrementAndGet();
                 }
             } else {
                 process(borrowedState.currentContext(), exchange);
