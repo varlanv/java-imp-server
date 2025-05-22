@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -388,6 +389,39 @@ public class ImpServerIntegrationTest implements FastTest {
     }
 
     @Test
+    @DisplayName("when shared server is running, isDisposed should return true")
+    void when_shared_server_is_running_isdisposed_should_return_true() {
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("any")
+                .startShared();
+        try {
+            assertThat(sharedServer.isDisposed()).isFalse();
+            assertThat(sharedServer.isDisposed()).isFalse();
+            assertThat(sharedServer.isDisposed()).isFalse();
+        } finally {
+            sharedServer.dispose();
+        }
+    }
+
+    @Test
+    @DisplayName("when shared server is stopped, isDisposed should return false")
+    void when_shared_server_is_stopped_isdisposed_should_return_false() {
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("any")
+                .startShared();
+
+        sharedServer.dispose();
+
+        assertThat(sharedServer.isDisposed()).isTrue();
+        assertThat(sharedServer.isDisposed()).isTrue();
+        assertThat(sharedServer.isDisposed()).isTrue();
+    }
+
+    @Test
     @DisplayName("should be able to send multiple requests to shared server")
     void should_be_able_to_send_multiple_requests_to_shared_server() {
         var body = "some text";
@@ -474,6 +508,44 @@ public class ImpServerIntegrationTest implements FastTest {
     }
 
     @Test
+    @DisplayName("should throw exception when try to borrow from already stopped shared server")
+    void should_throw_exception_when_try_to_borrow_from_already_stopped_shared_server() {
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("any")
+                .startShared();
+
+        sharedServer.dispose();
+
+        assertThatExceptionOfType(IllegalStateException.class)
+                .isThrownBy(sharedServer::borrow)
+                .withMessage("Cannot borrow from already stopped server");
+    }
+
+    @Test
+    @DisplayName("should throw exception when try to start borrowed server, when parent server is already stopped")
+    void should_throw_exception_when_try_to_start_borrowed_server_when_parent_server_is_already_stopped() {
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("any")
+                .startShared();
+
+        var borrowedServer = sharedServer
+                .borrow()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("any")
+                .andNoAdditionalHeaders();
+
+        sharedServer.dispose();
+
+        assertThatExceptionOfType(IllegalStateException.class)
+                .isThrownBy(() -> borrowedServer.useServer(server -> {}))
+                .withMessage("Shared server is already stopped. Cannot use borrowed server anymore.");
+    }
+
+    @Test
     @DisplayName("should return to original state after borrowing closure ends")
     void should_return_to_original_state_after_borrowing_closure_ends() {
         var originalBody = "some text";
@@ -497,6 +569,52 @@ public class ImpServerIntegrationTest implements FastTest {
             var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
             assertThat(response.body()).isEqualTo(originalBody);
             assertThat(response.statusCode()).isEqualTo(originalStatus);
+        } finally {
+            sharedServer.dispose();
+        }
+    }
+
+    @Test
+    @DisplayName("isDisposed should return false when running inside borrowed server")
+    void isdisposed_should_return_false_when_running_inside_borrowed_server() {
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("any")
+                .startShared();
+
+        try {
+            sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(200)
+                    .andTextBody("any")
+                    .andNoAdditionalHeaders()
+                    .useServer(server -> {
+                        assertThat(sharedServer.isDisposed()).isFalse();
+                        assertThat(sharedServer.isDisposed()).isFalse();
+                    });
+        } finally {
+            sharedServer.dispose();
+        }
+    }
+
+    @Test
+    @DisplayName("isDisposed should return false after running borrowed server")
+    void isdisposed_should_return_false_after_running_borrowed_server() {
+        var sharedServer = ImpServer.template()
+                .randomPort()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("any")
+                .startShared();
+
+        try {
+            sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(200)
+                    .andTextBody("any")
+                    .andNoAdditionalHeaders()
+                    .useServer(server -> {});
+            assertThat(sharedServer.isDisposed()).isFalse();
         } finally {
             sharedServer.dispose();
         }
@@ -1357,8 +1475,98 @@ public class ImpServerIntegrationTest implements FastTest {
     }
 
     @Test
-    @DisplayName("should successfuly match by headers predicate 'containsPair'")
-    void should_successfuly_match_by_headers_predicate_containspair() {
+    @DisplayName("should return error when empty content-type in request and 'containsPair' specified")
+    void should_return_error_when_empty_content_type_in_request_and_containspair_specified() {
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId",
+                        request -> request.headersPredicate(h -> h.containsPair("header1", "some not existing value")))
+                .respondWithStatus(200)
+                .andTextBody("anyBody")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
+            assertThat(response.body())
+                    .isEqualTo(
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+        });
+    }
+
+    @Test
+    @DisplayName("should return error when empty content-type in request and 'containsAllKeys' specified")
+    void should_return_error_when_empty_content_type_in_request_and_containsallkeys_specified() {
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId",
+                        request -> request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
+                .respondWithStatus(200)
+                .andTextBody("anyBody")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
+            assertThat(response.body())
+                    .isEqualTo(
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+        });
+    }
+
+    @Test
+    @DisplayName("should return error when 'containsAllKeys' specified, but not matches requested headers")
+    void should_return_error_when_containsallkeys_specified_but_not_matches_requested_headers() {
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId",
+                        request -> request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
+                .respondWithStatus(200)
+                .andTextBody("anyBody")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response = sendHttpRequestWithHeaders(
+                    impServer.port(), Map.of("header1", List.of("any")), HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
+            assertThat(response.body())
+                    .isEqualTo(
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+        });
+    }
+
+    @Test
+    @DisplayName("should successfully match by headers predicate 'containsAllKeys'")
+    void should_successfully_match_by_headers_predicate_containsallkeys() {
+        var sentHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2", "value3"));
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "any",
+                        request -> request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response =
+                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var responseHeaders = response.headers().map();
+            assertThat(response.body()).isEqualTo("any");
+            assertThat(responseHeaders).hasSize(3);
+            assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+        });
+    }
+
+    @Test
+    @DisplayName("should successfully match by headers predicate 'containsPair'")
+    void should_successfully_match_by_headers_predicate_containspair() {
         var expectedMatchPair = Map.entry("header2", "value3");
         var sentHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2", "value3"));
         var subject = ImpServer.template()
@@ -1398,6 +1606,29 @@ public class ImpServerIntegrationTest implements FastTest {
         subject.useServer(impServer -> {
             var response =
                     sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
+            assertThat(response.body())
+                    .isEqualTo(
+                            "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+        });
+    }
+
+    @Test
+    @DisplayName("should return error when empty content-type in request and 'containsPairList' specified")
+    void should_return_error_when_empty_content_type_in_request_and_containspairlist_specified() {
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId",
+                        request -> request.headersPredicate(
+                                h -> h.containsPairList("header1", List.of("some not existing value"))))
+                .respondWithStatus(200)
+                .andTextBody("anyBody")
+                .andNoAdditionalHeaders()
+                .rejectNonMatching();
+        subject.useServer(impServer -> {
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
 
             assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
             assertThat(response.body())
@@ -1512,6 +1743,56 @@ public class ImpServerIntegrationTest implements FastTest {
                         .body(() -> fallbackBody.getBytes(StandardCharsets.UTF_8)));
         subject.useServer(impServer -> {
             var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).isEqualTo(fallbackStatus.value());
+            assertThat(response.body()).isEqualTo(fallbackBody);
+        });
+    }
+
+    @Test
+    @DisplayName(
+            "should return fallback when 'hasContentType' specified, but contentType is empty list in request and fallback specified")
+    void
+            should_return_fallback_when_hascontenttype_specified_but_contenttype_is_empty_list_in_request_and_fallback_specified() {
+        var fallbackStatus = ImpHttpStatus.BAD_REQUEST;
+        var fallbackBody = "fallback";
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId", request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andExactHeaders(Map.of())
+                .fallbackForNonMatching(builder -> builder.status(fallbackStatus.value())
+                        .body(() -> fallbackBody.getBytes(StandardCharsets.UTF_8)));
+        subject.useServer(impServer -> {
+            var response = sendHttpRequestWithHeaders(
+                    impServer.port(), Map.of("Content-Type", List.of()), HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).isEqualTo(fallbackStatus.value());
+            assertThat(response.body()).isEqualTo(fallbackBody);
+        });
+    }
+
+    @Test
+    @DisplayName(
+            "should return fallback when 'hasContentType' specified, request contains content-type header, but content-type not matches and fallback specified")
+    void
+            should_return_fallback_when_hascontenttype_specified_request_contains_content_type_header_but_content_type_not_matches_and_fallback_specified() {
+        var fallbackStatus = ImpHttpStatus.BAD_REQUEST;
+        var fallbackBody = "fallback";
+        var subject = ImpServer.template()
+                .randomPort()
+                .onRequestMatching(
+                        "anyId", request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                .respondWithStatus(200)
+                .andTextBody("any")
+                .andExactHeaders(Map.of())
+                .fallbackForNonMatching(builder -> builder.status(fallbackStatus.value())
+                        .body(() -> fallbackBody.getBytes(StandardCharsets.UTF_8)));
+        subject.useServer(impServer -> {
+            var response = sendHttpRequestWithHeaders(
+                    impServer.port(),
+                    Map.of("Content-Type", List.of("some", "type")),
+                    HttpResponse.BodyHandlers.ofString());
             assertThat(response.statusCode()).isEqualTo(fallbackStatus.value());
             assertThat(response.body()).isEqualTo(fallbackBody);
         });

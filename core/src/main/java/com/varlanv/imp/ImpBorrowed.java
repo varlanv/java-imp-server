@@ -11,6 +11,9 @@ public final class ImpBorrowed {
     }
 
     public ImpStatistics useServer(ImpConsumer<ImpServer> consumer) {
+        if (parent.isDisposed()) {
+            throw new IllegalStateException("Shared server is already stopped. Cannot use borrowed server anymore.");
+        }
         return parent.useWithMutatedContext(config, consumer);
     }
 }

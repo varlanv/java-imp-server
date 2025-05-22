@@ -17,6 +17,9 @@ final class DefaultImpShared implements ImpShared {
 
     @Override
     public ImpBorrowedSpec borrow() {
+        if (isDisposed()) {
+            throw new IllegalStateException("Cannot borrow from already stopped server");
+        }
         return new ImpBorrowedSpec(this);
     }
 
