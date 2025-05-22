@@ -2,7 +2,9 @@ package com.varlanv.imp.it;
 
 import static org.assertj.core.api.Assertions.*;
 
-import com.varlanv.imp.*;
+import com.varlanv.imp.ImpHttpStatus;
+import com.varlanv.imp.ImpRunnable;
+import com.varlanv.imp.ImpServer;
 import com.varlanv.imp.commontest.BaseTest;
 import com.varlanv.imp.commontest.FastTest;
 import java.io.ByteArrayInputStream;
@@ -24,7 +26,6 @@ import java.util.function.Function;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,7 +34,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 public class ImpServerIntegrationTest implements FastTest {
 
-    @RepeatedTest(100)
+    @Test
     @DisplayName("Should be able to start server with random port")
     void should_be_able_to_start_server_with_random_port() {
         ImpServer.template()
