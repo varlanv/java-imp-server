@@ -29,6 +29,7 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public interface BaseTest {
 
+    HttpClient CLIENT = HttpClient.newHttpClient();
     String SLOW_TEST_TAG = "slow-test";
     String FAST_TEST_TAG = "fast-test";
 
@@ -197,10 +198,8 @@ public interface BaseTest {
     }
 
     default <T> HttpResponse<T> sendHttpRequest(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
-        @SuppressWarnings("resource")
-        var httpClient = HttpClient.newHttpClient();
         try {
-            return httpClient.send(request, responseBodyHandler);
+            return CLIENT.send(request, responseBodyHandler);
         } catch (Exception e) {
             return hide(e);
         }
