@@ -14,11 +14,11 @@ final class DefaultImpTemplate implements ImpTemplate {
 
     @Override
     public void useServer(ImpConsumer<ImpServer> consumer) {
-        Disposable server = null;
+        StartedServer server = null;
         try {
             var serverContext = new ImpServerContext(config, new MutableImpStatistics());
             server = buildAndStartServer(new BorrowedState(serverContext, false));
-            consumer.accept(new DefaultImpServer(serverContext));
+            consumer.accept(new DefaultImpServer(server.port(), serverContext));
         } catch (Exception e) {
             InternalUtils.hide(e);
         } finally {
@@ -28,9 +28,10 @@ final class DefaultImpTemplate implements ImpTemplate {
         }
     }
 
-    private Disposable buildAndStartServer(BorrowedState borrowedState) {
-        var server = config.port().resolveToServer();
-        server.createContext("/", exchange -> {
+    private StartedServer buildAndStartServer(BorrowedState borrowedState) {
+        var server = config.futureServer().toServer();
+        var httpServer = server.actualServer();
+        httpServer.createContext("/", exchange -> {
             if (borrowedState.isShared()) {
                 var counter = borrowedState.inProgressRequestCounter();
                 try {
@@ -43,8 +44,8 @@ final class DefaultImpTemplate implements ImpTemplate {
                 process(borrowedState.currentContext(), exchange);
             }
         });
-        server.start();
-        return () -> server.stop(0);
+        httpServer.start();
+        return new StartedServer(server.port(), httpServer);
     }
 
     private void process(ImpServerContext serverContext, HttpExchange exchange) throws IOException {
@@ -59,7 +60,6 @@ final class DefaultImpTemplate implements ImpTemplate {
             impResponse = response.responseSupplier().get();
         }
         var responseBytes = impResponse.body().get();
-        var responseBody = exchange.getResponseBody();
         var originalResponseHeaders = exchange.getResponseHeaders();
         var newResponseHeaders = impResponse.headersOperator().apply(originalResponseHeaders);
         if (!originalResponseHeaders.isEmpty()) {
@@ -71,6 +71,7 @@ final class DefaultImpTemplate implements ImpTemplate {
         }
         originalResponseHeaders.putAll(newResponseHeaders);
         exchange.sendResponseHeaders(impResponse.statusCode().value(), responseBytes.length);
+        var responseBody = exchange.getResponseBody();
         responseBody.write(responseBytes);
         responseBody.flush();
         responseBody.close();

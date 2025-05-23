@@ -7,7 +7,7 @@ import org.immutables.value.Value;
 @Value.Style(strictBuilder = true, nullableAnnotation = "org.jspecify.annotations.Nullable")
 interface ServerConfig {
 
-    ImpPort port();
+    FutureServer futureServer();
 
     ResponseDecision decision();
 

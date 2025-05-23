@@ -6,13 +6,13 @@ import java.util.function.IntSupplier;
 final class DefaultImpShared implements ImpShared {
 
     private final ImpServerContext context;
-    private final Disposable httpServer;
+    private final StartedServer startedServer;
     private final BorrowedState borrowedState;
     private final AtomicBoolean isDisposed = new AtomicBoolean(false);
 
-    DefaultImpShared(ImpServerContext context, Disposable httpServer, BorrowedState borrowedState) {
+    DefaultImpShared(ImpServerContext context, StartedServer startedServer, BorrowedState borrowedState) {
         this.context = context;
-        this.httpServer = httpServer;
+        this.startedServer = startedServer;
         this.borrowedState = borrowedState;
     }
 
@@ -26,12 +26,12 @@ final class DefaultImpShared implements ImpShared {
 
     @Override
     public int port() {
-        return context.config().port().value();
+        return startedServer.port();
     }
 
     @Override
     public void dispose() {
-        httpServer.dispose();
+        startedServer.dispose();
         isDisposed.set(true);
     }
 
@@ -48,7 +48,7 @@ final class DefaultImpShared implements ImpShared {
     ImpStatistics useWithMutatedContext(ServerConfig config, ImpConsumer<ImpServer> consumer) {
         var newContext = new ImpServerContext(config, new MutableImpStatistics());
         return borrowedState.doWithLockedContext(newContext, () -> {
-            var impServer = new DefaultImpServer(newContext);
+            var impServer = new DefaultImpServer(port(), newContext);
             consumer.accept(impServer);
             return impServer.statistics();
         });

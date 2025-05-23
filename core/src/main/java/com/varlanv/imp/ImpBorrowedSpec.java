@@ -99,13 +99,13 @@ public final class ImpBorrowedSpec {
         private ImpBorrowed toBorrowed(ImpHeadersOperator headersOperator) {
             return new ImpBorrowed(
                     ImmutableServerConfig.builder()
+                            .futureServer(parent.parent.parent.config().futureServer())
                             .decision(new ResponseDecision(
                                     List.of(new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
                                             .trustedStatus(parent.status)
                                             .body(bodySupplier)
                                             .trustedHeaders(headersOperator)
                                             .build()))))
-                            .port(parent.parent.parent.config().port())
                             .fallback(new Teapot(List.of()))
                             .build(),
                     parent.parent.parent);

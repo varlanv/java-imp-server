@@ -158,24 +158,24 @@ public final class ImpTemplateSpec {
         }
 
         public ImpTemplate onPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
-            return buildTemplate(new ImpPort(() -> port, false), fallback);
+            return buildTemplate(PortSupplier.fixed(port), fallback);
         }
 
         public ImpTemplate onRandomPort() {
-            return buildTemplate(new ImpPort(InternalUtils::randomPort, true), fallback);
+            return buildTemplate(PortSupplier.ofSupplier(InternalUtils::randomPort, true), fallback);
         }
 
         public ImpShared startSharedOnPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
-            return buildTemplate(new ImpPort(() -> port, false), fallback).startShared();
+            return buildTemplate(PortSupplier.fixed(port), fallback).startShared();
         }
 
         public ImpShared startSharedOnRandomPort() {
-            return buildTemplate(new ImpPort(InternalUtils::randomPort, true), fallback)
+            return buildTemplate(PortSupplier.ofSupplier(InternalUtils::randomPort, true), fallback)
                     .startShared();
         }
 
         private DefaultImpTemplate buildTemplate(
-                ImpPort port, ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
+                PortSupplier portSupplier, ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
             var requestMatch = parent.parent.parent.parent.requestMatch;
             var candidates = List.of(new ResponseCandidate(
                     parent.parent.parent.parent.matchId,
@@ -186,7 +186,7 @@ public final class ImpTemplateSpec {
                             .trustedHeaders(parent.responseHeadersOperator)
                             .build()));
             return new DefaultImpTemplate(ImmutableServerConfig.builder()
-                    .port(port)
+                    .futureServer(new FutureServer(portSupplier))
                     .decision(new ResponseDecision(candidates))
                     .fallback(fallback.apply(candidates))
                     .build());
@@ -284,24 +284,25 @@ public final class ImpTemplateSpec {
         }
 
         public ImpTemplate onPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
-            return buildTemplate(new ImpPort(() -> port, false));
+            return buildTemplate(PortSupplier.fixed(port));
         }
 
         public ImpTemplate onRandomPort() {
-            return buildTemplate(new ImpPort(InternalUtils::randomPort, true));
+            return buildTemplate(PortSupplier.ofSupplier(InternalUtils::randomPort, true));
         }
 
         public ImpShared startSharedOnPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
-            return buildTemplate(new ImpPort(() -> port, false)).startShared();
+            return buildTemplate(PortSupplier.fixed(port)).startShared();
         }
 
         public ImpShared startSharedOnRandomPort() {
-            return buildTemplate(new ImpPort(InternalUtils::randomPort, true)).startShared();
+            return buildTemplate(PortSupplier.ofSupplier(InternalUtils::randomPort, true))
+                    .startShared();
         }
 
-        private DefaultImpTemplate buildTemplate(ImpPort port) {
+        private DefaultImpTemplate buildTemplate(PortSupplier portSupplier) {
             return new DefaultImpTemplate(ImmutableServerConfig.builder()
-                    .port(port)
+                    .futureServer(new FutureServer(portSupplier))
                     .decision(new ResponseDecision(
                             new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
                                     .trustedStatus(parent.parent.status)

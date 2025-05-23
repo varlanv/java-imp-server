@@ -43,7 +43,7 @@ class ApplicationIntegrationTest implements SlowTest {
     @Nested
     class CreatedFixture {
 
-        private ImpBorrowed borrowedServer = sharedServer
+        private final ImpBorrowed borrowedServer = sharedServer
                 .borrow()
                 .alwaysRespondWithStatus(201)
                 .andTextBody("Created")

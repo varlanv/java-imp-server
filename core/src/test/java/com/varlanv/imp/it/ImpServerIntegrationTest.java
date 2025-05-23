@@ -15,12 +15,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,6 +53,31 @@ public class ImpServerIntegrationTest implements FastTest {
                     assertThat(impServer.statistics().hitCount()).isZero();
                     assertThat(impServer.statistics().missCount()).isZero();
                 });
+    }
+
+    @Test
+    @DisplayName("should return random ports each time for template with random port")
+    void should_return_random_ports_each_time_for_template_with_random_port() {
+        var ports = new ConcurrentLinkedQueue<Integer>();
+        var impTemplate = ImpServer.template()
+                .alwaysRespondWithStatus(200)
+                .andTextBody("")
+                .andNoAdditionalHeaders()
+                .onRandomPort();
+
+        var serversCount = 10;
+        IntStream.range(0, serversCount).forEach(i -> impTemplate.useServer(impServer -> ports.add(impServer.port())));
+
+        assertThat(ports).hasSize(serversCount);
+
+        assertThat(Set.copyOf(ports))
+                .as(
+                        """
+            This test case make conservative assumption that
+            out of %d started servers with random ports,
+            at least 3 should have unique port""",
+                        serversCount)
+                .hasSizeGreaterThanOrEqualTo(3);
     }
 
     @Test

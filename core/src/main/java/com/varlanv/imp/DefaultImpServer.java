@@ -2,15 +2,17 @@ package com.varlanv.imp;
 
 final class DefaultImpServer implements ImpServer {
 
+    private final int port;
     private final ImpServerContext context;
 
-    DefaultImpServer(ImpServerContext context) {
+    DefaultImpServer(int port, ImpServerContext context) {
+        this.port = port;
         this.context = context;
     }
 
     @Override
     public int port() {
-        return context.config().port().value();
+        return port;
     }
 
     @Override
