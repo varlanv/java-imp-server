@@ -151,13 +151,10 @@ public final class InternalConventionPlugin implements Plugin<Project> {
 
                         var immutablesDependency = internalProperties.getLib("immutables-values");
                         dependencies.add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, immutablesDependency);
-                        dependencies.add(JavaPlugin.TEST_COMPILE_ONLY_CONFIGURATION_NAME, immutablesDependency);
                         dependencies.add(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME, immutablesDependency);
-                        dependencies.add(JavaPlugin.TEST_ANNOTATION_PROCESSOR_CONFIGURATION_NAME, immutablesDependency);
 
                         dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, internalProperties.getLib("junit-jupiter-api"));
-                        dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, internalProperties.getLib("junit-platform-launcher"));
-                        dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, internalProperties.getLib("junit-platform-engine"));
+                        dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, internalProperties.getLib("junit-platform-launcher"));
 
                         if (!internalEnvironment.isTest() && !projectPath.equals(":common-test")) {
                             dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, dependencies.project(Collections.singletonMap("path", ":common-test")));

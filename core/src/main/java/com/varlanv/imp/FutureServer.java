@@ -13,7 +13,7 @@ final class FutureServer {
         this.portSupplier = portSupplier;
     }
 
-    Server toServer() {
+    Server createServer() {
         var retries = 5;
         for (int iteration = 0; iteration < retries; iteration++) {
             try {

@@ -5,9 +5,9 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @Value.Style(strictBuilder = true, nullableAnnotation = "org.jspecify.annotations.Nullable")
-interface ServerConfig {
+interface TemplateConfig {
 
-    Server server();
+    FutureServer futureServer();
 
     ResponseDecision decision();
 

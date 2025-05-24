@@ -6,30 +6,36 @@ import java.util.HashSet;
 
 final class DefaultImpTemplate implements ImpTemplate {
 
-    private final ServerConfig config;
+    private final TemplateConfig config;
 
-    DefaultImpTemplate(ServerConfig config) {
+    DefaultImpTemplate(TemplateConfig config) {
         this.config = config;
     }
 
     @Override
     public void useServer(ImpConsumer<ImpServer> consumer) {
-        StartedServer server = null;
+        StartedServer startedServer = null;
         try {
-            var serverContext = new ImpServerContext(config, new MutableImpStatistics());
-            server = buildAndStartServer(new BorrowedState(serverContext, false));
-            consumer.accept(new DefaultImpServer(server.port(), serverContext));
+            var server = config.futureServer().createServer();
+            var serverConfig = ImmutableServerConfig.builder()
+                    .server(server)
+                    .decision(config.decision())
+                    .fallback(config.fallback())
+                    .build();
+            var serverContext = new ImpServerContext(serverConfig, new MutableImpStatistics());
+            startedServer = buildAndStartServer(serverConfig, new BorrowedState(serverContext, false));
+            consumer.accept(new DefaultImpServer(startedServer.port(), serverContext));
         } catch (Exception e) {
             InternalUtils.hide(e);
         } finally {
-            if (server != null) {
-                server.dispose();
+            if (startedServer != null) {
+                startedServer.dispose();
             }
         }
     }
 
-    private StartedServer buildAndStartServer(BorrowedState borrowedState) {
-        var server = config.futureServer().toServer();
+    private StartedServer buildAndStartServer(ServerConfig serverConfig, BorrowedState borrowedState) {
+        var server = serverConfig.server();
         var httpServer = server.actualServer();
         httpServer.createContext("/", exchange -> {
             if (borrowedState.isShared()) {
@@ -78,9 +84,15 @@ final class DefaultImpTemplate implements ImpTemplate {
     }
 
     ImpShared startShared() {
-        var serverContext = new ImpServerContext(config, new MutableImpStatistics());
+        var server = config.futureServer().createServer();
+        var serverConfig = ImmutableServerConfig.builder()
+                .server(server)
+                .decision(config.decision())
+                .fallback(config.fallback())
+                .build();
+        var serverContext = new ImpServerContext(serverConfig, new MutableImpStatistics());
         var borrowedState = new BorrowedState(serverContext, true);
-        var httpServer = buildAndStartServer(borrowedState);
+        var httpServer = buildAndStartServer(serverConfig, borrowedState);
         return new DefaultImpShared(serverContext, httpServer, borrowedState);
     }
 }

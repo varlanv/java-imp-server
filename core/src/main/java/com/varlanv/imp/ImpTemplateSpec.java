@@ -185,7 +185,7 @@ public final class ImpTemplateSpec {
                             .body(parent.parent.bodySupplier)
                             .trustedHeaders(parent.responseHeadersOperator)
                             .build()));
-            return new DefaultImpTemplate(ImmutableServerConfig.builder()
+            return new DefaultImpTemplate(ImmutableTemplateConfig.builder()
                     .futureServer(new FutureServer(portSupplier))
                     .decision(new ResponseDecision(candidates))
                     .fallback(fallback.apply(candidates))
@@ -301,7 +301,7 @@ public final class ImpTemplateSpec {
         }
 
         private DefaultImpTemplate buildTemplate(PortSupplier portSupplier) {
-            return new DefaultImpTemplate(ImmutableServerConfig.builder()
+            return new DefaultImpTemplate(ImmutableTemplateConfig.builder()
                     .futureServer(new FutureServer(portSupplier))
                     .decision(new ResponseDecision(
                             new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()

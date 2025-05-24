@@ -99,7 +99,7 @@ public final class ImpBorrowedSpec {
         private ImpBorrowed toBorrowed(ImpHeadersOperator headersOperator) {
             return new ImpBorrowed(
                     ImmutableServerConfig.builder()
-                            .futureServer(parent.parent.parent.config().futureServer())
+                            .server(parent.parent.parent.config().server())
                             .decision(new ResponseDecision(
                                     List.of(new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
                                             .trustedStatus(parent.status)
