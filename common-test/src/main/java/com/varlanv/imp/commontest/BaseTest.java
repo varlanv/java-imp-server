@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -197,15 +198,17 @@ public interface BaseTest {
         runnable.toUnchecked().run();
     }
 
-    default <T> HttpResponse<T> sendHttpRequest(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
+    default <T> CompletableFuture<HttpResponse<T>> sendHttpRequest(
+            HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
         try {
-            return CLIENT.send(request, responseBodyHandler);
+            return CLIENT.sendAsync(request, responseBodyHandler);
         } catch (Exception e) {
             return hide(e);
         }
     }
 
-    default <T> HttpResponse<T> sendHttpRequest(int port, HttpResponse.BodyHandler<T> responseBodyHandler) {
+    default <T> CompletableFuture<HttpResponse<T>> sendHttpRequest(
+            int port, HttpResponse.BodyHandler<T> responseBodyHandler) {
         try {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)))
                     .build();
@@ -215,7 +218,7 @@ public interface BaseTest {
         }
     }
 
-    default <T> HttpResponse<T> sendHttpRequestWithHeaders(
+    default <T> CompletableFuture<HttpResponse<T>> sendHttpRequestWithHeaders(
             int port, Map<String, List<String>> headers, HttpResponse.BodyHandler<T> responseBodyHandler) {
         try {
             var requestBuilder = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)));

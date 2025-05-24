@@ -92,7 +92,8 @@ public class ImpServerIntegrationTest implements FastTest {
                     var request = HttpRequest.newBuilder(
                                     new URI(String.format("http://localhost:%d/", impServer.port())))
                             .build();
-                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
 
                     assertThat(impServer.statistics().hitCount()).isOne();
                     assertThat(impServer.statistics().missCount()).isZero();
@@ -113,7 +114,8 @@ public class ImpServerIntegrationTest implements FastTest {
                     var request = HttpRequest.newBuilder(
                                     new URI(String.format("http://localhost:%d/", impServer.port())))
                             .build();
-                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
 
                     assertThat(statistics.hitCount()).isZero();
                     assertThat(statistics.missCount()).isZero();
@@ -134,13 +136,15 @@ public class ImpServerIntegrationTest implements FastTest {
                     var request = HttpRequest.newBuilder(
                                     new URI(String.format("http://localhost:%d/", impServer.port())))
                             .build();
-                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
 
                     var statistics = impServer.statistics();
                     assertThat(statistics.hitCount()).isOne();
                     assertThat(statistics.missCount()).isZero();
 
-                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
                     assertThat(statistics.hitCount()).isOne();
                     assertThat(statistics.missCount()).isZero();
                 });
@@ -156,12 +160,14 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort()
                 .useServer(impServer -> {
                     var count = 50;
+                    var futures = new CompletableFuture<?>[count];
                     for (var i = 0; i < count; i++) {
                         var request = HttpRequest.newBuilder(
                                         new URI(String.format("http://localhost:%d/", impServer.port())))
                                 .build();
-                        sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                        futures[i] = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
                     }
+                    CompletableFuture.allOf(futures).join();
 
                     assertThat(impServer.statistics().hitCount()).isEqualTo(count);
                     assertThat(impServer.statistics().missCount()).isZero();
@@ -195,7 +201,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         var request = HttpRequest.newBuilder(new URI(
                                                         String.format("http://localhost:%d/", impServer.port())))
                                                 .build();
-                                        sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                                        sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                                                .join();
                                     } catch (Exception e) {
                                         BaseTest.hide(e);
                                     }
@@ -238,7 +245,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .useServer(impServer -> {
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
 
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -267,7 +275,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .useServer(impServer -> {
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
 
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -294,7 +303,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .useServer(impServer -> {
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
 
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -321,7 +331,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .useServer(impServer -> {
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
 
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -354,7 +365,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .useServer(impServer -> {
                     var request =
                             httpRequestBuilderSupplier.apply(impServer.port()).build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
 
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -380,7 +392,8 @@ public class ImpServerIntegrationTest implements FastTest {
                     var request = HttpRequest.newBuilder(
                                     new URI(String.format("http://localhost:%d/", impServer.port())))
                             .build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
 
                     assertThat(response.body()).isEqualTo(someText);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -469,7 +482,8 @@ public class ImpServerIntegrationTest implements FastTest {
         ImpRunnable action = () -> {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", sharedServer.port())))
                     .build();
-            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.body()).isEqualTo(body);
             assertThat(response.statusCode()).isEqualTo(200);
@@ -509,7 +523,8 @@ public class ImpServerIntegrationTest implements FastTest {
                     .andNoAdditionalHeaders();
 
             impBorrowed.useServer(server -> {
-                var response = sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString());
+                var response = sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString())
+                        .join();
                 assertThat(response.body()).isEqualTo(borrowedTextBody);
                 assertThat(response.statusCode()).isEqualTo(borrowedStatus);
             });
@@ -638,7 +653,8 @@ public class ImpServerIntegrationTest implements FastTest {
                     .andNoAdditionalHeaders();
             impBorrowed.useServer(server -> sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString()));
 
-            var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
+                    .join();
             assertThat(response.body()).isEqualTo(originalBody);
             assertThat(response.statusCode()).isEqualTo(originalStatus);
         } finally {
@@ -707,8 +723,10 @@ public class ImpServerIntegrationTest implements FastTest {
                 .rejectNonMatching()
                 .startSharedOnRandomPort();
 
-        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
-        sendHttpRequestWithHeaders(sharedServer.port(), headers, HttpResponse.BodyHandlers.ofString());
+        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
+                .join();
+        sendHttpRequestWithHeaders(sharedServer.port(), headers, HttpResponse.BodyHandlers.ofString())
+                .join();
         try {
             var borrowedTextBody = "some borrowed text";
             var borrowedStatus = 400;
@@ -742,8 +760,10 @@ public class ImpServerIntegrationTest implements FastTest {
                 .rejectNonMatching()
                 .startSharedOnRandomPort();
 
-        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
-        sendHttpRequestWithHeaders(sharedServer.port(), headers, HttpResponse.BodyHandlers.ofString());
+        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
+                .join();
+        sendHttpRequestWithHeaders(sharedServer.port(), headers, HttpResponse.BodyHandlers.ofString())
+                .join();
         try {
             sharedServer
                     .borrow()
@@ -751,8 +771,10 @@ public class ImpServerIntegrationTest implements FastTest {
                     .andTextBody("some borrowed text")
                     .andNoAdditionalHeaders()
                     .useServer(server -> {
-                        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
-                        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString());
+                        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
+                                .join();
+                        sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
+                                .join();
                     });
             var statistics = sharedServer.statistics();
 
@@ -780,9 +802,11 @@ public class ImpServerIntegrationTest implements FastTest {
                     .andNoAdditionalHeaders()
                     .useServer(server -> {
                         assertThat(server.statistics().hitCount()).isZero();
-                        sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString());
+                        sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString())
+                                .join();
                         assertThat(server.statistics().hitCount()).isOne();
-                        sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString());
+                        sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString())
+                                .join();
                         assertThat(server.statistics().hitCount()).isEqualTo(2);
                         assertThat(server.statistics().missCount()).isZero();
                     });
@@ -805,8 +829,10 @@ public class ImpServerIntegrationTest implements FastTest {
 
         var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", sharedServer.port())))
                 .build();
-        assertThatThrownBy(() -> sendHttpRequest(request, HttpResponse.BodyHandlers.ofString()))
-                .isInstanceOf(ConnectException.class);
+        assertThatExceptionOfType(CompletionException.class)
+                .isThrownBy(() -> sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                        .join())
+                .withCauseInstanceOf(ConnectException.class);
     }
 
     @Test
@@ -825,8 +851,10 @@ public class ImpServerIntegrationTest implements FastTest {
 
         var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", sharedServer.port())))
                 .build();
-        assertThatThrownBy(() -> sendHttpRequest(request, HttpResponse.BodyHandlers.ofString()))
-                .isInstanceOf(ConnectException.class);
+        assertThatExceptionOfType(CompletionException.class)
+                .isThrownBy(() -> sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                        .join())
+                .withCauseInstanceOf(ConnectException.class);
     }
 
     @Test
@@ -1193,7 +1221,8 @@ public class ImpServerIntegrationTest implements FastTest {
                     var request = HttpRequest.newBuilder(
                                     new URI(String.format("http://localhost:%d/", impServer.port())))
                             .build();
-                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
 
                     assertThat(response.body()).isEqualTo(expected);
                     assertThat(response.statusCode()).isEqualTo(200);
@@ -1221,7 +1250,8 @@ public class ImpServerIntegrationTest implements FastTest {
         subject.useServer(impServer -> {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
                     .build();
-            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.body())
                     .isEqualTo(
@@ -1252,7 +1282,8 @@ public class ImpServerIntegrationTest implements FastTest {
         subject.useServer(impServer -> {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
                     .build();
-            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.body())
                     .isEqualTo(
@@ -1284,7 +1315,8 @@ public class ImpServerIntegrationTest implements FastTest {
         subject.useServer(impServer -> {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
                     .build();
-            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.body()).isEqualTo(expected);
             assertThat(response.statusCode()).isEqualTo(200);
@@ -1313,7 +1345,8 @@ public class ImpServerIntegrationTest implements FastTest {
         subject.useServer(impServer -> {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
                     .build();
-            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.body()).isEqualTo(expected);
             assertThat(response.statusCode()).isEqualTo(200);
@@ -1341,7 +1374,8 @@ public class ImpServerIntegrationTest implements FastTest {
         subject.useServer(impServer -> {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
                     .build();
-            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
             assertThat(response.statusCode()).isEqualTo(200);
@@ -1371,7 +1405,8 @@ public class ImpServerIntegrationTest implements FastTest {
         subject.useServer(impServer -> {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
                     .build();
-            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
             assertThat(response.statusCode()).isEqualTo(200);
@@ -1397,7 +1432,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                    .join();
             assertThat(response.body()).isEqualTo("any");
             assertThat(response.statusCode()).isEqualTo(expectedStatus);
         });
@@ -1418,7 +1454,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                    .join();
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSizeGreaterThan(additionalHeaders.size());
@@ -1441,7 +1478,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                    .join();
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(4);
@@ -1465,8 +1503,9 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response =
-                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequestWithHeaders(
+                            impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
+                    .join();
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(3);
@@ -1488,8 +1527,9 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response =
-                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequestWithHeaders(
+                            impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
             assertThat(response.body())
@@ -1513,8 +1553,9 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response =
-                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequestWithHeaders(
+                            impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
             assertThat(response.body())
@@ -1537,7 +1578,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
             assertThat(response.body())
@@ -1560,7 +1602,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
             assertThat(response.body())
@@ -1584,7 +1627,8 @@ public class ImpServerIntegrationTest implements FastTest {
 
         subject.useServer(impServer -> {
             var response = sendHttpRequestWithHeaders(
-                    impServer.port(), Map.of("header1", List.of("any")), HttpResponse.BodyHandlers.ofString());
+                            impServer.port(), Map.of("header1", List.of("any")), HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
             assertThat(response.body())
@@ -1608,8 +1652,9 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response =
-                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequestWithHeaders(
+                            impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
+                    .join();
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(3);
@@ -1634,8 +1679,9 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response =
-                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequestWithHeaders(
+                            impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
+                    .join();
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(3);
@@ -1659,8 +1705,9 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response =
-                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequestWithHeaders(
+                            impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
             assertThat(response.body())
@@ -1684,7 +1731,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                    .join();
 
             assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
             assertThat(response.body())
@@ -1711,8 +1759,9 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response =
-                    sendHttpRequestWithHeaders(impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequestWithHeaders(
+                            impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
+                    .join();
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(3);
@@ -1733,9 +1782,10 @@ public class ImpServerIntegrationTest implements FastTest {
 
         subject.useServer(impServer -> {
             var response = sendHttpRequestWithHeaders(
-                    impServer.port(),
-                    Map.of("content-type", List.of("text/plain")),
-                    HttpResponse.BodyHandlers.ofString());
+                            impServer.port(),
+                            Map.of("content-type", List.of("text/plain")),
+                            HttpResponse.BodyHandlers.ofString())
+                    .join();
             var responseHeaders = response.headers().map();
             assertThat(response.body()).isEqualTo("any");
             assertThat(responseHeaders).hasSize(3);
@@ -1756,7 +1806,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                    .join();
             assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
             assertThat(response.body())
                     .isEqualTo(
@@ -1777,7 +1828,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                    .join();
             assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
             assertThat(response.body())
                     .isEqualTo(
@@ -1803,7 +1855,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 .onRandomPort();
 
         subject.useServer(impServer -> {
-            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString());
+            var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                    .join();
             assertThat(response.statusCode()).isEqualTo(fallbackStatus.value());
             assertThat(response.body()).isEqualTo(fallbackBody);
         });
@@ -1828,7 +1881,8 @@ public class ImpServerIntegrationTest implements FastTest {
 
         subject.useServer(impServer -> {
             var response = sendHttpRequestWithHeaders(
-                    impServer.port(), Map.of("Content-Type", List.of()), HttpResponse.BodyHandlers.ofString());
+                            impServer.port(), Map.of("Content-Type", List.of()), HttpResponse.BodyHandlers.ofString())
+                    .join();
             assertThat(response.statusCode()).isEqualTo(fallbackStatus.value());
             assertThat(response.body()).isEqualTo(fallbackBody);
         });
@@ -1853,9 +1907,10 @@ public class ImpServerIntegrationTest implements FastTest {
 
         subject.useServer(impServer -> {
             var response = sendHttpRequestWithHeaders(
-                    impServer.port(),
-                    Map.of("Content-Type", List.of("some", "type")),
-                    HttpResponse.BodyHandlers.ofString());
+                            impServer.port(),
+                            Map.of("Content-Type", List.of("some", "type")),
+                            HttpResponse.BodyHandlers.ofString())
+                    .join();
             assertThat(response.statusCode()).isEqualTo(fallbackStatus.value());
             assertThat(response.body()).isEqualTo(fallbackBody);
         });
