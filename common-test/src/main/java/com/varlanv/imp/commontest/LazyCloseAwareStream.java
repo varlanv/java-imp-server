@@ -19,8 +19,19 @@ public final class LazyCloseAwareStream implements Supplier<InputStream> {
         try {
             var inputStream = streamSupplier.get();
             return new InputStream() {
+
                 @Override
                 public int read() throws IOException {
+                    return inputStream.read();
+                }
+
+                @Override
+                public int read(byte[] b, int off, int len) throws IOException {
+                    return inputStream.read(b, off, len);
+                }
+
+                @Override
+                public int read(byte[] b) throws IOException {
                     return inputStream.read();
                 }
 
@@ -37,16 +48,6 @@ public final class LazyCloseAwareStream implements Supplier<InputStream> {
                 @Override
                 public byte[] readAllBytes() throws IOException {
                     return inputStream.readAllBytes();
-                }
-
-                @Override
-                public int read(byte[] b, int off, int len) throws IOException {
-                    return inputStream.read(b, off, len);
-                }
-
-                @Override
-                public int read(byte[] b) throws IOException {
-                    return inputStream.read();
                 }
 
                 @Override
