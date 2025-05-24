@@ -2,6 +2,7 @@ package com.varlanv.imp;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 public final class ImpBodyMatch {
 
@@ -20,6 +21,11 @@ public final class ImpBodyMatch {
     public boolean bodyContains(String substring) {
         Preconditions.nonNull(substring, "substring");
         return stringBodySupplier.get().contains(substring);
+    }
+
+    public boolean bodyMatches(Pattern pattern) {
+        Preconditions.nonNull(pattern, "pattern");
+        return pattern.matcher(stringBodySupplier.get()).matches();
     }
 
     public boolean bodyContainsIgnoreCase(String substring) {

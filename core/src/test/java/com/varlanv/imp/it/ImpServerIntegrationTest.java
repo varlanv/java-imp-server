@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.DisplayName;
@@ -1388,6 +1389,57 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
+        @DisplayName("should successfully match by body predicate 'bodyMatches'")
+        void should_successfully_match_by_body_predicate_bodymatches() {
+            var requestBody = "Some Text body";
+            var expectedMatch = Pattern.compile(".*ext.*");
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            "any", request -> request.bodyPredicate(b -> b.bodyMatches(expectedMatch)))
+                    .respondWithStatus(200)
+                    .andTextBody("any")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body()).isEqualTo("any");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should return error when fail to match by body predicate 'bodyMatches'")
+        void should_return_error_when_fail_to_match_by_body_predicate_bodymatches() {
+            var requestBody = "Some Text body";
+            var expectedMatch = Pattern.compile(".*extt.*");
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            "any", request -> request.bodyPredicate(b -> b.bodyMatches(expectedMatch)))
+                    .respondWithStatus(200)
+                    .andTextBody("any")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body()).isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. " +
+                    "Available matcher IDs: [any]");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
         @DisplayName("should fail when fail to match by body predicate 'bodyContainsIgnoreCase'")
         void should_fail_when_fail_to_match_by_body_predicate_bodycontainsignorecase() {
             var requestBody = "Some Text body";
@@ -1427,16 +1479,16 @@ public class ImpServerIntegrationTest implements FastTest {
                     .onRandomPort();
 
             subject.useServer(impServer -> {
-                var requestBuilder = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8));
-                requestHeaders.forEach((key,valList) -> valList.forEach(val -> requestBuilder.header(key, val)));
+                var requestBuilder = HttpRequest.newBuilder(
+                                new URI(String.format("http://localhost:%d/", impServer.port())))
+                        .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8));
+                requestHeaders.forEach((key, valList) -> valList.forEach(val -> requestBuilder.header(key, val)));
                 var request = requestBuilder.build();
 
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
                 var responseHeaders = response.headers().map();
-                assertThat(response.body())
-                        .isEqualTo("response body");
+                assertThat(response.body()).isEqualTo("response body");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -1457,16 +1509,18 @@ public class ImpServerIntegrationTest implements FastTest {
                     .onRandomPort();
 
             subject.useServer(impServer -> {
-                var requestBuilder = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8));
-                requestHeaders.forEach((key,valList) -> valList.forEach(val -> requestBuilder.header(key, val)));
+                var requestBuilder = HttpRequest.newBuilder(
+                                new URI(String.format("http://localhost:%d/", impServer.port())))
+                        .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8));
+                requestHeaders.forEach((key, valList) -> valList.forEach(val -> requestBuilder.header(key, val)));
                 var request = requestBuilder.build();
 
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
                 var responseHeaders = response.headers().map();
                 assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                        .isEqualTo(
+                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -1478,8 +1532,9 @@ public class ImpServerIntegrationTest implements FastTest {
             var requestBody = "Some Text body";
             var requestHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("texttttt"))
-                            .headersPredicate(h -> h.containsPair("header1", "value1")))
+                    .onRequestMatching(
+                            "any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("texttttt"))
+                                    .headersPredicate(h -> h.containsPair("header1", "value1")))
                     .respondWithStatus(200)
                     .andTextBody("response body")
                     .andNoAdditionalHeaders()
@@ -1487,16 +1542,18 @@ public class ImpServerIntegrationTest implements FastTest {
                     .onRandomPort();
 
             subject.useServer(impServer -> {
-                var requestBuilder = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8));
-                requestHeaders.forEach((key,valList) -> valList.forEach(val -> requestBuilder.header(key, val)));
+                var requestBuilder = HttpRequest.newBuilder(
+                                new URI(String.format("http://localhost:%d/", impServer.port())))
+                        .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8));
+                requestHeaders.forEach((key, valList) -> valList.forEach(val -> requestBuilder.header(key, val)));
                 var request = requestBuilder.build();
 
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
                 var responseHeaders = response.headers().map();
                 assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                        .isEqualTo(
+                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
