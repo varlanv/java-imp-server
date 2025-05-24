@@ -5,15 +5,19 @@ import static org.assertj.core.api.Assertions.*;
 import com.varlanv.imp.ImpHttpStatus;
 import com.varlanv.imp.ImpRunnable;
 import com.varlanv.imp.ImpServer;
+import com.varlanv.imp.ImpSupplier;
 import com.varlanv.imp.commontest.BaseTest;
 import com.varlanv.imp.commontest.FastTest;
+import com.varlanv.imp.commontest.LazyCloseAwareStream;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -342,6 +346,98 @@ public class ImpServerIntegrationTest implements FastTest {
                         assertThat(headers).containsKey("date");
                     });
                 });
+    }
+
+    @Test
+    @DisplayName("template should be able to reuse file stream supplier from `andDataStreamBody`")
+    void template_should_be_able_to_reuse_file_stream_supplier_from_anddatastreambody() {
+        var expectedText = "some text";
+        consumeTempFile(tempFile -> {
+            Files.writeString(tempFile, expectedText);
+            ImpServer.template()
+                    .alwaysRespondWithStatus(200)
+                    .andDataStreamBody(() -> Files.newInputStream(tempFile))
+                    .andNoAdditionalHeaders()
+                    .onRandomPort()
+                    .useServer(impServer -> {
+                        for (var futureResponse :
+                                sendManyHttpRequests(5, impServer.port(), HttpResponse.BodyHandlers.ofString())) {
+                            var response = futureResponse.join();
+
+                            assertThat(response.body()).isEqualTo(expectedText);
+                            assertThat(response.statusCode()).isEqualTo(200);
+                            assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
+                                assertThat(headers).containsEntry("Content-Type", List.of("application/octet-stream"));
+                                assertThat(headers)
+                                        .containsEntry(
+                                                "Content-Length", List.of(String.valueOf(expectedText.length())));
+                                assertThat(headers).containsKey("date");
+                            });
+                        }
+                    });
+        });
+    }
+
+    @Test
+    @DisplayName("should call `close` on stream returned by supplier from `andDataStreamBody`")
+    void should_call_close_on_stream_returned_by_supplier_from_anddatastreambody() {
+        var expectedText = "some text";
+        var dataStream =
+                new LazyCloseAwareStream(() -> new ByteArrayInputStream(expectedText.getBytes(StandardCharsets.UTF_8)));
+        consumeTempFile(tempFile -> {
+            Files.writeString(tempFile, expectedText);
+            ImpServer.template()
+                    .alwaysRespondWithStatus(200)
+                    .andDataStreamBody(dataStream::get)
+                    .andNoAdditionalHeaders()
+                    .onRandomPort()
+                    .useServer(impServer -> {
+                        sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                                .join();
+                        assertThat(dataStream.isClosed()).isTrue();
+                    });
+        });
+    }
+
+    @Test
+    @DisplayName("should call `close` on stream returned by supplier from `andCustomContentTypeStream`")
+    void should_call_close_on_stream_returned_by_supplier_from_andcustomcontenttypestream() {
+        var expectedText = "some text";
+        var dataStream =
+                new LazyCloseAwareStream(() -> new ByteArrayInputStream(expectedText.getBytes(StandardCharsets.UTF_8)));
+        consumeTempFile(tempFile -> {
+            Files.writeString(tempFile, expectedText);
+            ImpServer.template()
+                    .alwaysRespondWithStatus(200)
+                    .andCustomContentTypeStream("someContent", dataStream::get)
+                    .andNoAdditionalHeaders()
+                    .onRandomPort()
+                    .useServer(impServer -> {
+                        sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                                .join();
+                        assertThat(dataStream.isClosed()).isTrue();
+                    });
+        });
+    }
+
+    @Test
+    @DisplayName("`andCustomContentTypeStream` should be able to read from resources stream")
+    void andcustomcontenttypestream_should_be_able_to_read_from_resources_stream() throws Exception {
+        ImpSupplier<InputStream> resourcesStreamSupplier =
+                () -> Objects.requireNonNull(getClass().getResourceAsStream("/responses/json/response1.json"));
+        try (var res = resourcesStreamSupplier.get()) {
+            var expectedJson = new String(res.readAllBytes(), StandardCharsets.UTF_8);
+            ImpServer.template()
+                    .alwaysRespondWithStatus(200)
+                    .andCustomContentTypeStream("application/json", resourcesStreamSupplier)
+                    .andNoAdditionalHeaders()
+                    .onRandomPort()
+                    .useServer(impServer -> {
+                        var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                            .join();
+                        assertThat(response.body()).isEqualTo(expectedJson);
+                    });
+        }
     }
 
     @ParameterizedTest
@@ -844,10 +940,15 @@ public class ImpServerIntegrationTest implements FastTest {
                 .andTextBody("some text")
                 .andNoAdditionalHeaders()
                 .startSharedOnRandomPort();
+        assertThat(sharedServer.isDisposed()).isFalse();
         sharedServer.dispose();
+        assertThat(sharedServer.isDisposed()).isTrue();
         sharedServer.dispose();
+        assertThat(sharedServer.isDisposed()).isTrue();
         sharedServer.dispose();
+        assertThat(sharedServer.isDisposed()).isTrue();
         sharedServer.dispose();
+        assertThat(sharedServer.isDisposed()).isTrue();
 
         var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", sharedServer.port())))
                 .build();
@@ -869,8 +970,8 @@ public class ImpServerIntegrationTest implements FastTest {
     }
 
     @Test
-    @DisplayName("'alwaysRespondWithStatus' should work all known status codes")
-    void alwaysrespondwithstatus_should_work_all_known_status_codes() {
+    @DisplayName("'alwaysRespondWithStatus' should work for all known status codes")
+    void alwaysrespondwithstatus_should_work_for_all_known_status_codes() {
         for (var httpStatus : ImpHttpStatus.values()) {
             assertThatNoException()
                     .as("Should work for http status code [%d]", httpStatus.value())

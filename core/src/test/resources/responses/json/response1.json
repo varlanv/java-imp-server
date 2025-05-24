@@ -1,0 +1,11 @@
+{
+  "someStringKey": "someStringValue",
+  "someNestedObjectArray": [
+    {
+      "someNestedArrayObjectNumKey": 1
+    },
+    {
+      "someNestedArrayObjectNumKey": 2
+    }
+  ]
+}

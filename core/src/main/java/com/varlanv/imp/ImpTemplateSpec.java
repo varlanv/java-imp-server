@@ -218,16 +218,22 @@ public final class ImpTemplateSpec {
 
         public AlwaysRespondHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultRespondHeaders(
-                    ImpContentType.OCTET_STREAM, () -> dataStreamSupplier.get().readAllBytes());
+            return defaultRespondHeaders(ImpContentType.OCTET_STREAM, () -> {
+                try (var stream = dataStreamSupplier.get()) {
+                    return stream.readAllBytes();
+                }
+            });
         }
 
         public AlwaysRespondHeaders andCustomContentTypeStream(
                 String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultRespondHeaders(
-                    contentType, () -> dataStreamSupplier.get().readAllBytes());
+            return defaultRespondHeaders(contentType, () -> {
+                try (var stream = dataStreamSupplier.get()) {
+                    return stream.readAllBytes();
+                }
+            });
         }
 
         private AlwaysRespondHeaders defaultRespondHeaders(CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {

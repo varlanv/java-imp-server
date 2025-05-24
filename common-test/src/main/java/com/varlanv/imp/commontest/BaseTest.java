@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.TestInstance;
@@ -213,6 +214,21 @@ public interface BaseTest {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)))
                     .build();
             return sendHttpRequest(request, responseBodyHandler);
+        } catch (Exception e) {
+            return hide(e);
+        }
+    }
+
+    default <T> CompletableFuture<HttpResponse<T>>[] sendManyHttpRequests(
+            int count, int port, HttpResponse.BodyHandler<T> responseBodyHandler) {
+        try {
+            var futures = new CompletableFuture<?>[count];
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)))
+                    .build();
+            IntStream.range(0, count).forEach(i -> futures[i] = sendHttpRequest(request, responseBodyHandler));
+            @SuppressWarnings("unchecked")
+            var result = (CompletableFuture<HttpResponse<T>>[]) futures;
+            return result;
         } catch (Exception e) {
             return hide(e);
         }
