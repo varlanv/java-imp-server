@@ -1146,6 +1146,92 @@ public class ImpServerIntegrationTest implements FastTest {
                     }));
         }
 
+        @Test
+        @DisplayName("`andJsonBody` for borrowed server should return json body")
+        void andjsonbody_for_borrowed_server_should_return_json_body() {
+            useDefaultSharedServer(sharedServer -> {
+                @Language("json") var newBody = "{}";
+                var newStatus = 200;
+                sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(newStatus)
+                    .andJsonBody(newBody)
+                    .andNoAdditionalHeaders()
+                    .useServer(borrowedServer -> {
+                        var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
+                            .join();
+
+                        assertThat(response.body()).isEqualTo(newBody);
+                        assertThat(response.headers().map()).containsEntry("content-type", List.of("application/json"));
+                    });
+            });
+        }
+
+        @Test
+        @DisplayName("`andXmlBody` for borrowed server should return xml body")
+        void andxmlbody_for_borrowed_server_should_return_xml_body() {
+            useDefaultSharedServer(sharedServer -> {
+                @Language("xml") var newBody = "<root></root>";
+                var newStatus = 200;
+                sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(newStatus)
+                    .andXmlBody(newBody)
+                    .andNoAdditionalHeaders()
+                    .useServer(borrowedServer -> {
+                        var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
+                            .join();
+
+                        assertThat(response.body()).isEqualTo(newBody);
+                        assertThat(response.headers().map()).containsEntry("content-type", List.of("application/xml"));
+                    });
+            });
+        }
+
+        @Test
+        @DisplayName("`andDataStreamBody` for borrowed server should return octet stream body")
+        void anddatastreambody_for_borrowed_server_should_return_octet_stream_body() {
+            useDefaultSharedServer(sharedServer -> {
+                var newBody = "some body";
+                var newStatus = 200;
+                sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(newStatus)
+                    .andDataStreamBody(() -> new ByteArrayInputStream(newBody.getBytes(StandardCharsets.UTF_8)))
+                    .andNoAdditionalHeaders()
+                    .useServer(borrowedServer -> {
+                        var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
+                            .join();
+
+                        assertThat(response.body()).isEqualTo(newBody);
+                        assertThat(response.headers().map()).containsEntry("content-type", List.of("application/octet-stream"));
+                    });
+            });
+        }
+
+
+        @Test
+        @DisplayName("`andCustomContentTypeStream` for borrowed server should return requested content type and body")
+        void andcustomcontenttypestream_for_borrowed_server_should_return_requested_content_type_and_body() {
+            useDefaultSharedServer(sharedServer -> {
+                var newBody = "some body";
+                var newStatus = 200;
+                var newContentType = "ctype";
+                sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(newStatus)
+                    .andCustomContentTypeStream(newContentType, () -> new ByteArrayInputStream(newBody.getBytes(StandardCharsets.UTF_8)))
+                    .andNoAdditionalHeaders()
+                    .useServer(borrowedServer -> {
+                        var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
+                            .join();
+
+                        assertThat(response.body()).isEqualTo(newBody);
+                        assertThat(response.headers().map()).containsEntry("content-type", List.of(newContentType));
+                    });
+            });
+        }
+
         void useDefaultSharedServer(ThrowingConsumer<ImpShared> consumer) {
             var originalBody = "some text";
             int originalStatus = 200;
