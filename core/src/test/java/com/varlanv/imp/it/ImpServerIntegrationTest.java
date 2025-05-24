@@ -1403,6 +1403,58 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
+        @DisplayName("`andExactHeaders` should replace existing headers and possibly add new")
+        void andexactheaders_should_replace_existing_headers_and_possibly_add_new() {
+            var exactHeaders =
+                    Map.of("content-type", List.of("application/json"), "another-header", List.of("some value"));
+            var sharedServer = ImpServer.httpTemplate()
+                    .alwaysRespondWithStatus(200)
+                    .andTextBody("some text")
+                    .andExactHeaders(exactHeaders)
+                    .startSharedOnRandomPort();
+            try {
+                var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                assertThat(response.statusCode()).isEqualTo(200);
+                assertThat(response.body()).isEqualTo("some text");
+                assertThat(response.headers().map())
+                        .hasSize(4)
+                        .containsKeys("Content-Type", "Content-Length", "date", "another-header")
+                        .containsEntry("another-header", List.of("some value"))
+                        .containsEntry("content-type", List.of("application/json"));
+            } finally {
+                sharedServer.dispose();
+            }
+        }
+
+        @Test
+        @DisplayName("`andAdditionalHeaders` should add new but not change exiting headers")
+        void andadditionalheaders_should_add_new_but_not_change_exiting_headers() {
+            var additionalHeaders =
+                    Map.of("content-type", List.of("application/json"), "another-header", List.of("some value"));
+            var sharedServer = ImpServer.httpTemplate()
+                    .alwaysRespondWithStatus(200)
+                    .andTextBody("some text")
+                    .andAdditionalHeaders(additionalHeaders)
+                    .startSharedOnRandomPort();
+            try {
+                var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                assertThat(response.statusCode()).isEqualTo(200);
+                assertThat(response.body()).isEqualTo("some text");
+                assertThat(response.headers().map())
+                        .hasSize(4)
+                        .containsKeys("Content-Type", "Content-Length", "date", "another-header")
+                        .containsEntry("another-header", List.of("some value"))
+                        .containsEntry("content-type", List.of("text/plain"));
+            } finally {
+                sharedServer.dispose();
+            }
+        }
+
+        @Test
         @DisplayName("when shared server is stopped many times, then no exception thrown and server is still stopped")
         void when_shared_server_is_stopped_many_times_then_no_exception_thrown_and_server_is_still_stopped()
                 throws Exception {

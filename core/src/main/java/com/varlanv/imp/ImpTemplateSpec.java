@@ -257,9 +257,9 @@ public final class ImpTemplateSpec {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return new AlwaysRespondFinal(this, existingHeaders -> {
-                var newHeaders = new HashMap<>(existingHeaders);
+                var newHeaders = new HashMap<>(headersCopy);
                 newHeaders.put("Content-Type", List.of(contentType));
-                newHeaders.putAll(headersCopy);
+                newHeaders.putAll(existingHeaders);
                 return Map.copyOf(newHeaders);
             });
         }
