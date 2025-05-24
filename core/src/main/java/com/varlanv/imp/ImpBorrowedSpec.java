@@ -1,5 +1,6 @@
 package com.varlanv.imp;
 
+import com.sun.net.httpserver.Headers;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -99,10 +100,11 @@ public final class ImpBorrowedSpec {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return toBorrowed(originalHeaders -> {
-                var res = new HashMap<>(originalHeaders);
-                res.put("Content-Type", List.of(contentType));
-                res.putAll(headersCopy);
-                return Collections.unmodifiableMap(res);
+                var newHeaders = new Headers();
+                newHeaders.putAll(originalHeaders);
+                newHeaders.put("Content-Type", List.of(contentType));
+                newHeaders.putAll(headersCopy);
+                return Collections.unmodifiableMap(newHeaders);
             });
         }
 

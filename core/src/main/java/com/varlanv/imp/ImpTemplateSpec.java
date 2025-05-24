@@ -1,5 +1,6 @@
 package com.varlanv.imp;
 
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -257,7 +258,8 @@ public final class ImpTemplateSpec {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return new AlwaysRespondFinal(this, existingHeaders -> {
-                var newHeaders = new HashMap<>(headersCopy);
+                var newHeaders = new Headers();
+                newHeaders.putAll(headersCopy);
                 newHeaders.put("Content-Type", List.of(contentType));
                 newHeaders.putAll(existingHeaders);
                 return Map.copyOf(newHeaders);
@@ -272,7 +274,8 @@ public final class ImpTemplateSpec {
 
         public AlwaysRespondFinal andNoAdditionalHeaders() {
             return new AlwaysRespondFinal(this, headers -> {
-                var newHeaders = new HashMap<>(headers);
+                var newHeaders = new Headers();
+                newHeaders.putAll(headers);
                 newHeaders.put("Content-Type", List.of(contentType));
                 return Map.copyOf(newHeaders);
             });

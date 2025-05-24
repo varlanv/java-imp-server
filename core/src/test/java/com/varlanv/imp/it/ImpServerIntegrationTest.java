@@ -1266,6 +1266,17 @@ public class ImpServerIntegrationTest implements FastTest {
                 assertThat(response.body()).isEqualTo(fallbackBody);
             });
         }
+
+        @Test
+        @DisplayName("`onRequestMatching` is closure throws exception then fail immediately")
+        void onrequestmatching_is_closure_throws_exception_then_fail_immediately() {
+            var matcherException = new RuntimeException("matcher exception");
+            assertThatExceptionOfType(RuntimeException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("anyId", request -> {
+                        throw matcherException;
+                    }))
+                    .withMessage(matcherException.getMessage());
+        }
     }
 
     @Nested
