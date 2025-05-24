@@ -76,11 +76,17 @@ final class DefaultImpTemplate implements ImpTemplate {
             }
         }
         originalResponseHeaders.putAll(newResponseHeaders);
-        exchange.sendResponseHeaders(impResponse.statusCode().value(), responseBytes.length);
-        var responseBody = exchange.getResponseBody();
-        responseBody.write(responseBytes);
-        responseBody.flush();
-        responseBody.close();
+        var expectedStatus = impResponse.statusCode().value();
+        if (expectedStatus < 200) {
+            exchange.sendResponseHeaders(expectedStatus, 0);
+            exchange.getResponseBody().close();
+        } else {
+            exchange.sendResponseHeaders(expectedStatus, responseBytes.length);
+            var responseBody = exchange.getResponseBody();
+            responseBody.write(responseBytes);
+            responseBody.flush();
+            responseBody.close();
+        }
     }
 
     ImpShared startShared() {

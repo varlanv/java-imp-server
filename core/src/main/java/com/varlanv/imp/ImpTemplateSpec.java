@@ -100,7 +100,7 @@ public final class ImpTemplateSpec {
         }
 
         public ContentContinue andAdditionalHeaders(Map<String, List<String>> headers) {
-            Preconditions.noNullsInMap(headers, "headers");
+            Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return new ContentContinue(this, existingHeaders -> {
                 var newHeaders = new HashMap<>(existingHeaders);
@@ -111,7 +111,7 @@ public final class ImpTemplateSpec {
         }
 
         public ContentContinue andExactHeaders(Map<String, List<String>> headers) {
-            Preconditions.noNullsInMap(headers, "headers");
+            Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return new ContentContinue(this, existingHeaders -> headersCopy);
         }
@@ -254,7 +254,7 @@ public final class ImpTemplateSpec {
         }
 
         public AlwaysRespondFinal andAdditionalHeaders(Map<String, List<String>> headers) {
-            Preconditions.noNullsInMap(headers, "headers");
+            Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return new AlwaysRespondFinal(this, existingHeaders -> {
                 var newHeaders = new HashMap<>(existingHeaders);
@@ -265,7 +265,7 @@ public final class ImpTemplateSpec {
         }
 
         public AlwaysRespondFinal andExactHeaders(Map<String, List<String>> headers) {
-            Preconditions.noNullsInMap(headers, "headers");
+            Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return new AlwaysRespondFinal(this, existingHeaders -> headersCopy);
         }

@@ -2,10 +2,7 @@ package com.varlanv.imp.it;
 
 import static org.assertj.core.api.Assertions.*;
 
-import com.varlanv.imp.ImpHttpStatus;
-import com.varlanv.imp.ImpRunnable;
-import com.varlanv.imp.ImpServer;
-import com.varlanv.imp.ImpSupplier;
+import com.varlanv.imp.*;
 import com.varlanv.imp.commontest.BaseTest;
 import com.varlanv.imp.commontest.FastTest;
 import com.varlanv.imp.commontest.LazyCloseAwareStream;
@@ -673,13 +670,7 @@ public class ImpServerIntegrationTest implements FastTest {
         @Test
         @DisplayName("borrowed server port should be same as original server port")
         void borrowed_server_port_should_be_same_as_original_server_port() {
-            var sharedServer = ImpServer.template()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
-                    .startSharedOnRandomPort();
-
-            try {
+            useDefaultSharedServer(sharedServer -> {
                 var impBorrowed = sharedServer
                         .borrow()
                         .alwaysRespondWithStatus(400)
@@ -689,9 +680,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 impBorrowed.useServer(server -> {
                     assertThat(server.port()).isEqualTo(sharedServer.port());
                 });
-            } finally {
-                sharedServer.dispose();
-            }
+            });
         }
 
         @Test
@@ -765,13 +754,7 @@ public class ImpServerIntegrationTest implements FastTest {
         @Test
         @DisplayName("isDisposed should return false when running inside borrowed server")
         void isdisposed_should_return_false_when_running_inside_borrowed_server() {
-            var sharedServer = ImpServer.template()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
-                    .startSharedOnRandomPort();
-
-            try {
+            useDefaultSharedServer(sharedServer -> {
                 sharedServer
                         .borrow()
                         .alwaysRespondWithStatus(200)
@@ -781,21 +764,13 @@ public class ImpServerIntegrationTest implements FastTest {
                             assertThat(sharedServer.isDisposed()).isFalse();
                             assertThat(sharedServer.isDisposed()).isFalse();
                         });
-            } finally {
-                sharedServer.dispose();
-            }
+            });
         }
 
         @Test
         @DisplayName("isDisposed should return false after running borrowed server")
         void isdisposed_should_return_false_after_running_borrowed_server() {
-            var sharedServer = ImpServer.template()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
-                    .startSharedOnRandomPort();
-
-            try {
+            useDefaultSharedServer(sharedServer -> {
                 sharedServer
                         .borrow()
                         .alwaysRespondWithStatus(200)
@@ -803,9 +778,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .andNoAdditionalHeaders()
                         .useServer(server -> {});
                 assertThat(sharedServer.isDisposed()).isFalse();
-            } finally {
-                sharedServer.dispose();
-            }
+            });
         }
 
         @Test
@@ -888,13 +861,7 @@ public class ImpServerIntegrationTest implements FastTest {
         @Test
         @DisplayName("borrowed server should store statistics inside and after closure")
         void borrowed_server_should_store_statistics_inside_and_after_closure() {
-            var originalBody = "some text";
-            var sharedServer = ImpServer.template()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody(originalBody)
-                    .andNoAdditionalHeaders()
-                    .startSharedOnRandomPort();
-            try {
+            useDefaultSharedServer(sharedServer -> {
                 var statistics = sharedServer
                         .borrow()
                         .alwaysRespondWithStatus(400)
@@ -912,6 +879,285 @@ public class ImpServerIntegrationTest implements FastTest {
                         });
                 assertThat(statistics.hitCount()).isEqualTo(2);
                 assertThat(statistics.missCount()).isZero();
+            });
+        }
+
+        @Test
+        @DisplayName("`andTextBody` should fail immediately on borrowed server when pass null")
+        void andtextbody_should_fail_immediately_on_borrowed_server_when_pass_null() {
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
+                //noinspection DataFlowIssue
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andTextBody(null))
+                        .withMessage("nulls are not supported - textBody");
+            });
+        }
+
+        @Test
+        @DisplayName("`andJsonBody` should fail immediately on borrowed server when pass null")
+        void andjsonbody_should_fail_immediately_on_borrowed_server_when_pass_null() {
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
+                //noinspection DataFlowIssue
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andJsonBody(null))
+                        .withMessage("nulls are not supported - jsonBody");
+            });
+        }
+
+        @Test
+        @DisplayName("`andXmlBody` should fail immediately on borrowed server when pass null")
+        void andxmlbody_should_fail_immediately_on_borrowed_server_when_pass_null() {
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
+                //noinspection DataFlowIssue
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andXmlBody(null))
+                        .withMessage("nulls are not supported - xmlBody");
+            });
+        }
+
+        @Test
+        @DisplayName("`andDataStreamBody` should fail immediately on borrowed server when pass null")
+        void anddatastreambody_should_fail_immediately_on_borrowed_server_when_pass_null() {
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
+                //noinspection DataFlowIssue
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andDataStreamBody(null))
+                        .withMessage("nulls are not supported - dataStreamSupplier");
+            });
+        }
+
+        @Test
+        @DisplayName("`andCustomContentTypeStream` should fail immediately on borrowed server when pass nulls")
+        void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_nulls() {
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
+                //noinspection DataFlowIssue
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andCustomContentTypeStream(null, null))
+                        .withMessage("null or blank strings are not supported - contentType");
+            });
+        }
+
+        @Test
+        @DisplayName(
+                "`andCustomContentTypeStream` should fail immediately on borrowed server when pass null contentType")
+        void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_null_contenttype() {
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
+                //noinspection DataFlowIssue
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andCustomContentTypeStream(
+                                null, () -> new ByteArrayInputStream(new byte[0])))
+                        .withMessage("null or blank strings are not supported - contentType");
+            });
+        }
+
+        @Test
+        @DisplayName(
+                "`andCustomContentTypeStream` should fail immediately on borrowed server when pass empty contentType")
+        void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_empty_contenttype() {
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andCustomContentTypeStream(
+                                "", () -> new ByteArrayInputStream(new byte[0])))
+                        .withMessage("null or blank strings are not supported - contentType");
+            });
+        }
+
+        @Test
+        @DisplayName(
+                "`andCustomContentTypeStream` should fail immediately on borrowed server when pass blank contentType")
+        void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_blank_contenttype() {
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andCustomContentTypeStream(
+                                "  ", () -> new ByteArrayInputStream(new byte[0])))
+                        .withMessage("null or blank strings are not supported - contentType");
+            });
+        }
+
+        @Test
+        @DisplayName("`andCustomContentTypeStream` should fail immediately on borrowed server when pass null stream")
+        void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_null_stream() {
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
+                //noinspection DataFlowIssue
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andCustomContentTypeStream("any", null))
+                        .withMessage("nulls are not supported - dataStreamSupplier");
+            });
+        }
+
+        @Test
+        @DisplayName("`andHeaders` should fail immediately on borrowed server when pass null map")
+        void andheaders_should_fail_immediately_on_borrowed_server_when_pass_null_map() {
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond =
+                        sharedServer.borrow().alwaysRespondWithStatus(200).andTextBody("any");
+                //noinspection DataFlowIssue
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andHeaders(null))
+                        .withMessage("nulls are not supported - headers");
+            });
+        }
+
+        @Test
+        @DisplayName("`andHeaders` should overwrite existing headers")
+        void andheaders_should_overwrite_existing_headers() {
+            useDefaultSharedServer(sharedServer -> {
+                var newHeaders = Map.of(
+                        "some-header", List.of("some-value1", "some-value2"), "Content-Type", List.of("some-value3"));
+                var newBody = "any";
+                var newStatus = 200;
+                sharedServer
+                        .borrow()
+                        .alwaysRespondWithStatus(newStatus)
+                        .andTextBody(newBody)
+                        .andHeaders(newHeaders)
+                        .useServer(borrowedServer -> {
+                            var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
+                                    .join();
+
+                            assertThat(response.body()).isEqualTo(newBody);
+                            assertThat(response.statusCode()).isEqualTo(newStatus);
+                            assertThat(response.headers().map()).hasSize(4).satisfies(responseHeaders -> {
+                                assertThat(responseHeaders).containsAllEntriesOf(newHeaders);
+                                assertThat(responseHeaders).containsKeys("date", "content-length");
+                            });
+                        });
+            });
+        }
+
+        @Test
+        @DisplayName("`andNoAdditionalHeaders` should not change existing headers")
+        void andnoadditionalheaders_should_not_change_existing_headers() {
+            useDefaultSharedServer(sharedServer -> {
+                var newBody = "any";
+                var newStatus = 200;
+                sharedServer
+                        .borrow()
+                        .alwaysRespondWithStatus(newStatus)
+                        .andTextBody(newBody)
+                        .andNoAdditionalHeaders()
+                        .useServer(borrowedServer -> {
+                            var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
+                                    .join();
+
+                            assertThat(response.body()).isEqualTo(newBody);
+                            assertThat(response.statusCode()).isEqualTo(newStatus);
+                            assertThat(response.headers().map()).hasSize(3).satisfies(responseHeaders -> {
+                                assertThat(responseHeaders).containsEntry("content-type", List.of("text/plain"));
+                                assertThat(responseHeaders).containsKeys("date", "content-length");
+                            });
+                        });
+            });
+        }
+
+        @Test
+        @DisplayName("`andHeaders` should fail immediately on borrowed server when pass map with null key")
+        void andheaders_should_fail_immediately_on_borrowed_server_when_pass_map_with_null_key() {
+            var map = new HashMap<String, List<String>>();
+            map.put("key", List.of("val1"));
+            map.put(null, List.of("val2"));
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond =
+                        sharedServer.borrow().alwaysRespondWithStatus(200).andTextBody("any");
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andHeaders(map))
+                        .withMessage(
+                                "null key are not supported in headers, but found null key in entry [ null=[val2] ]");
+            });
+        }
+
+        @Test
+        @DisplayName("`andHeaders` should fail immediately on borrowed server when pass map with null value")
+        void andheaders_should_fail_immediately_on_borrowed_server_when_pass_map_with_null_value() {
+            var map = new HashMap<String, List<String>>();
+            map.put("key1", List.of("val1"));
+            map.put("key2", null);
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond =
+                        sharedServer.borrow().alwaysRespondWithStatus(200).andTextBody("any");
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andHeaders(map))
+                        .withMessage(
+                                "null values are not supported in headers, but found null values in entry [ key2=null ]");
+            });
+        }
+
+        @Test
+        @DisplayName("`andHeaders` should fail immediately on borrowed server when pass map with null entry")
+        void andheaders_should_fail_immediately_on_borrowed_server_when_pass_map_with_null_entry() {
+            var map = new HashMap<String, List<String>>();
+            map.put("key1", List.of("val1"));
+            map.put(null, null);
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond =
+                        sharedServer.borrow().alwaysRespondWithStatus(200).andTextBody("any");
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andHeaders(map))
+                        .withMessage(
+                                "null key are not supported in headers, but found null key in entry [ null=null ]");
+            });
+        }
+
+        @Test
+        @DisplayName(
+                "`andHeaders` should fail immediately on borrowed server when pass map with one value in value is null")
+        void andheaders_should_fail_immediately_on_borrowed_server_when_pass_map_with_one_value_in_value_is_null() {
+            var map = new HashMap<String, List<String>>();
+            var valueList = new ArrayList<String>();
+            valueList.add("val1");
+            valueList.add(null);
+            map.put("key1", List.of("val1"));
+            map.put("key2", valueList);
+            useDefaultSharedServer(sharedServer -> {
+                var alwaysRespond =
+                        sharedServer.borrow().alwaysRespondWithStatus(200).andTextBody("any");
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .isThrownBy(() -> alwaysRespond.andHeaders(map))
+                        .withMessage(
+                                "null values are not supported in headers, but found null values in entry [ key2=[val1, null] ]");
+            });
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = {200, 300, 400, 500})
+        @DisplayName("borrowed server should always respond with asked status")
+        void borrowed_server_should_always_respond_with_asked_status(int expectedStatus) {
+            var expectedBody = "some body";
+            useDefaultSharedServer(sharedServer -> sharedServer
+                    .borrow()
+                    .alwaysRespondWithStatus(expectedStatus)
+                    .andTextBody(expectedBody)
+                    .andNoAdditionalHeaders()
+                    .useServer(borrowedServer -> {
+                        var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
+                                .join();
+
+                        assertThat(response.body()).isEqualTo(expectedBody);
+                        assertThat(response.statusCode()).isEqualTo(expectedStatus);
+                    }));
+        }
+
+        void useDefaultSharedServer(ThrowingConsumer<ImpShared> consumer) {
+            var originalBody = "some text";
+            int originalStatus = 200;
+            var sharedServer = ImpServer.template()
+                    .alwaysRespondWithStatus(originalStatus)
+                    .andTextBody(originalBody)
+                    .andNoAdditionalHeaders()
+                    .startSharedOnRandomPort();
+            try {
+                consumer.accept(sharedServer);
+            } catch (Exception e) {
+                BaseTest.hide(e);
             } finally {
                 sharedServer.dispose();
             }

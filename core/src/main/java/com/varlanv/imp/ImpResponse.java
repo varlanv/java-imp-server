@@ -72,7 +72,7 @@ public final class ImpResponse {
         }
 
         public BuilderHeaders headers(Map<String, List<String>> headers) {
-            Preconditions.noNullsInMap(headers, "headers");
+            Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return new BuilderHeaders(statusCode, body, originalHeaders -> {
                 var newHeaders = new HashMap<>(originalHeaders);

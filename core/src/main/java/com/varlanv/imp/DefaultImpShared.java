@@ -1,6 +1,8 @@
 package com.varlanv.imp;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.IntSupplier;
 
 final class DefaultImpShared implements ImpShared {
@@ -9,6 +11,7 @@ final class DefaultImpShared implements ImpShared {
     private final StartedServer startedServer;
     private final BorrowedState borrowedState;
     private final AtomicBoolean isDisposed = new AtomicBoolean(false);
+    private final Lock stopLock = new ReentrantLock();
 
     DefaultImpShared(ImpServerContext context, StartedServer startedServer, BorrowedState borrowedState) {
         this.context = context;
@@ -31,8 +34,14 @@ final class DefaultImpShared implements ImpShared {
 
     @Override
     public void dispose() {
-        startedServer.dispose();
-        isDisposed.set(true);
+        try {
+            stopLock.lock();
+            if (isDisposed.compareAndSet(false, true)) {
+                startedServer.dispose();
+            }
+        } finally {
+            stopLock.unlock();
+        }
     }
 
     @Override

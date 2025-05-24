@@ -6,16 +6,27 @@ import org.jspecify.annotations.Nullable;
 interface Preconditions {
 
     @SuppressWarnings("ConstantValue")
-    static <K, V, M extends Map<K, V>> M noNullsInMap(M map, String fieldName) {
+    static <K, V, I extends Iterable<V>, M extends Map<K, I>> M noNullsInHeaders(M map, String fieldName) {
         nonNull(map, fieldName);
         for (var entry : map.entrySet()) {
             if (entry.getKey() == null) {
                 throw new IllegalArgumentException(String.format(
                         "null key are not supported in %s, but found null key in entry [ %s ]", fieldName, entry));
-            } else if (entry.getValue() == null) {
-                throw new IllegalArgumentException(String.format(
-                        "null values are not supported in %s, but found null values in entry [ %s ]",
-                        fieldName, entry));
+            } else {
+                var value = entry.getValue();
+                if (value == null) {
+                    throw new IllegalArgumentException(String.format(
+                            "null values are not supported in %s, but found null values in entry [ %s ]",
+                            fieldName, entry));
+                } else {
+                    for (var v : value) {
+                        if (v == null) {
+                            throw new IllegalArgumentException(String.format(
+                                    "null values are not supported in %s, but found null values in entry [ %s ]",
+                                    fieldName, entry));
+                        }
+                    }
+                }
             }
         }
         return map;

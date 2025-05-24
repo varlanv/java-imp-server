@@ -86,7 +86,7 @@ public final class ImpBorrowedSpec {
         }
 
         public ImpBorrowed andHeaders(Map<String, List<String>> headers) {
-            Preconditions.noNullsInMap(headers, "headers");
+            Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return toBorrowed(originalHeaders -> {
                 var res = new HashMap<>(originalHeaders);
