@@ -23,7 +23,7 @@ class ApplicationIntegrationTest implements SlowTest {
     private Client client;
 
     static {
-        sharedServer = ImpServer.template()
+        sharedServer = ImpServer.httpTemplate()
                 .alwaysRespondWithStatus(defaultServerStatus)
                 .andTextBody(defaultServerResponse)
                 .andNoAdditionalHeaders()

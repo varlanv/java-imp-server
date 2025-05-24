@@ -2,7 +2,7 @@ package com.varlanv.imp;
 
 public interface ImpServer {
 
-    static ImpTemplateSpec.Start template() {
+    static ImpTemplateSpec.Start httpTemplate() {
         return new ImpTemplateSpec.Start();
     }
 
