@@ -1358,6 +1358,51 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
+        @DisplayName("when try to start server with `startSharedOnPort` but port already taken, then fail immediately")
+        void when_try_to_start_server_with_startsharedonport_but_port_already_taken_then_fail_immediately() {
+            var sharedServer = ImpServer.httpTemplate()
+                    .alwaysRespondWithStatus(200)
+                    .andTextBody("some text")
+                    .andNoAdditionalHeaders()
+                    .startSharedOnRandomPort();
+
+            try {
+                var specEnd = ImpServer.httpTemplate()
+                        .alwaysRespondWithStatus(200)
+                        .andTextBody("some text")
+                        .andNoAdditionalHeaders();
+                var port = sharedServer.port();
+
+                assertThatExceptionOfType(BindException.class)
+                        .isThrownBy(() -> specEnd.startSharedOnPort(port))
+                        .withMessage("Address already in use");
+            } finally {
+                sharedServer.dispose();
+            }
+        }
+
+        @Test
+        @DisplayName("should be able to start shared server on specific port when it is not taken")
+        void should_be_able_to_start_shared_server_on_specific_port_when_it_is_not_taken() {
+            var port = randomPort();
+            var sharedServer = ImpServer.httpTemplate()
+                    .alwaysRespondWithStatus(200)
+                    .andTextBody("some text")
+                    .andNoAdditionalHeaders()
+                    .startSharedOnPort(port);
+            try {
+                var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                assertThat(response.statusCode()).isEqualTo(200);
+                assertThat(response.body()).isEqualTo("some text");
+                assertThat(response.headers().map()).hasSize(3).containsKeys("Content-Type", "Content-Length", "date");
+            } finally {
+                sharedServer.dispose();
+            }
+        }
+
+        @Test
         @DisplayName("when shared server is stopped many times, then no exception thrown and server is still stopped")
         void when_shared_server_is_stopped_many_times_then_no_exception_thrown_and_server_is_still_stopped()
                 throws Exception {
@@ -2086,6 +2131,42 @@ public class ImpServerIntegrationTest implements FastTest {
             });
         }
 
+        @Test
+        @DisplayName("should be able to borrow server from shared server that was started on specific port")
+        void should_be_able_to_borrow_server_from_shared_server_that_was_started_on_specific_port() {
+            var port = randomPort();
+            var sharedServer = ImpServer.httpTemplate()
+                    .alwaysRespondWithStatus(200)
+                    .andTextBody("some text")
+                    .andNoAdditionalHeaders()
+                    .startSharedOnPort(port);
+            try {
+                sharedServer
+                        .borrow()
+                        .alwaysRespondWithStatus(400)
+                        .andTextBody("changed text")
+                        .andNoAdditionalHeaders()
+                        .useServer(borrowedServer -> {
+                            assertThat(borrowedServer.port()).isEqualTo(port);
+                            var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
+                                    .join();
+
+                            assertThat(response.statusCode()).isEqualTo(400);
+                            assertThat(response.body()).isEqualTo("changed text");
+                            assertThat(response.headers().map())
+                                    .hasSize(3)
+                                    .containsKeys("Content-Type", "Content-Length", "date");
+                            assertThat(borrowedServer.statistics().hitCount()).isOne();
+                            assertThat(borrowedServer.statistics().missCount()).isZero();
+                        });
+                assertThat(sharedServer.statistics().hitCount()).isZero();
+                assertThat(sharedServer.statistics().missCount()).isZero();
+                assertThat(sharedServer.isDisposed()).isFalse();
+            } finally {
+                sharedServer.dispose();
+            }
+        }
+
         void useDefaultSharedServer(ThrowingConsumer<ImpShared> consumer) {
             var originalBody = "some text";
             int originalStatus = 200;
@@ -2104,362 +2185,373 @@ public class ImpServerIntegrationTest implements FastTest {
         }
     }
 
-    @Test
-    @DisplayName("'alwaysRespondWithStatus' should fail immediately if provided invalid http status")
-    void alwaysrespondwithstatus_should_fail_immediately_if_provided_invalid_http_status() {
-        for (var invalidHttpStatusCode : List.of(-1, 1, 99, 104, 512, Integer.MAX_VALUE)) {
-            assertThatExceptionOfType(IllegalArgumentException.class)
-                    .as("should reject http status code [%d]", invalidHttpStatusCode)
-                    .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespondWithStatus(invalidHttpStatusCode))
-                    .withMessage("Invalid http status code [%d]", invalidHttpStatusCode);
+    @Nested
+    class FailFastSuite {
+
+        @Test
+        @DisplayName("'alwaysRespondWithStatus' should fail immediately if provided invalid http status")
+        void alwaysrespondwithstatus_should_fail_immediately_if_provided_invalid_http_status() {
+            for (var invalidHttpStatusCode : List.of(-1, 1, 99, 104, 512, Integer.MAX_VALUE)) {
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .as("should reject http status code [%d]", invalidHttpStatusCode)
+                        .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespondWithStatus(invalidHttpStatusCode))
+                        .withMessage("Invalid http status code [%d]", invalidHttpStatusCode);
+            }
         }
-    }
 
-    @Test
-    @DisplayName("'alwaysRespondWithStatus' should work for all known status codes")
-    void alwaysrespondwithstatus_should_work_for_all_known_status_codes() {
-        for (var httpStatus : ImpHttpStatus.values()) {
-            assertThatNoException()
-                    .as("Should work for http status code [%d]", httpStatus.value())
-                    .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespondWithStatus(httpStatus.value()));
+        @Test
+        @DisplayName("'alwaysRespondWithStatus' should work for all known status codes")
+        void alwaysrespondwithstatus_should_work_for_all_known_status_codes() {
+            for (var httpStatus : ImpHttpStatus.values()) {
+                assertThatNoException()
+                        .as("Should work for http status code [%d]", httpStatus.value())
+                        .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespondWithStatus(httpStatus.value()));
+            }
         }
-    }
 
-    @Test
-    @DisplayName("'andTextBody' should fail immediately if provided null")
-    void andtextbody_should_fail_immediately_if_provided_null() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() ->
-                        ImpServer.httpTemplate().alwaysRespondWithStatus(200).andTextBody(null))
-                .withMessage("nulls are not supported - textBody");
-    }
-
-    @Test
-    @DisplayName("'andXmlBody' should fail immediately if provided null")
-    void andxmlbody_should_fail_immediately_if_provided_null() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() ->
-                        ImpServer.httpTemplate().alwaysRespondWithStatus(200).andXmlBody(null))
-                .withMessage("nulls are not supported - xmlBody");
-    }
-
-    @Test
-    @DisplayName("'andJsonBody' should fail immediately if provided null")
-    void andjsonbody_should_fail_immediately_if_provided_null() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() ->
-                        ImpServer.httpTemplate().alwaysRespondWithStatus(200).andJsonBody(null))
-                .withMessage("nulls are not supported - jsonBody");
-    }
-
-    @Test
-    @DisplayName("'andCustomContentTypeStream' should fail immediately if provided null contentType")
-    void andcustomcontenttypestream_should_fail_immediately_if_provided_null_contenttype() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .alwaysRespondWithStatus(200)
-                        .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0])))
-                .withMessage("null or blank strings are not supported - contentType");
-    }
-
-    @Test
-    @DisplayName("'andCustomContentTypeStream' should fail immediately if provided null streamSupplier")
-    void andcustomcontenttypestream_should_fail_immediately_if_provided_null_streamsupplier() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .alwaysRespondWithStatus(200)
-                        .andCustomContentTypeStream("someType", null))
-                .withMessage("nulls are not supported - dataStreamSupplier");
-    }
-
-    @Test
-    @DisplayName(
-            "'andCustomContentTypeStream' should fail immediately if provided null streamSupplier and contentTypeqq")
-    void andcustomcontenttypestream_should_fail_immediately_if_provided_null_streamsupplier_and_contenttypeqq() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() ->
-                        ImpServer.httpTemplate().alwaysRespondWithStatus(200).andCustomContentTypeStream(null, null))
-                .withMessage("null or blank strings are not supported - contentType");
-    }
-
-    @Test
-    @DisplayName("'andCustomContentTypeStream' should fail immediately if provided empty contentType")
-    void andcustomcontenttypestream_should_fail_immediately_if_provided_empty_contenttype() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .alwaysRespondWithStatus(200)
-                        .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0])))
-                .withMessage("null or blank strings are not supported - contentType");
-    }
-
-    @Test
-    @DisplayName("'andCustomContentTypeStream' should fail immediately if provided blank contentType")
-    void andcustomcontenttypestream_should_fail_immediately_if_provided_blank_contenttype() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .alwaysRespondWithStatus(200)
-                        .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0])))
-                .withMessage("null or blank strings are not supported - contentType");
-    }
-
-    @Test
-    @DisplayName("'onRequestMatching' when null then throw exception")
-    void onrequestmatching_when_null_then_throw_exception() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("id", null))
-                .withMessage("nulls are not supported - consumer");
-    }
-
-    @Test
-    @DisplayName("'onRequestMatching' when null id then throw exception")
-    void onrequestmatching_when_null_id_then_throw_exception() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching(null, b -> {}))
-                .withMessage("null or blank strings are not supported - id");
-    }
-
-    @Test
-    @DisplayName("'onRequestMatching' when empty id then throw exception")
-    void onrequestmatching_when_empty_id_then_throw_exception() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("", b -> {}))
-                .withMessage("null or blank strings are not supported - id");
-    }
-
-    @Test
-    @DisplayName("'onRequestMatching' when blank id then throw exception")
-    void onrequestmatching_when_blank_id_then_throw_exception() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("  ", b -> {}))
-                .withMessage("null or blank strings are not supported - id");
-    }
-
-    @Test
-    @DisplayName("'onRequestMatching' when noop consumer then ok")
-    void onrequestmatching_when_noop_consumer_then_ok() {
-        assertThatNoException().isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("id", builder -> {}));
-    }
-
-    @Test
-    @DisplayName("'onRequestMatching' when consumer sets null headers predicate, then fail immediately")
-    void onrequestmatching_when_consumer_sets_null_headers_predicate_then_fail_immediately() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() ->
-                        ImpServer.httpTemplate().onRequestMatching("id", builder -> builder.headersPredicate(null)))
-                .withMessage("nulls are not supported - headersPredicate");
-    }
-
-    @Test
-    @DisplayName("'onRequestMatching' when consumer sets normal headers predicate then ok")
-    void onrequestmatching_when_consumer_sets_normal_headers_predicate_then_ok() {
-        assertThatNoException().isThrownBy(() -> ImpServer.httpTemplate()
-                .onRequestMatching("id", builder -> builder.headersPredicate(p -> true)));
-    }
-
-    @Test
-    @DisplayName("'onRequestMatching' should fail immediately if provided invalid http status")
-    void onrequestmatching_should_fail_immediately_if_provided_invalid_http_status() {
-        for (var invalidHttpStatusCode : List.of(-1, 1, 99, 104, 512, Integer.MAX_VALUE)) {
+        @Test
+        @DisplayName("'andTextBody' should fail immediately if provided null")
+        void andtextbody_should_fail_immediately_if_provided_null() {
+            //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .as("should reject http status code [%d]", invalidHttpStatusCode)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespondWithStatus(200)
+                            .andTextBody(null))
+                    .withMessage("nulls are not supported - textBody");
+        }
+
+        @Test
+        @DisplayName("'andXmlBody' should fail immediately if provided null")
+        void andxmlbody_should_fail_immediately_if_provided_null() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespondWithStatus(200)
+                            .andXmlBody(null))
+                    .withMessage("nulls are not supported - xmlBody");
+        }
+
+        @Test
+        @DisplayName("'andJsonBody' should fail immediately if provided null")
+        void andjsonbody_should_fail_immediately_if_provided_null() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespondWithStatus(200)
+                            .andJsonBody(null))
+                    .withMessage("nulls are not supported - jsonBody");
+        }
+
+        @Test
+        @DisplayName("'andCustomContentTypeStream' should fail immediately if provided null contentType")
+        void andcustomcontenttypestream_should_fail_immediately_if_provided_null_contenttype() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespondWithStatus(200)
+                            .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0])))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
+
+        @Test
+        @DisplayName("'andCustomContentTypeStream' should fail immediately if provided null streamSupplier")
+        void andcustomcontenttypestream_should_fail_immediately_if_provided_null_streamsupplier() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespondWithStatus(200)
+                            .andCustomContentTypeStream("someType", null))
+                    .withMessage("nulls are not supported - dataStreamSupplier");
+        }
+
+        @Test
+        @DisplayName(
+                "'andCustomContentTypeStream' should fail immediately if provided null streamSupplier and contentTypeqq")
+        void andcustomcontenttypestream_should_fail_immediately_if_provided_null_streamsupplier_and_contenttypeqq() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespondWithStatus(200)
+                            .andCustomContentTypeStream(null, null))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
+
+        @Test
+        @DisplayName("'andCustomContentTypeStream' should fail immediately if provided empty contentType")
+        void andcustomcontenttypestream_should_fail_immediately_if_provided_empty_contenttype() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespondWithStatus(200)
+                            .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0])))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
+
+        @Test
+        @DisplayName("'andCustomContentTypeStream' should fail immediately if provided blank contentType")
+        void andcustomcontenttypestream_should_fail_immediately_if_provided_blank_contenttype() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespondWithStatus(200)
+                            .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0])))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
+
+        @Test
+        @DisplayName("'onRequestMatching' when null then throw exception")
+        void onrequestmatching_when_null_then_throw_exception() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("id", null))
+                    .withMessage("nulls are not supported - consumer");
+        }
+
+        @Test
+        @DisplayName("'onRequestMatching' when null id then throw exception")
+        void onrequestmatching_when_null_id_then_throw_exception() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching(null, b -> {}))
+                    .withMessage("null or blank strings are not supported - id");
+        }
+
+        @Test
+        @DisplayName("'onRequestMatching' when empty id then throw exception")
+        void onrequestmatching_when_empty_id_then_throw_exception() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("", b -> {}))
+                    .withMessage("null or blank strings are not supported - id");
+        }
+
+        @Test
+        @DisplayName("'onRequestMatching' when blank id then throw exception")
+        void onrequestmatching_when_blank_id_then_throw_exception() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("  ", b -> {}))
+                    .withMessage("null or blank strings are not supported - id");
+        }
+
+        @Test
+        @DisplayName("'onRequestMatching' when noop consumer then ok")
+        void onrequestmatching_when_noop_consumer_then_ok() {
+            assertThatNoException().isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("id", builder -> {}));
+        }
+
+        @Test
+        @DisplayName("'onRequestMatching' when consumer sets null headers predicate, then fail immediately")
+        void onrequestmatching_when_consumer_sets_null_headers_predicate_then_fail_immediately() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() ->
+                            ImpServer.httpTemplate().onRequestMatching("id", builder -> builder.headersPredicate(null)))
+                    .withMessage("nulls are not supported - headersPredicate");
+        }
+
+        @Test
+        @DisplayName("'onRequestMatching' when consumer sets normal headers predicate then ok")
+        void onrequestmatching_when_consumer_sets_normal_headers_predicate_then_ok() {
+            assertThatNoException().isThrownBy(() -> ImpServer.httpTemplate()
+                    .onRequestMatching("id", builder -> builder.headersPredicate(p -> true)));
+        }
+
+        @Test
+        @DisplayName("'onRequestMatching' should fail immediately if provided invalid http status")
+        void onrequestmatching_should_fail_immediately_if_provided_invalid_http_status() {
+            for (var invalidHttpStatusCode : List.of(-1, 1, 99, 104, 512, Integer.MAX_VALUE)) {
+                assertThatExceptionOfType(IllegalArgumentException.class)
+                        .as("should reject http status code [%d]", invalidHttpStatusCode)
+                        .isThrownBy(() -> ImpServer.httpTemplate()
+                                .onRequestMatching("id", r -> {})
+                                .respondWithStatus(invalidHttpStatusCode))
+                        .withMessage("Invalid http status code [%d]", invalidHttpStatusCode);
+            }
+        }
+
+        @Test
+        @DisplayName("'onRequestMatching' should work all known status codes")
+        void onrequestmatching_should_work_all_known_status_codes() {
+            for (var httpStatus : ImpHttpStatus.values()) {
+                assertThatNoException()
+                        .as("Should work for http status code [%d]", httpStatus.value())
+                        .isThrownBy(() -> ImpServer.httpTemplate()
+                                .onRequestMatching("id", r -> {})
+                                .respondWithStatus(httpStatus.value()));
+            }
+        }
+
+        @Test
+        @DisplayName("'onRequestMatching andTextBody' should reject null")
+        void onrequestmatching_andtextbody_should_reject_null() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate()
                             .onRequestMatching("id", r -> {})
-                            .respondWithStatus(invalidHttpStatusCode))
-                    .withMessage("Invalid http status code [%d]", invalidHttpStatusCode);
+                            .respondWithStatus(200)
+                            .andTextBody(null))
+                    .withMessage("nulls are not supported - textBody");
         }
-    }
 
-    @Test
-    @DisplayName("'onRequestMatching' should work all known status codes")
-    void onrequestmatching_should_work_all_known_status_codes() {
-        for (var httpStatus : ImpHttpStatus.values()) {
-            assertThatNoException()
-                    .as("Should work for http status code [%d]", httpStatus.value())
+        @Test
+        @DisplayName("'onRequestMatching andJsonBody' should reject null")
+        void onrequestmatching_andjsonbody_should_reject_null() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate()
                             .onRequestMatching("id", r -> {})
-                            .respondWithStatus(httpStatus.value()));
+                            .respondWithStatus(200)
+                            .andJsonBody(null))
+                    .withMessage("nulls are not supported - jsonBody");
         }
-    }
 
-    @Test
-    @DisplayName("'onRequestMatching andTextBody' should reject null")
-    void onrequestmatching_andtextbody_should_reject_null() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andTextBody(null))
-                .withMessage("nulls are not supported - textBody");
-    }
+        @Test
+        @DisplayName("'onRequestMatching andXmlBody' should reject null")
+        void onrequestmatching_andxmlbody_should_reject_null() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andXmlBody(null))
+                    .withMessage("nulls are not supported - xmlBody");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching andJsonBody' should reject null")
-    void onrequestmatching_andjsonbody_should_reject_null() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andJsonBody(null))
-                .withMessage("nulls are not supported - jsonBody");
-    }
+        @Test
+        @DisplayName("'onRequestMatching customContentTypeStream' should reject null content type")
+        void onrequestmatching_customcontenttypestream_should_reject_null_content_type() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0])))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching andXmlBody' should reject null")
-    void onrequestmatching_andxmlbody_should_reject_null() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andXmlBody(null))
-                .withMessage("nulls are not supported - xmlBody");
-    }
+        @Test
+        @DisplayName("'onRequestMatching customContentTypeStream' should reject empty content type")
+        void onrequestmatching_customcontenttypestream_should_reject_empty_content_type() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0])))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching customContentTypeStream' should reject null content type")
-    void onrequestmatching_customcontenttypestream_should_reject_null_content_type() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0])))
-                .withMessage("null or blank strings are not supported - contentType");
-    }
+        @Test
+        @DisplayName("'onRequestMatching customContentTypeStream' should reject blank content type")
+        void onrequestmatching_customcontenttypestream_should_reject_blank_content_type() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0])))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching customContentTypeStream' should reject empty content type")
-    void onrequestmatching_customcontenttypestream_should_reject_empty_content_type() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0])))
-                .withMessage("null or blank strings are not supported - contentType");
-    }
+        @Test
+        @DisplayName("'onRequestMatching customContentTypeStream' should reject null dataStreamSupplier")
+        void onrequestmatching_customcontenttypestream_should_reject_null_datastreamsupplier() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andCustomContentTypeStream("contentType", null))
+                    .withMessage("nulls are not supported - dataStreamSupplier");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching customContentTypeStream' should reject blank content type")
-    void onrequestmatching_customcontenttypestream_should_reject_blank_content_type() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0])))
-                .withMessage("null or blank strings are not supported - contentType");
-    }
+        @Test
+        @DisplayName("'onRequestMatching andDataStreamBody' should reject null dataStreamBody")
+        void onrequestmatching_anddatastreambody_should_reject_null_datastreambody() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andDataStreamBody(null))
+                    .withMessage("nulls are not supported - dataStreamSupplier");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching customContentTypeStream' should reject null dataStreamSupplier")
-    void onrequestmatching_customcontenttypestream_should_reject_null_datastreamsupplier() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andCustomContentTypeStream("contentType", null))
-                .withMessage("nulls are not supported - dataStreamSupplier");
-    }
+        @Test
+        @DisplayName(
+                "'onRequestMatching customContentTypeStream' should reject null contentType with dataStreamSupplier")
+        void onrequestmatching_customcontenttypestream_should_reject_null_contenttype_with_datastreamsupplier() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andCustomContentTypeStream(null, null))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching andDataStreamBody' should reject null dataStreamBody")
-    void onrequestmatching_anddatastreambody_should_reject_null_datastreambody() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andDataStreamBody(null))
-                .withMessage("nulls are not supported - dataStreamSupplier");
-    }
+        @Test
+        @DisplayName("'onRequestMatching andAdditionalHeaders' should reject null headers")
+        void onrequestmatching_andadditionalheaders_should_reject_null_headers() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(RuntimeException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andAdditionalHeaders(null))
+                    .withMessage("nulls are not supported - headers");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching customContentTypeStream' should reject null contentType with dataStreamSupplier")
-    void onrequestmatching_customcontenttypestream_should_reject_null_contenttype_with_datastreamsupplier() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andCustomContentTypeStream(null, null))
-                .withMessage("null or blank strings are not supported - contentType");
-    }
+        @Test
+        @DisplayName("'onRequestMatching andAdditionalHeaders' should reject nulls entry in map immediately")
+        void onrequestmatching_andadditionalheaders_should_reject_nulls_entry_in_map_immediately() {
+            var headers = new HashMap<String, List<String>>();
+            headers.put(null, null);
+            assertThatExceptionOfType(RuntimeException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andAdditionalHeaders(headers))
+                    .withMessage("null key are not supported in headers, but found null key in entry [ null=null ]");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching andAdditionalHeaders' should reject null headers")
-    void onrequestmatching_andadditionalheaders_should_reject_null_headers() {
-        //noinspection DataFlowIssue
-        assertThatExceptionOfType(RuntimeException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andTextBody("")
-                        .andAdditionalHeaders(null))
-                .withMessage("nulls are not supported - headers");
-    }
+        @Test
+        @DisplayName("'onRequestMatching andAdditionalHeaders' should reject nulls keys in map immediately")
+        void onrequestmatching_andadditionalheaders_should_reject_nulls_keys_in_map_immediately() {
+            var headers = new HashMap<String, List<String>>();
+            headers.put(null, List.of("something"));
+            assertThatExceptionOfType(RuntimeException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andAdditionalHeaders(headers))
+                    .withMessage(
+                            "null key are not supported in headers, but found null key in entry [ null=[something] ]");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching andAdditionalHeaders' should reject nulls entry in map immediately")
-    void onrequestmatching_andadditionalheaders_should_reject_nulls_entry_in_map_immediately() {
-        var headers = new HashMap<String, List<String>>();
-        headers.put(null, null);
-        assertThatExceptionOfType(RuntimeException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andTextBody("")
-                        .andAdditionalHeaders(headers))
-                .withMessage("null key are not supported in headers, but found null key in entry [ null=null ]");
-    }
+        @Test
+        @DisplayName("'onRequestMatching andAdditionalHeaders' should reject nulls values in map immediately")
+        void onrequestmatching_andadditionalheaders_should_reject_nulls_values_in_map_immediately() {
+            var headers = new HashMap<String, List<String>>();
+            headers.put("something", null);
+            assertThatExceptionOfType(RuntimeException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .onRequestMatching("id", r -> {})
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andAdditionalHeaders(headers))
+                    .withMessage(
+                            "null values are not supported in headers, but found null values in entry [ something=null ]");
+        }
 
-    @Test
-    @DisplayName("'onRequestMatching andAdditionalHeaders' should reject nulls keys in map immediately")
-    void onrequestmatching_andadditionalheaders_should_reject_nulls_keys_in_map_immediately() {
-        var headers = new HashMap<String, List<String>>();
-        headers.put(null, List.of("something"));
-        assertThatExceptionOfType(RuntimeException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andTextBody("")
-                        .andAdditionalHeaders(headers))
-                .withMessage("null key are not supported in headers, but found null key in entry [ null=[something] ]");
-    }
-
-    @Test
-    @DisplayName("'onRequestMatching andAdditionalHeaders' should reject nulls values in map immediately")
-    void onrequestmatching_andadditionalheaders_should_reject_nulls_values_in_map_immediately() {
-        var headers = new HashMap<String, List<String>>();
-        headers.put("something", null);
-        assertThatExceptionOfType(RuntimeException.class)
-                .isThrownBy(() -> ImpServer.httpTemplate()
-                        .onRequestMatching("id", r -> {})
-                        .respondWithStatus(200)
-                        .andTextBody("")
-                        .andAdditionalHeaders(headers))
-                .withMessage(
-                        "null values are not supported in headers, but found null values in entry [ something=null ]");
-    }
-
-    @Test
-    @DisplayName("should fail-fast when attempt to reassign headers matchers")
-    void should_fail_fast_when_attempt_to_reassign_headers_matchers() {
-        var contentStart = ImpServer.httpTemplate();
-        assertThatExceptionOfType(IllegalStateException.class)
-                .isThrownBy(() -> contentStart.onRequestMatching(
-                        "anyId", request -> request.headersPredicate(h -> true).headersPredicate(h -> true)))
-                .withMessage(
-                        "Attempting to reassign 'headersPredicate'. Assign operations for 'headersPredicate' are not additive and should be done only once.");
+        @Test
+        @DisplayName("should fail-fast when attempt to reassign headers matchers")
+        void should_fail_fast_when_attempt_to_reassign_headers_matchers() {
+            var contentStart = ImpServer.httpTemplate();
+            assertThatExceptionOfType(IllegalStateException.class)
+                    .isThrownBy(
+                            () -> contentStart.onRequestMatching("anyId", request -> request.headersPredicate(h -> true)
+                                    .headersPredicate(h -> true)))
+                    .withMessage(
+                            "Attempting to reassign 'headersPredicate'. Assign operations for 'headersPredicate' are not additive and should be done only once.");
+        }
     }
 }
