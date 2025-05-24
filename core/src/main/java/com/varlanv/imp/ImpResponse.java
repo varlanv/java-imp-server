@@ -18,7 +18,7 @@ public final class ImpResponse {
         this.headersOperator = headersOperator;
     }
 
-   public ImpSupplier<byte[]> body() {
+    public ImpSupplier<byte[]> body() {
         return body;
     }
 
@@ -59,10 +59,10 @@ public final class ImpResponse {
 
         public BuilderHeaders body(ImpSupplier<byte[]> body) {
             Preconditions.nonNull(body, "body");
-            return new BuilderHeaders(statusCode, NamedSupplier.from("body",body), headers -> headers);
+            return new BuilderHeaders(statusCode, NamedSupplier.from("body", body), headers -> headers);
         }
 
-         BuilderHeaders trustedBody(NamedSupplier<byte[]> body) {
+        BuilderHeaders trustedBody(NamedSupplier<byte[]> body) {
             Preconditions.nonNull(body, "body");
             return new BuilderHeaders(statusCode, body, headers -> headers);
         }

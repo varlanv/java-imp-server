@@ -1239,7 +1239,8 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("`andCustomContentTypeStream` when provided supplier fails then should return fallback 418 response")
+        @DisplayName(
+                "`andCustomContentTypeStream` when provided supplier fails then should return fallback 418 response")
         void andcustomcontenttypestream_when_provided_supplier_fails_then_should_return_fallback_418_response() {
             useDefaultSharedServer(sharedServer -> {
                 var newStatus = 200;
@@ -1248,18 +1249,19 @@ public class ImpServerIntegrationTest implements FastTest {
                 sharedServer
                         .borrow()
                         .alwaysRespondWithStatus(newStatus)
-                        .andCustomContentTypeStream(
-                                newContentType,
-                                () -> {
-                                    throw dataSupplierException;
-                                })
+                        .andCustomContentTypeStream(newContentType, () -> {
+                            throw dataSupplierException;
+                        })
                         .andNoAdditionalHeaders()
                         .useServer(borrowedServer -> {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.body()).isEqualTo("Failed to read response body supplier, provided by `andCustomContentTypeStream` method. " +
-                                "Message from exception thrown by provided supplier: %s", dataSupplierException.getMessage());
+                            assertThat(response.body())
+                                    .isEqualTo(
+                                            "Failed to read response body supplier, provided by `andCustomContentTypeStream` method. "
+                                                    + "Message from exception thrown by provided supplier: %s",
+                                            dataSupplierException.getMessage());
                             assertThat(response.statusCode()).isEqualTo(418);
                             assertThat(response.headers().map()).containsEntry("content-type", List.of(newContentType));
                         });
@@ -1275,19 +1277,22 @@ public class ImpServerIntegrationTest implements FastTest {
                 sharedServer
                         .borrow()
                         .alwaysRespondWithStatus(newStatus)
-                        .andDataStreamBody(
-                                () -> {
-                                    throw dataSupplierException;
-                                })
+                        .andDataStreamBody(() -> {
+                            throw dataSupplierException;
+                        })
                         .andNoAdditionalHeaders()
                         .useServer(borrowedServer -> {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.body()).isEqualTo("Failed to read response body supplier, provided by `andDataStreamBody` method. " +
-                                "Message from exception thrown by provided supplier: %s", dataSupplierException.getMessage());
+                            assertThat(response.body())
+                                    .isEqualTo(
+                                            "Failed to read response body supplier, provided by `andDataStreamBody` method. "
+                                                    + "Message from exception thrown by provided supplier: %s",
+                                            dataSupplierException.getMessage());
                             assertThat(response.statusCode()).isEqualTo(418);
-                            assertThat(response.headers().map()).containsEntry("content-type", List.of("application/octet-stream"));
+                            assertThat(response.headers().map())
+                                    .containsEntry("content-type", List.of("application/octet-stream"));
                         });
             });
         }

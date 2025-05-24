@@ -9,8 +9,6 @@ import java.util.Map;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Range;
 
-import javax.naming.Name;
-
 public final class ImpBorrowedSpec {
 
     private final DefaultImpShared parent;
@@ -35,23 +33,31 @@ public final class ImpBorrowedSpec {
 
         public AlwaysHeaders andTextBody(String textBody) {
             Preconditions.nonNull(textBody, "textBody");
-            return defaultImpTemplate(ImpContentType.PLAIN_TEXT, NamedSupplier.from("andTextBody",() -> textBody.getBytes(StandardCharsets.UTF_8)));
+            return defaultImpTemplate(
+                    ImpContentType.PLAIN_TEXT,
+                    NamedSupplier.from("andTextBody", () -> textBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public AlwaysHeaders andJsonBody(@Language("json") String jsonBody) {
             Preconditions.nonNull(jsonBody, "jsonBody");
-            return defaultImpTemplate(ImpContentType.JSON, NamedSupplier.from("andJsonBody",() -> jsonBody.getBytes(StandardCharsets.UTF_8)));
+            return defaultImpTemplate(
+                    ImpContentType.JSON,
+                    NamedSupplier.from("andJsonBody", () -> jsonBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public AlwaysHeaders andXmlBody(@Language("xml") String xmlBody) {
             Preconditions.nonNull(xmlBody, "xmlBody");
-            return defaultImpTemplate(ImpContentType.XML, NamedSupplier.from("andXmlBody",() -> xmlBody.getBytes(StandardCharsets.UTF_8)));
+            return defaultImpTemplate(
+                    ImpContentType.XML,
+                    NamedSupplier.from("andXmlBody", () -> xmlBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public AlwaysHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return defaultImpTemplate(
-                    ImpContentType.OCTET_STREAM, NamedSupplier.from("andDataStreamBody",() -> dataStreamSupplier.get().readAllBytes()));
+                    ImpContentType.OCTET_STREAM,
+                    NamedSupplier.from(
+                            "andDataStreamBody", () -> dataStreamSupplier.get().readAllBytes()));
         }
 
         public AlwaysHeaders andCustomContentTypeStream(
@@ -59,7 +65,9 @@ public final class ImpBorrowedSpec {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return defaultImpTemplate(
-                    contentType, NamedSupplier.from("andCustomContentTypeStream",() -> dataStreamSupplier.get().readAllBytes()));
+                    contentType, NamedSupplier.from("andCustomContentTypeStream", () -> dataStreamSupplier
+                            .get()
+                            .readAllBytes()));
         }
 
         private AlwaysHeaders defaultImpTemplate(CharSequence contentType, NamedSupplier<byte[]> bodySupplier) {

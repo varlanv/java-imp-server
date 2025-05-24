@@ -74,8 +74,11 @@ final class DefaultImpTemplate implements ImpTemplate {
                 responseBytes = trustedBodySupplier.get();
                 responseStatus = impResponse.statusCode().value();
             } catch (Exception e) {
-                responseBytes = String.format("Failed to read response body supplier, provided by `%s` method. " +
-                    "Message from exception thrown by provided supplier: %s", trustedBodySupplier.name(), e.getMessage()).getBytes(StandardCharsets.UTF_8);
+                responseBytes = String.format(
+                                "Failed to read response body supplier, provided by `%s` method. "
+                                        + "Message from exception thrown by provided supplier: %s",
+                                trustedBodySupplier.name(), e.getMessage())
+                        .getBytes(StandardCharsets.UTF_8);
                 responseStatus = 418;
             }
         }
