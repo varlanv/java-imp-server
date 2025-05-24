@@ -15,4 +15,14 @@ public final class ImpUrlMatch {
         Preconditions.nonNull(pattern, "pattern");
         return urlString.matches(pattern);
     }
+
+    public boolean urlContains(String substring) {
+        Preconditions.nonNull(substring, "substring");
+        return urlString.contains(substring);
+    }
+
+    public boolean urlContainsIgnoreCase(String substring) {
+        Preconditions.nonNull(substring, "substring");
+        return urlString.toLowerCase().contains(substring.toLowerCase());
+    }
 }

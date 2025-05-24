@@ -1712,6 +1712,107 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
+        @DisplayName("should return error when fail to match by url predicate 'urlContains' at specific path")
+        void should_return_error_when_fail_to_match_by_url_predicate_urlcontains_at_specific_path() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlContains("me/pa")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(
+                                                String.format("http://localhost:%d/some/Path", impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body()).isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. " +
+                    "Available matcher IDs: [any]");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should successfully match by url predicate 'urlContains' at specific path")
+        void should_successfully_match_by_url_predicate_urlcontains_at_specific_path() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlContains("ome/P")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(
+                                                String.format("http://localhost:%d/some/Path", impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body()).isEqualTo("response body");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should successfully match by url predicate 'urlContainsIgnoreCase' at specific path")
+        void should_successfully_match_by_url_predicate_urlcontainsignorecase_at_specific_path() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlContainsIgnoreCase("ome/p")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(
+                                                String.format("http://localhost:%d/some/Path", impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body()).isEqualTo("response body");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should return error when fail to match by url predicate 'urlContainsIgnoreCase' at specific path")
+        void should_return_error_when_fail_to_match_by_url_predicate_urlcontainsignorecase_at_specific_path() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlContainsIgnoreCase("ome/ppp")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(
+                                                String.format("http://localhost:%d/some/Path", impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body()).isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
         @DisplayName("should fail when match success match by url predicate but fail to match by body")
         void should_fail_when_match_success_match_by_url_predicate_but_fail_to_match_by_body() {
             var subject = ImpServer.httpTemplate()
