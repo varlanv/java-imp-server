@@ -1729,8 +1729,9 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. " +
-                    "Available matcher IDs: [any]");
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
+                                + "Available matcher IDs: [any]");
                 var responseHeaders = response.headers().map();
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
@@ -1788,6 +1789,220 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
+        @DisplayName("should successfully match by url predicate 'hasQueryParamKey'")
+        void should_successfully_match_by_url_predicate_hasqueryparamkey() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParamKey("query1")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format(
+                                                "http://localhost:%d/some/path?query1=param1&query2=param2&qw",
+                                                impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body()).isEqualTo("response body");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should successfully match by url predicate 'hasQueryParamKey' when query value is not present")
+        void should_successfully_match_by_url_predicate_hasqueryparamkey_when_query_value_is_not_present() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParamKey("qw")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format(
+                                                "http://localhost:%d/some/path?query1=param1&query2=param2&qw",
+                                                impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body()).isEqualTo("response body");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should successfully match by url predicate 'hasQueryParamKey' when query value is empty after =")
+        void should_successfully_match_by_url_predicate_hasqueryparamkey_when_query_value_is_empty_after() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParamKey("qw")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format(
+                                                "http://localhost:%d/some/path?query1=param1&query2=param2&qw=",
+                                                impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body()).isEqualTo("response body");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should return error when fail to match by url predicate 'hasQueryParamKey'")
+        void should_return_error_when_fail_to_match_by_url_predicate_hasqueryparamkey() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParamKey("query3")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format(
+                                                "http://localhost:%d/some/path?query1=param1&query2=param2&qw",
+                                                impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
+                                + "Available matcher IDs: [any]");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should return error when query is empty but request to match by url predicate 'hasQueryParamKey'")
+        void should_return_error_when_query_is_empty_but_request_to_match_by_url_predicate_hasqueryparamkey() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParamKey("query1")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(
+                                                String.format("http://localhost:%d/some/path", impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
+                                + "Available matcher IDs: [any]");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should successfully match by url predicate 'hasQueryParam'")
+        void should_successfully_match_by_url_predicate_hasqueryparam() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param1")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format(
+                                                "http://localhost:%d/some/path?query1=param1&query2=param2&qw",
+                                                impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body()).isEqualTo("response body");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should return error when fail to match by url predicate 'hasQueryParam'")
+        void should_return_error_when_fail_to_match_by_url_predicate_hasqueryparam() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param2")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format(
+                                                "http://localhost:%d/some/path?query1=param1&query2=param2&qw",
+                                                impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
+                                + "Available matcher IDs: [any]");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should return error when query is empty but request to match by url predicate 'hasQueryParam'")
+        void should_return_error_when_query_is_empty_but_request_to_match_by_url_predicate_hasqueryparam() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param2")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(
+                                                String.format("http://localhost:%d/some/path", impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
+                                + "Available matcher IDs: [any]");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
         @DisplayName("should return error when fail to match by url predicate 'urlContainsIgnoreCase' at specific path")
         void should_return_error_when_fail_to_match_by_url_predicate_urlcontainsignorecase_at_specific_path() {
             var subject = ImpServer.httpTemplate()
@@ -1805,7 +2020,9 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                assertThat(response.body())
+                        .isEqualTo(
+                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
                 var responseHeaders = response.headers().map();
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
