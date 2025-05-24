@@ -54,7 +54,7 @@ final class DefaultImpShared implements ImpShared {
         return new ImpStatistics(context.statistics());
     }
 
-    ImpStatistics useWithMutatedContext(ServerConfig config, ImpConsumer<ImpServer> consumer) {
+    ImpStatistics useWithMutatedContext(StartedServerConfig config, ImpConsumer<ImpServer> consumer) {
         var newContext = new ImpServerContext(config, new MutableImpStatistics());
         return borrowedState.doWithLockedContext(newContext, () -> {
             var impServer = new DefaultImpServer(port(), newContext);
@@ -68,7 +68,7 @@ final class DefaultImpShared implements ImpShared {
         return counter::get;
     }
 
-    ServerConfig config() {
+    StartedServerConfig config() {
         return context.config();
     }
 }

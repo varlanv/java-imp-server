@@ -2,10 +2,10 @@ package com.varlanv.imp;
 
 public final class ImpBorrowed {
 
-    private final ServerConfig config;
+    private final StartedServerConfig config;
     private final DefaultImpShared parent;
 
-    ImpBorrowed(ServerConfig config, DefaultImpShared parent) {
+    ImpBorrowed(StartedServerConfig config, DefaultImpShared parent) {
         this.config = config;
         this.parent = parent;
     }

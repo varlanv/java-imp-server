@@ -5,7 +5,7 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 @Value.Style(strictBuilder = true, nullableAnnotation = "org.jspecify.annotations.Nullable")
-interface ServerConfig {
+interface StartedServerConfig {
 
     Server server();
 

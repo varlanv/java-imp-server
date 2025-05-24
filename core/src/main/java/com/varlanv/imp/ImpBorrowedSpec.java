@@ -9,6 +9,8 @@ import java.util.Map;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Range;
 
+import javax.naming.Name;
+
 public final class ImpBorrowedSpec {
 
     private final DefaultImpShared parent;
@@ -33,23 +35,23 @@ public final class ImpBorrowedSpec {
 
         public AlwaysHeaders andTextBody(String textBody) {
             Preconditions.nonNull(textBody, "textBody");
-            return defaultImpTemplate(ImpContentType.PLAIN_TEXT, () -> textBody.getBytes(StandardCharsets.UTF_8));
+            return defaultImpTemplate(ImpContentType.PLAIN_TEXT, NamedSupplier.from("andTextBody",() -> textBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public AlwaysHeaders andJsonBody(@Language("json") String jsonBody) {
             Preconditions.nonNull(jsonBody, "jsonBody");
-            return defaultImpTemplate(ImpContentType.JSON, () -> jsonBody.getBytes(StandardCharsets.UTF_8));
+            return defaultImpTemplate(ImpContentType.JSON, NamedSupplier.from("andJsonBody",() -> jsonBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public AlwaysHeaders andXmlBody(@Language("xml") String xmlBody) {
             Preconditions.nonNull(xmlBody, "xmlBody");
-            return defaultImpTemplate(ImpContentType.XML, () -> xmlBody.getBytes(StandardCharsets.UTF_8));
+            return defaultImpTemplate(ImpContentType.XML, NamedSupplier.from("andXmlBody",() -> xmlBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public AlwaysHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return defaultImpTemplate(
-                    ImpContentType.OCTET_STREAM, () -> dataStreamSupplier.get().readAllBytes());
+                    ImpContentType.OCTET_STREAM, NamedSupplier.from("andDataStreamBody",() -> dataStreamSupplier.get().readAllBytes()));
         }
 
         public AlwaysHeaders andCustomContentTypeStream(
@@ -57,10 +59,10 @@ public final class ImpBorrowedSpec {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return defaultImpTemplate(
-                    contentType, () -> dataStreamSupplier.get().readAllBytes());
+                    contentType, NamedSupplier.from("andCustomContentTypeStream",() -> dataStreamSupplier.get().readAllBytes()));
         }
 
-        private AlwaysHeaders defaultImpTemplate(CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
+        private AlwaysHeaders defaultImpTemplate(CharSequence contentType, NamedSupplier<byte[]> bodySupplier) {
             return new AlwaysHeaders(this, contentType.toString(), bodySupplier);
         }
     }
@@ -69,9 +71,9 @@ public final class ImpBorrowedSpec {
 
         private final AlwaysRespond parent;
         private final String contentType;
-        private final ImpSupplier<byte[]> bodySupplier;
+        private final NamedSupplier<byte[]> bodySupplier;
 
-        public AlwaysHeaders(AlwaysRespond parent, String contentType, ImpSupplier<byte[]> bodySupplier) {
+        AlwaysHeaders(AlwaysRespond parent, String contentType, NamedSupplier<byte[]> bodySupplier) {
             this.parent = parent;
             this.contentType = contentType;
             this.bodySupplier = bodySupplier;
@@ -98,12 +100,12 @@ public final class ImpBorrowedSpec {
 
         private ImpBorrowed toBorrowed(ImpHeadersOperator headersOperator) {
             return new ImpBorrowed(
-                    ImmutableServerConfig.builder()
+                    ImmutableStartedServerConfig.builder()
                             .server(parent.parent.parent.config().server())
                             .decision(new ResponseDecision(
                                     List.of(new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
                                             .trustedStatus(parent.status)
-                                            .body(bodySupplier)
+                                            .trustedBody(bodySupplier)
                                             .trustedHeaders(headersOperator)
                                             .build()))))
                             .fallback(new Teapot(List.of()))

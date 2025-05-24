@@ -8,17 +8,21 @@ import org.jetbrains.annotations.Range;
 
 public final class ImpResponse {
 
-    private final ImpSupplier<byte[]> body;
+    private final NamedSupplier<byte[]> body;
     private final ImpHttpStatus statusCode;
     private final ImpHeadersOperator headersOperator;
 
-    public ImpResponse(ImpSupplier<byte[]> body, ImpHttpStatus statusCode, ImpHeadersOperator headersOperator) {
+    ImpResponse(NamedSupplier<byte[]> body, ImpHttpStatus statusCode, ImpHeadersOperator headersOperator) {
         this.body = body;
         this.statusCode = statusCode;
         this.headersOperator = headersOperator;
     }
 
-    public ImpSupplier<byte[]> body() {
+   public ImpSupplier<byte[]> body() {
+        return body;
+    }
+
+    NamedSupplier<byte[]> trustedBody() {
         return body;
     }
 
@@ -55,6 +59,11 @@ public final class ImpResponse {
 
         public BuilderHeaders body(ImpSupplier<byte[]> body) {
             Preconditions.nonNull(body, "body");
+            return new BuilderHeaders(statusCode, NamedSupplier.from("body",body), headers -> headers);
+        }
+
+         BuilderHeaders trustedBody(NamedSupplier<byte[]> body) {
+            Preconditions.nonNull(body, "body");
             return new BuilderHeaders(statusCode, body, headers -> headers);
         }
     }
@@ -62,10 +71,10 @@ public final class ImpResponse {
     public static final class BuilderHeaders {
 
         private final ImpHttpStatus statusCode;
-        private final ImpSupplier<byte[]> body;
+        private final NamedSupplier<byte[]> body;
         private final ImpHeadersOperator headersOperator;
 
-        BuilderHeaders(ImpHttpStatus statusCode, ImpSupplier<byte[]> body, ImpHeadersOperator headersOperator) {
+        BuilderHeaders(ImpHttpStatus statusCode, NamedSupplier<byte[]> body, ImpHeadersOperator headersOperator) {
             this.statusCode = statusCode;
             this.body = body;
             this.headersOperator = headersOperator;
