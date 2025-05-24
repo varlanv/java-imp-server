@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -212,6 +213,18 @@ public interface BaseTest {
             int port, HttpResponse.BodyHandler<T> responseBodyHandler) {
         try {
             var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)))
+                    .build();
+            return sendHttpRequest(request, responseBodyHandler);
+        } catch (Exception e) {
+            return hide(e);
+        }
+    }
+
+    default <T> CompletableFuture<HttpResponse<T>> sendHttpRequestWithBody(
+            int port, String body, HttpResponse.BodyHandler<T> responseBodyHandler) {
+        try {
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)))
+                    .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                     .build();
             return sendHttpRequest(request, responseBodyHandler);
         } catch (Exception e) {

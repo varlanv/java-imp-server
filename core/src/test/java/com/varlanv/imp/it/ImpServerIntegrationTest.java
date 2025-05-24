@@ -1312,6 +1312,195 @@ public class ImpServerIntegrationTest implements FastTest {
                         }
                     });
         }
+
+        @Test
+        @DisplayName("should successfully match by body predicate 'bodyContains'")
+        void should_successfully_match_by_body_predicate_bodycontains() {
+            var requestBody = "Some Text body";
+            var expectedMatch = "Text";
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContains(expectedMatch)))
+                    .respondWithStatus(200)
+                    .andTextBody("any")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body()).isEqualTo("any");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when don't match by body predicate 'bodyContains'")
+        void should_fail_when_don_t_match_by_body_predicate_bodycontains() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContains("text")))
+                    .respondWithStatus(200)
+                    .andTextBody("any")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
+                                + "Available matcher IDs: [any]");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should successfully match by body predicate 'bodyContainsIgnoreCase'")
+        void should_successfully_match_by_body_predicate_bodycontainsignorecase() {
+            var requestBody = "Some Text body";
+            var expectedMatch = "text";
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            "any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase(expectedMatch)))
+                    .respondWithStatus(200)
+                    .andTextBody("any")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body()).isEqualTo("any");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when fail to match by body predicate 'bodyContainsIgnoreCase'")
+        void should_fail_when_fail_to_match_by_body_predicate_bodycontainsignorecase() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("texttt")))
+                    .respondWithStatus(200)
+                    .andTextBody("any")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
+                                + "Available matcher IDs: [any]");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should successfully match by body and headers together")
+        void should_successfully_match_by_body_and_headers_together() {
+            var requestBody = "Some Text body";
+            var requestHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2"));
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("text"))
+                            .headersPredicate(h -> h.containsPair("header1", "value1")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var requestBuilder = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8));
+                requestHeaders.forEach((key,valList) -> valList.forEach(val -> requestBuilder.header(key, val)));
+                var request = requestBuilder.build();
+
+                var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body())
+                        .isEqualTo("response body");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when successfully match by body but fail to match by headers")
+        void should_fail_when_successfully_match_by_body_but_fail_to_match_by_headers() {
+            var requestBody = "Some Text body";
+            var requestHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2"));
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("text"))
+                            .headersPredicate(h -> h.containsPair("header1", "value1qweqwe")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var requestBuilder = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8));
+                requestHeaders.forEach((key,valList) -> valList.forEach(val -> requestBuilder.header(key, val)));
+                var request = requestBuilder.build();
+
+                var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when successfully match by headers but fail to match by body")
+        void should_fail_when_successfully_match_by_headers_but_fail_to_match_by_body() {
+            var requestBody = "Some Text body";
+            var requestHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2"));
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("texttttt"))
+                            .headersPredicate(h -> h.containsPair("header1", "value1")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var requestBuilder = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8));
+                requestHeaders.forEach((key,valList) -> valList.forEach(val -> requestBuilder.header(key, val)));
+                var request = requestBuilder.build();
+
+                var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
     }
 
     @Nested
