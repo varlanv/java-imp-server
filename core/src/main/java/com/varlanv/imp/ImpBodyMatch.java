@@ -32,4 +32,9 @@ public final class ImpBodyMatch {
         Preconditions.nonNull(substring, "substring");
         return stringBodySupplier.get().toLowerCase().contains(substring.toLowerCase());
     }
+
+    public boolean testBodyString(ImpPredicate<String> predicate) {
+        Preconditions.nonNull(predicate, "predicate");
+        return predicate.test(stringBodySupplier.get());
+    }
 }

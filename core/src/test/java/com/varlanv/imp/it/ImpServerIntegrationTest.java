@@ -1394,8 +1394,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var requestBody = "Some Text body";
             var expectedMatch = Pattern.compile(".*ext.*");
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any", request -> request.bodyPredicate(b -> b.bodyMatches(expectedMatch)))
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyMatches(expectedMatch)))
                     .respondWithStatus(200)
                     .andTextBody("any")
                     .andNoAdditionalHeaders()
@@ -1419,8 +1418,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var requestBody = "Some Text body";
             var expectedMatch = Pattern.compile(".*extt.*");
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any", request -> request.bodyPredicate(b -> b.bodyMatches(expectedMatch)))
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyMatches(expectedMatch)))
                     .respondWithStatus(200)
                     .andTextBody("any")
                     .andNoAdditionalHeaders()
@@ -1432,8 +1430,9 @@ public class ImpServerIntegrationTest implements FastTest {
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
                 var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. " +
-                    "Available matcher IDs: [any]");
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
+                                + "Available matcher IDs: [any]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -1556,6 +1555,93 @@ public class ImpServerIntegrationTest implements FastTest {
                                 "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should successfully match by body predicate 'testBodyString'")
+        void should_successfully_match_by_body_predicate_testbodystring() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            "any",
+                            request ->
+                                    request.bodyPredicate(b -> b.testBodyString(bodyString -> !bodyString.isEmpty())))
+                    .respondWithStatus(200)
+                    .andTextBody("any")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body()).isEqualTo("any");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should return error when fail to match by body predicate 'testBodyString'")
+        void should_return_error_when_fail_to_match_by_body_predicate_testbodystring() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.testBodyString(String::isEmpty)))
+                    .respondWithStatus(200)
+                    .andTextBody("any")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body())
+                        .isEqualTo(
+                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should return error when `testBodyString` predicate throws exception")
+        void should_return_error_when_testbodystring_predicate_throws_exception() {
+            var requestBody = "Some Text body";
+            var testBodyStringException = new RuntimeException("testBodyString exception");
+            var matcherId = "matcherId";
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            matcherId,
+                            request -> request.bodyPredicate(b -> b.testBodyString(str -> {
+                                throw testBodyStringException;
+                            })))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body())
+                        .isEqualTo(
+                                "Exception was thrown by request predicate with id [%s]. "
+                                        + "Please check your ImpServer configuration for [%s] request matcher. "
+                                        + "Thrown error is [%s]: %s",
+                                matcherId,
+                                matcherId,
+                                testBodyStringException.getClass().getName(),
+                                testBodyStringException.getMessage());
+                assertThat(responseHeaders).hasSize(2);
             });
         }
     }
