@@ -18,8 +18,17 @@ final class ResponseDecision {
 
     @Nullable ResponseCandidate pick(HttpExchange exchange) {
         for (var candidate : candidates) {
-            if (candidate.requestPredicate().test(exchange)) {
-                return candidate;
+            try {
+                if (candidate.requestPredicate().test(exchange)) {
+                    return candidate;
+                }
+            } catch (Exception e) {
+                ImpLog.error(e);
+                var matcherId = candidate.id();
+                throw new RuntimeException(String.format(
+                        "Exception was thrown by request predicate with id [%s]. Please check your ImpServer configuration for [%s] request matcher. "
+                                + "Thrown error is: %s",
+                        matcherId, matcherId, e.getMessage()));
             }
         }
         return null;

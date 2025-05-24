@@ -3,7 +3,7 @@ package com.varlanv.imp;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
+import java.util.Objects;
 
 final class DefaultImpTemplate implements ImpTemplate {
 
@@ -57,41 +57,40 @@ final class DefaultImpTemplate implements ImpTemplate {
 
     private void process(ImpServerContext serverContext, HttpExchange exchange) throws IOException {
         var serverConfig = serverContext.config();
-        var response = serverConfig.decision().pick(exchange);
         ImpResponse impResponse;
         byte[] responseBytes;
         int responseStatus;
-        if (response == null) {
-            serverContext.statistics().incrementMissCount();
-            impResponse = serverConfig.fallback().apply(exchange);
-            responseBytes = impResponse.body().get();
-            responseStatus = impResponse.statusCode().value();
-        } else {
-            serverContext.statistics().incrementHitCount();
-            impResponse = response.responseSupplier().get();
-            var trustedBodySupplier = impResponse.trustedBody();
-            try {
-                responseBytes = trustedBodySupplier.get();
+        try {
+            ResponseCandidate responseCandidate = serverConfig.decision().pick(exchange);
+            if (responseCandidate == null) {
+                serverContext.statistics().incrementMissCount();
+                impResponse = serverConfig.fallback().apply(exchange);
+                responseBytes = impResponse.body().get();
                 responseStatus = impResponse.statusCode().value();
-            } catch (Exception e) {
-                responseBytes = String.format(
-                                "Failed to read response body supplier, provided by `%s` method. "
-                                        + "Message from exception thrown by provided supplier: %s",
-                                trustedBodySupplier.name(), e.getMessage())
-                        .getBytes(StandardCharsets.UTF_8);
-                responseStatus = 418;
-            }
-        }
-        var originalResponseHeaders = exchange.getResponseHeaders();
-        var newResponseHeaders = impResponse.headersOperator().apply(originalResponseHeaders);
-        if (!originalResponseHeaders.isEmpty()) {
-            for (var entry : new HashSet<>(originalResponseHeaders.entrySet())) {
-                if (!newResponseHeaders.containsKey(entry.getKey())) {
-                    originalResponseHeaders.remove(entry.getKey());
+            } else {
+                serverContext.statistics().incrementHitCount();
+                impResponse = responseCandidate.responseSupplier().get();
+                var trustedBodySupplier = impResponse.trustedBody();
+                try {
+                    responseBytes = trustedBodySupplier.get();
+                    responseStatus = impResponse.statusCode().value();
+                } catch (Exception e) {
+                    responseBytes = String.format(
+                                    "Failed to read response body supplier, provided by `%s` method. "
+                                            + "Message from exception thrown by provided supplier: %s",
+                                    trustedBodySupplier.name(), e.getMessage())
+                            .getBytes(StandardCharsets.UTF_8);
+                    responseStatus = 418;
                 }
             }
+
+            var originalResponseHeaders = exchange.getResponseHeaders();
+            var newResponseHeaders = impResponse.headersOperator().apply(originalResponseHeaders);
+            originalResponseHeaders.putAll(newResponseHeaders);
+        } catch (Exception e) {
+            responseBytes = Objects.requireNonNullElse(e.getMessage(), "").getBytes(StandardCharsets.UTF_8);
+            responseStatus = 418;
         }
-        originalResponseHeaders.putAll(newResponseHeaders);
         if (responseStatus < 200) {
             exchange.sendResponseHeaders(responseStatus, 0);
             exchange.getResponseBody().close();

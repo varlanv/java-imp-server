@@ -83,6 +83,7 @@ public final class InternalConventionPlugin implements Plugin<Project> {
             .orElseGet(() -> extensions.create(InternalConventionExtension.name(), InternalConventionExtension.class));
         internalConventionExtension.getIntegrationTestName().convention("integrationTest");
         internalConventionExtension.getInternalModule().convention(false);
+        internalConventionExtension.getAddSlf4jApiDependency().convention(false);
         var isGradlePlugin = projectName.endsWith("plugin");
         var javaVersion = 11;
         var jdkVersion = 21;
@@ -152,6 +153,11 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                         var immutablesDependency = internalProperties.getLib("immutables-values");
                         dependencies.add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, immutablesDependency);
                         dependencies.add(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME, immutablesDependency);
+
+                        if (internalConventionExtension.getAddSlf4jApiDependency().get()) {
+                            var slf4jApi = internalProperties.getLib("slf4jApi");
+                            dependencies.add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, slf4jApi);
+                        }
 
                         dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, internalProperties.getLib("junit-jupiter-api"));
                         dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, internalProperties.getLib("junit-platform-launcher"));

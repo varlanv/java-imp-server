@@ -11,4 +11,6 @@ public interface InternalConventionExtension {
     Property<String> getIntegrationTestName();
 
     Property<Boolean> getInternalModule();
+
+    Property<Boolean> getAddSlf4jApiDependency();
 }

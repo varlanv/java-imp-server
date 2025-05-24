@@ -1268,14 +1268,44 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("`onRequestMatching` is closure throws exception then fail immediately")
-        void onrequestmatching_is_closure_throws_exception_then_fail_immediately() {
+        @DisplayName("`onRequestMatching` if closure throws exception then fail immediately")
+        void onrequestmatching_if_closure_throws_exception_then_fail_immediately() {
             var matcherException = new RuntimeException("matcher exception");
             assertThatExceptionOfType(RuntimeException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("anyId", request -> {
                         throw matcherException;
                     }))
                     .withMessage(matcherException.getMessage());
+        }
+
+        @Test
+        @DisplayName("should response with errors if `headersPredicate` throws exceptions")
+        void should_response_with_errors_if_headerspredicate_throws_exceptions() {
+            var matcherException = new RuntimeException("matcher exception");
+            var matcherId = "anyId";
+            ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            matcherId,
+                            request -> request.headersPredicate(headers -> {
+                                throw matcherException;
+                            }))
+                    .respondWithStatus(200)
+                    .andTextBody("some text")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort()
+                    .useServer(impServer -> {
+                        var futureResponses = sendManyHttpRequests(5, impServer.port(), HttpResponse.BodyHandlers.ofString());
+                        for (var futureResponse : futureResponses) {
+                            var response = futureResponse.join();
+                            assertThat(response.statusCode()).isEqualTo(418);
+                            assertThat(response.body())
+                                .isEqualTo(
+                                    "Exception was thrown by request predicate with id [%s]. "
+                                        + "Please check your ImpServer configuration for [%s] request matcher. Thrown error is: %s",
+                                    matcherId, matcherId, matcherException.getMessage());
+                        }
+                    });
         }
     }
 
