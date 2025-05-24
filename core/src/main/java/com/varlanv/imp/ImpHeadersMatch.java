@@ -1,5 +1,6 @@
 package com.varlanv.imp;
 
+import com.sun.net.httpserver.Headers;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -8,7 +9,8 @@ public final class ImpHeadersMatch {
 
     private final Map<String, List<String>> headers;
 
-    public ImpHeadersMatch(Map<String, List<String>> headers) {
+    @SuppressWarnings("PMD")
+    ImpHeadersMatch(Headers headers) {
         this.headers = headers;
     }
 

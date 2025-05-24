@@ -8,6 +8,8 @@ final class ImpLog {
 
     private static final Log log;
 
+    private ImpLog() {}
+
     static void debug(Supplier<String> message) {
         log.debug(message);
     }
@@ -51,20 +53,26 @@ final class ImpLog {
                         logger.error(message, exception);
                     }
                 };
-            };
-        } catch (ClassNotFoundException ignore) {
+            }
+        } catch (ClassNotFoundException ignored) {
             // noop
         }
         if (resultLog == null) {
             resultLog = new Log() {
                 @Override
-                public void debug(Supplier<String> message) {}
+                public void debug(Supplier<String> message) {
+                    // noop
+                }
 
                 @Override
-                public void error(Supplier<String> message, Exception exception) {}
+                public void error(Supplier<String> message, Exception exception) {
+                    // noop
+                }
 
                 @Override
-                public void error(String message, Exception exception) {}
+                public void error(String message, Exception exception) {
+                    // noop
+                }
             };
         }
         log = resultLog;

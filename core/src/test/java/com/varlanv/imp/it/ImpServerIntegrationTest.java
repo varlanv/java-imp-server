@@ -1295,15 +1295,20 @@ public class ImpServerIntegrationTest implements FastTest {
                     .rejectNonMatching()
                     .onRandomPort()
                     .useServer(impServer -> {
-                        var futureResponses = sendManyHttpRequests(5, impServer.port(), HttpResponse.BodyHandlers.ofString());
+                        var futureResponses =
+                                sendManyHttpRequests(5, impServer.port(), HttpResponse.BodyHandlers.ofString());
                         for (var futureResponse : futureResponses) {
                             var response = futureResponse.join();
                             assertThat(response.statusCode()).isEqualTo(418);
                             assertThat(response.body())
-                                .isEqualTo(
-                                    "Exception was thrown by request predicate with id [%s]. "
-                                        + "Please check your ImpServer configuration for [%s] request matcher. Thrown error is: %s",
-                                    matcherId, matcherId, matcherException.getMessage());
+                                    .isEqualTo(
+                                            "Exception was thrown by request predicate with id [%s]. "
+                                                    + "Please check your ImpServer configuration for [%s] request matcher. "
+                                                    + "Thrown error is [%s]: %s",
+                                            matcherId,
+                                            matcherId,
+                                            matcherException.getClass().getName(),
+                                            matcherException.getMessage());
                         }
                     });
         }
