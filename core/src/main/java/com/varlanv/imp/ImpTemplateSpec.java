@@ -181,7 +181,8 @@ public final class ImpTemplateSpec {
             var candidates = List.of(new ResponseCandidate(
                     parent.parent.parent.parent.matchId,
                     request -> requestMatch.headersPredicate().test(new ImpHeadersMatch(request.getRequestHeaders()))
-                            && requestMatch.bodyPredicate().test(new ImpBodyMatch(request::getRequestBody)),
+                            && requestMatch.bodyPredicate().test(new ImpBodyMatch(request::getRequestBody))
+                            && requestMatch.urlPredicate().test(new ImpUrlMatch(request.getRequestURI())),
                     () -> ImpResponse.builder()
                             .trustedStatus(parent.parent.parent.status)
                             .body(parent.parent.bodySupplier)

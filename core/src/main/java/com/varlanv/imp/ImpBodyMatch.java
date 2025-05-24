@@ -2,7 +2,7 @@ package com.varlanv.imp;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Pattern;
+import org.intellij.lang.annotations.Language;
 
 public final class ImpBodyMatch {
 
@@ -23,9 +23,9 @@ public final class ImpBodyMatch {
         return stringBodySupplier.get().contains(substring);
     }
 
-    public boolean bodyMatches(Pattern pattern) {
+    public boolean bodyMatches(@Language("regexp") String pattern) {
         Preconditions.nonNull(pattern, "pattern");
-        return pattern.matcher(stringBodySupplier.get()).matches();
+        return stringBodySupplier.get().matches(pattern);
     }
 
     public boolean bodyContainsIgnoreCase(String substring) {

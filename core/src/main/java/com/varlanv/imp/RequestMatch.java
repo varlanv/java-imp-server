@@ -4,10 +4,15 @@ public final class RequestMatch {
 
     private final ImpPredicate<ImpHeadersMatch> headersPredicate;
     private final ImpPredicate<ImpBodyMatch> bodyPredicate;
+    private final ImpPredicate<ImpUrlMatch> urlPredicate;
 
-    public RequestMatch(ImpPredicate<ImpHeadersMatch> headersPredicate, ImpPredicate<ImpBodyMatch> bodyPredicate) {
+    public RequestMatch(
+            ImpPredicate<ImpHeadersMatch> headersPredicate,
+            ImpPredicate<ImpBodyMatch> bodyPredicate,
+            ImpPredicate<ImpUrlMatch> urlPredicate) {
         this.headersPredicate = headersPredicate;
         this.bodyPredicate = bodyPredicate;
+        this.urlPredicate = urlPredicate;
     }
 
     public ImpPredicate<ImpHeadersMatch> headersPredicate() {
@@ -16,5 +21,9 @@ public final class RequestMatch {
 
     public ImpPredicate<ImpBodyMatch> bodyPredicate() {
         return bodyPredicate;
+    }
+
+    public ImpPredicate<ImpUrlMatch> urlPredicate() {
+        return urlPredicate;
     }
 }

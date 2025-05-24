@@ -19,7 +19,6 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.DisplayName;
@@ -1392,9 +1391,8 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should successfully match by body predicate 'bodyMatches'")
         void should_successfully_match_by_body_predicate_bodymatches() {
             var requestBody = "Some Text body";
-            var expectedMatch = Pattern.compile(".*ext.*");
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyMatches(expectedMatch)))
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyMatches(".*ext.*")))
                     .respondWithStatus(200)
                     .andTextBody("any")
                     .andNoAdditionalHeaders()
@@ -1416,9 +1414,8 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when fail to match by body predicate 'bodyMatches'")
         void should_return_error_when_fail_to_match_by_body_predicate_bodymatches() {
             var requestBody = "Some Text body";
-            var expectedMatch = Pattern.compile(".*extt.*");
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyMatches(expectedMatch)))
+                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyMatches(".*extt.*")))
                     .respondWithStatus(200)
                     .andTextBody("any")
                     .andNoAdditionalHeaders()
@@ -1642,6 +1639,103 @@ public class ImpServerIntegrationTest implements FastTest {
                                 testBodyStringException.getClass().getName(),
                                 testBodyStringException.getMessage());
                 assertThat(responseHeaders).hasSize(2);
+            });
+        }
+
+        @Test
+        @DisplayName("should return error wen fail to match by url predicate 'urlMatches'")
+        void should_return_error_wen_fail_to_match_by_url_predicate_urlmatches() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlMatches(".*local.*")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body())
+                        .isEqualTo(
+                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should successfully match by url predicate 'urlMatches' at root path")
+        void should_successfully_match_by_url_predicate_urlmatches_at_root_path() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlMatches("/")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body()).isEqualTo("response body");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should successfully match by url predicate 'urlMatches' at specific path")
+        void should_successfully_match_by_url_predicate_urlmatches_at_specific_path() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlMatches(".*some/.*")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(
+                                                String.format("http://localhost:%d/some/path", impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body()).isEqualTo("response body");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when match success match by url predicate but fail to match by body")
+        void should_fail_when_match_success_match_by_url_predicate_but_fail_to_match_by_body() {
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlMatches(".*some/.*"))
+                            .bodyPredicate(b -> b.bodyContains("text")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(
+                                                String.format("http://localhost:%d/some/path", impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
+                                + "Available matcher IDs: [any]");
+                var responseHeaders = response.headers().map();
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
         }
     }

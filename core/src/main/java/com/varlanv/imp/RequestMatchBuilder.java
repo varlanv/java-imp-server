@@ -6,6 +6,8 @@ public final class RequestMatchBuilder {
             new SingleAssign<>(ImpPredicate.alwaysTrue(), "headersPredicate");
     private final SingleAssign<ImpPredicate<ImpBodyMatch>> bodyPredicate =
             new SingleAssign<>(ImpPredicate.alwaysTrue(), "bodyPredicate");
+    private final SingleAssign<ImpPredicate<ImpUrlMatch>> urlPredicate =
+            new SingleAssign<>(ImpPredicate.alwaysTrue(), "urlPredicate");
 
     public RequestMatchBuilder headersPredicate(ImpPredicate<ImpHeadersMatch> headersPredicate) {
         Preconditions.nonNull(headersPredicate, "headersPredicate");
@@ -14,12 +16,18 @@ public final class RequestMatchBuilder {
     }
 
     public RequestMatchBuilder bodyPredicate(ImpPredicate<ImpBodyMatch> bodyPredicate) {
-        Preconditions.nonNull(headersPredicate, "bodyPredicate");
+        Preconditions.nonNull(bodyPredicate, "bodyPredicate");
         this.bodyPredicate.set(bodyPredicate);
         return this;
     }
 
+    public RequestMatchBuilder urlPredicate(ImpPredicate<ImpUrlMatch> urlPredicate) {
+        Preconditions.nonNull(urlPredicate, "urlPredicate");
+        this.urlPredicate.set(urlPredicate);
+        return this;
+    }
+
     RequestMatch build() {
-        return new RequestMatch(headersPredicate.get(), bodyPredicate.get());
+        return new RequestMatch(headersPredicate.get(), bodyPredicate.get(), urlPredicate.get());
     }
 }
