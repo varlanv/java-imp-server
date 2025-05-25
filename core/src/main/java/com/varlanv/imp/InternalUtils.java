@@ -1,6 +1,7 @@
 package com.varlanv.imp;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,5 +29,13 @@ interface InternalUtils {
         newList.addAll(list);
         newList.add(element);
         return Collections.unmodifiableList(newList);
+    }
+
+    static byte[] readAllBytesFromSupplier(ImpSupplier<InputStream> supplier) {
+        try (var stream = supplier.get()) {
+            return stream.readAllBytes();
+        } catch (IOException e) {
+            return hide(e);
+        }
     }
 }

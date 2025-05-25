@@ -1,6 +1,7 @@
 package com.varlanv.imp;
 
 import com.sun.net.httpserver.Headers;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -36,29 +37,33 @@ public final class ImpBorrowedSpec {
             Preconditions.nonNull(textBody, "textBody");
             return defaultImpTemplate(
                     ImpContentType.PLAIN_TEXT,
-                    NamedSupplier.from("andTextBody", () -> textBody.getBytes(StandardCharsets.UTF_8)));
+                    NamedFn.from(
+                            "andTextBody",
+                            ignored -> () -> new ByteArrayInputStream(textBody.getBytes(StandardCharsets.UTF_8))));
         }
 
         public AlwaysHeaders andJsonBody(@Language("json") String jsonBody) {
             Preconditions.nonNull(jsonBody, "jsonBody");
             return defaultImpTemplate(
                     ImpContentType.JSON,
-                    NamedSupplier.from("andJsonBody", () -> jsonBody.getBytes(StandardCharsets.UTF_8)));
+                    NamedFn.from(
+                            "andJsonBody",
+                            ignored -> () -> new ByteArrayInputStream(jsonBody.getBytes(StandardCharsets.UTF_8))));
         }
 
         public AlwaysHeaders andXmlBody(@Language("xml") String xmlBody) {
             Preconditions.nonNull(xmlBody, "xmlBody");
             return defaultImpTemplate(
                     ImpContentType.XML,
-                    NamedSupplier.from("andXmlBody", () -> xmlBody.getBytes(StandardCharsets.UTF_8)));
+                    NamedFn.from(
+                            "andXmlBody",
+                            ignored -> () -> new ByteArrayInputStream(xmlBody.getBytes(StandardCharsets.UTF_8))));
         }
 
         public AlwaysHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return defaultImpTemplate(
-                    ImpContentType.OCTET_STREAM,
-                    NamedSupplier.from(
-                            "andDataStreamBody", () -> dataStreamSupplier.get().readAllBytes()));
+                    ImpContentType.OCTET_STREAM, NamedFn.from("andDataStreamBody", ignored -> dataStreamSupplier));
         }
 
         public AlwaysHeaders andCustomContentTypeStream(
@@ -66,13 +71,12 @@ public final class ImpBorrowedSpec {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return defaultImpTemplate(
-                    contentType, NamedSupplier.from("andCustomContentTypeStream", () -> dataStreamSupplier
-                            .get()
-                            .readAllBytes()));
+                    contentType, NamedFn.from("andCustomContentTypeStream", ignored -> dataStreamSupplier));
         }
 
-        private AlwaysHeaders defaultImpTemplate(CharSequence contentType, NamedSupplier<byte[]> bodySupplier) {
-            return new AlwaysHeaders(this, contentType.toString(), bodySupplier);
+        private AlwaysHeaders defaultImpTemplate(
+                CharSequence contentType, NamedFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
+            return new AlwaysHeaders(this, contentType.toString(), bodyFunction);
         }
     }
 
@@ -80,12 +84,15 @@ public final class ImpBorrowedSpec {
 
         private final AlwaysRespond parent;
         private final String contentType;
-        private final NamedSupplier<byte[]> bodySupplier;
+        private final NamedFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
 
-        AlwaysHeaders(AlwaysRespond parent, String contentType, NamedSupplier<byte[]> bodySupplier) {
+        AlwaysHeaders(
+                AlwaysRespond parent,
+                String contentType,
+                NamedFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
             this.parent = parent;
             this.contentType = contentType;
-            this.bodySupplier = bodySupplier;
+            this.bodyFunction = bodyFunction;
         }
 
         public ImpBorrowed andNoAdditionalHeaders() {
@@ -115,7 +122,7 @@ public final class ImpBorrowedSpec {
                             .decision(new ResponseDecision(
                                     List.of(new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
                                             .trustedStatus(parent.status)
-                                            .trustedBody(bodySupplier)
+                                            .trustedBody(bodyFunction)
                                             .trustedHeaders(headersOperator)
                                             .build()))))
                             .fallback(new Teapot(List.of()))

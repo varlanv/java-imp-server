@@ -57,6 +57,11 @@ final class DefaultImpTemplate implements ImpTemplate {
 
     private void process(ImpServerContext serverContext, HttpExchange exchange) throws IOException {
         var serverConfig = serverContext.config();
+        var impRequestView = new ImpRequestView(
+                exchange.getRequestMethod(),
+                exchange.getRequestHeaders(),
+                () -> exchange.getRequestBody().readAllBytes(),
+                exchange.getRequestURI());
         ImpResponse impResponse;
         byte[] responseBytes;
         int responseStatus;
@@ -65,20 +70,21 @@ final class DefaultImpTemplate implements ImpTemplate {
             if (responseCandidate == null) {
                 serverContext.statistics().incrementMissCount();
                 impResponse = serverConfig.fallback().apply(exchange);
-                responseBytes = impResponse.body().get();
+                responseBytes = InternalUtils.readAllBytesFromSupplier(
+                        impResponse.body().apply(impRequestView));
                 responseStatus = impResponse.statusCode().value();
             } else {
                 serverContext.statistics().incrementHitCount();
                 impResponse = responseCandidate.responseSupplier().get();
-                var trustedBodySupplier = impResponse.trustedBody();
+                var trustedBodyFn = impResponse.trustedBody();
                 try {
-                    responseBytes = trustedBodySupplier.get();
+                    responseBytes = InternalUtils.readAllBytesFromSupplier(trustedBodyFn.apply(impRequestView));
                     responseStatus = impResponse.statusCode().value();
                 } catch (Exception e) {
                     responseBytes = String.format(
                                     "Failed to read response body supplier, provided by `%s` method. "
                                             + "Message from exception thrown by provided supplier: %s",
-                                    trustedBodySupplier.name(), e.getMessage())
+                                    trustedBodyFn.name(), e.getMessage())
                             .getBytes(StandardCharsets.UTF_8);
                     responseStatus = 418;
                 }

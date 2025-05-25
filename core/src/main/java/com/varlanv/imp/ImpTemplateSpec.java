@@ -2,6 +2,7 @@ package com.varlanv.imp;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -61,35 +62,48 @@ public final class ImpTemplateSpec {
             this.responseCandidates = responseCandidates;
         }
 
+        public OnRequestMatchingHeaders andBodyBasedOnRequest(
+                String contentType, ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
+            Preconditions.nonBlank(contentType, "contentType");
+            Preconditions.nonNull(bodyFunction, "bodyFunction");
+            return toHeadersMatching(contentType, bodyFunction);
+        }
+
         public OnRequestMatchingHeaders andTextBody(String textBody) {
             Preconditions.nonNull(textBody, "textBody");
-            return toHeadersMatching(ImpContentType.PLAIN_TEXT, () -> textBody.getBytes(StandardCharsets.UTF_8));
+            return toHeadersMatching(
+                    ImpContentType.PLAIN_TEXT,
+                    ignored -> () -> new ByteArrayInputStream(textBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public OnRequestMatchingHeaders andJsonBody(@Language("json") String jsonBody) {
             Preconditions.nonNull(jsonBody, "jsonBody");
-            return toHeadersMatching(ImpContentType.JSON, () -> jsonBody.getBytes(StandardCharsets.UTF_8));
+            return toHeadersMatching(
+                    ImpContentType.JSON,
+                    ignored -> () -> new ByteArrayInputStream(jsonBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public OnRequestMatchingHeaders andXmlBody(@Language("xml") String xmlBody) {
             Preconditions.nonNull(xmlBody, "xmlBody");
-            return toHeadersMatching(ImpContentType.XML, () -> xmlBody.getBytes(StandardCharsets.UTF_8));
+            return toHeadersMatching(
+                    ImpContentType.XML,
+                    ignored -> () -> new ByteArrayInputStream(xmlBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public OnRequestMatchingHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return toHeadersMatching(
-                    ImpContentType.OCTET_STREAM, () -> dataStreamSupplier.get().readAllBytes());
+            return toHeadersMatching(ImpContentType.OCTET_STREAM, ignored -> dataStreamSupplier);
         }
 
         public OnRequestMatchingHeaders andCustomContentTypeStream(
                 String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return toHeadersMatching(contentType, () -> dataStreamSupplier.get().readAllBytes());
+            return toHeadersMatching(contentType, ignored -> dataStreamSupplier);
         }
 
-        private OnRequestMatchingHeaders toHeadersMatching(CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
+        private OnRequestMatchingHeaders toHeadersMatching(
+                CharSequence contentType, ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodySupplier) {
             return new OnRequestMatchingHeaders(
                     matchId, requestMatch, status, contentType.toString(), bodySupplier, responseCandidates);
         }
@@ -101,7 +115,7 @@ public final class ImpTemplateSpec {
         private final RequestMatch requestMatch;
         private final ImpHttpStatus status;
         private final String contentType;
-        private final ImpSupplier<byte[]> bodySupplier;
+        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
         private final List<ResponseCandidate> responseCandidates;
 
         OnRequestMatchingHeaders(
@@ -109,13 +123,13 @@ public final class ImpTemplateSpec {
                 RequestMatch requestMatch,
                 ImpHttpStatus status,
                 String contentType,
-                ImpSupplier<byte[]> bodySupplier,
+                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction,
                 List<ResponseCandidate> responseCandidates) {
             this.matchId = matchId;
             this.requestMatch = requestMatch;
             this.status = status;
             this.contentType = contentType;
-            this.bodySupplier = bodySupplier;
+            this.bodyFunction = bodyFunction;
             this.responseCandidates = responseCandidates;
         }
 
@@ -123,7 +137,7 @@ public final class ImpTemplateSpec {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return new ContentContinue(
-                    matchId, requestMatch, status, bodySupplier, responseCandidates, existingHeaders -> {
+                    matchId, requestMatch, status, bodyFunction, responseCandidates, existingHeaders -> {
                         var newHeaders = new HashMap<>(existingHeaders);
                         newHeaders.put("Content-Type", List.of(contentType));
                         newHeaders.putAll(headersCopy);
@@ -135,11 +149,11 @@ public final class ImpTemplateSpec {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return new ContentContinue(
-                    matchId, requestMatch, status, bodySupplier, responseCandidates, existingHeaders -> headersCopy);
+                    matchId, requestMatch, status, bodyFunction, responseCandidates, existingHeaders -> headersCopy);
         }
 
         public ContentContinue andNoAdditionalHeaders() {
-            return new ContentContinue(matchId, requestMatch, status, bodySupplier, responseCandidates, headers -> {
+            return new ContentContinue(matchId, requestMatch, status, bodyFunction, responseCandidates, headers -> {
                 var newHeaders = new HashMap<>(headers);
                 newHeaders.put("Content-Type", List.of(contentType));
                 return Map.copyOf(newHeaders);
@@ -152,7 +166,7 @@ public final class ImpTemplateSpec {
         private final String matchId;
         private final RequestMatch requestMatch;
         private final ImpHttpStatus status;
-        private final ImpSupplier<byte[]> bodySupplier;
+        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
         private final List<ResponseCandidate> responseCandidates;
         private final ImpHeadersOperator responseHeadersOperator;
 
@@ -160,13 +174,13 @@ public final class ImpTemplateSpec {
                 String matchId,
                 RequestMatch requestMatch,
                 ImpHttpStatus status,
-                ImpSupplier<byte[]> bodySupplier,
+                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction,
                 List<ResponseCandidate> responseCandidates,
                 ImpHeadersOperator responseHeadersOperator) {
             this.matchId = matchId;
             this.requestMatch = requestMatch;
             this.status = status;
-            this.bodySupplier = bodySupplier;
+            this.bodyFunction = bodyFunction;
             this.responseHeadersOperator = responseHeadersOperator;
             this.responseCandidates = responseCandidates;
         }
@@ -177,18 +191,8 @@ public final class ImpTemplateSpec {
             var builder = new RequestMatchBuilder();
             specConsumer.accept(builder);
             var requestMatch = builder.build();
-            var responseCandidate = new ResponseCandidate(
-                    matchId,
-                    request -> requestMatch.headersPredicate().test(new ImpHeadersMatch(request.getRequestHeaders()))
-                            && requestMatch.bodyPredicate().test(new ImpBodyMatch(request::getRequestBody))
-                            && requestMatch.urlPredicate().test(new ImpUrlMatch(request.getRequestURI())),
-                    () -> ImpResponse.builder()
-                            .trustedStatus(status)
-                            .body(bodySupplier)
-                            .trustedHeaders(responseHeadersOperator)
-                            .build());
             return new AlsoOnMatching(
-                    id, requestMatch, InternalUtils.addToNewListFinal(responseCandidates, responseCandidate));
+                    id, requestMatch, InternalUtils.addToNewListFinal(responseCandidates, buildResponseCandidate()));
         }
 
         public ContentFinal fallbackForNonMatching(
@@ -212,7 +216,7 @@ public final class ImpTemplateSpec {
                             && requestMatch.urlPredicate().test(new ImpUrlMatch(request.getRequestURI())),
                     () -> ImpResponse.builder()
                             .trustedStatus(status)
-                            .body(bodySupplier)
+                            .bodyFromRequest(bodyFunction)
                             .trustedHeaders(responseHeadersOperator)
                             .build());
         }
@@ -285,41 +289,40 @@ public final class ImpTemplateSpec {
 
         public AlwaysRespondHeaders andTextBody(String textBody) {
             Preconditions.nonNull(textBody, "textBody");
-            return defaultRespondHeaders(ImpContentType.PLAIN_TEXT, () -> textBody.getBytes(StandardCharsets.UTF_8));
+            return defaultRespondHeaders(
+                    ImpContentType.PLAIN_TEXT,
+                    ignored -> () -> new ByteArrayInputStream(textBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public AlwaysRespondHeaders andJsonBody(@Language("json") String jsonBody) {
             Preconditions.nonNull(jsonBody, "jsonBody");
-            return defaultRespondHeaders(ImpContentType.JSON, () -> jsonBody.getBytes(StandardCharsets.UTF_8));
+            return defaultRespondHeaders(
+                    ImpContentType.JSON,
+                    ignored -> () -> new ByteArrayInputStream(jsonBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public AlwaysRespondHeaders andXmlBody(@Language("xml") String xmlBody) {
             Preconditions.nonNull(xmlBody, "xmlBody");
-            return defaultRespondHeaders(ImpContentType.XML, () -> xmlBody.getBytes(StandardCharsets.UTF_8));
+            return defaultRespondHeaders(
+                    ImpContentType.XML,
+                    ignored -> () -> new ByteArrayInputStream(xmlBody.getBytes(StandardCharsets.UTF_8)));
         }
 
         public AlwaysRespondHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultRespondHeaders(ImpContentType.OCTET_STREAM, () -> {
-                try (var stream = dataStreamSupplier.get()) {
-                    return stream.readAllBytes();
-                }
-            });
+            return defaultRespondHeaders(ImpContentType.OCTET_STREAM, ignored -> dataStreamSupplier);
         }
 
         public AlwaysRespondHeaders andCustomContentTypeStream(
                 String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultRespondHeaders(contentType, () -> {
-                try (var stream = dataStreamSupplier.get()) {
-                    return stream.readAllBytes();
-                }
-            });
+            return defaultRespondHeaders(contentType, ignored -> dataStreamSupplier);
         }
 
-        private AlwaysRespondHeaders defaultRespondHeaders(CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
-            return new AlwaysRespondHeaders(status, contentType.toString(), bodySupplier);
+        private AlwaysRespondHeaders defaultRespondHeaders(
+                CharSequence contentType, ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
+            return new AlwaysRespondHeaders(status, contentType.toString(), bodyFunction);
         }
     }
 
@@ -327,18 +330,21 @@ public final class ImpTemplateSpec {
 
         private final ImpHttpStatus status;
         private final String contentType;
-        private final ImpSupplier<byte[]> bodySupplier;
+        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
 
-        public AlwaysRespondHeaders(ImpHttpStatus status, String contentType, ImpSupplier<byte[]> bodySupplier) {
+        public AlwaysRespondHeaders(
+                ImpHttpStatus status,
+                String contentType,
+                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
             this.status = status;
             this.contentType = contentType;
-            this.bodySupplier = bodySupplier;
+            this.bodyFunction = bodyFunction;
         }
 
         public AlwaysRespondFinal andAdditionalHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return new AlwaysRespondFinal(status, bodySupplier, existingHeaders -> {
+            return new AlwaysRespondFinal(status, bodyFunction, existingHeaders -> {
                 var newHeaders = new Headers();
                 newHeaders.putAll(headersCopy);
                 newHeaders.put("Content-Type", List.of(contentType));
@@ -350,11 +356,11 @@ public final class ImpTemplateSpec {
         public AlwaysRespondFinal andExactHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return new AlwaysRespondFinal(status, bodySupplier, existingHeaders -> headersCopy);
+            return new AlwaysRespondFinal(status, bodyFunction, existingHeaders -> headersCopy);
         }
 
         public AlwaysRespondFinal andNoAdditionalHeaders() {
-            return new AlwaysRespondFinal(status, bodySupplier, headers -> {
+            return new AlwaysRespondFinal(status, bodyFunction, headers -> {
                 var newHeaders = new Headers();
                 newHeaders.putAll(headers);
                 newHeaders.put("Content-Type", List.of(contentType));
@@ -366,13 +372,15 @@ public final class ImpTemplateSpec {
     public static final class AlwaysRespondFinal {
 
         private final ImpHttpStatus status;
-        private final ImpSupplier<byte[]> bodySupplier;
+        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
         private final ImpHeadersOperator headersOperator;
 
         public AlwaysRespondFinal(
-                ImpHttpStatus status, ImpSupplier<byte[]> bodySupplier, ImpHeadersOperator headersOperator) {
+                ImpHttpStatus status,
+                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction,
+                ImpHeadersOperator headersOperator) {
             this.status = status;
-            this.bodySupplier = bodySupplier;
+            this.bodyFunction = bodyFunction;
             this.headersOperator = headersOperator;
         }
 
@@ -399,7 +407,7 @@ public final class ImpTemplateSpec {
                     .decision(new ResponseDecision(
                             new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
                                     .trustedStatus(status)
-                                    .body(bodySupplier)
+                                    .bodyFromRequest(bodyFunction)
                                     .trustedHeaders(headersOperator)
                                     .build())))
                     .fallback(new Teapot(List.of()))

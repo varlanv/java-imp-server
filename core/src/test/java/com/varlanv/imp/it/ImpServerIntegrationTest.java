@@ -1225,7 +1225,7 @@ public class ImpServerIntegrationTest implements FastTest {
                     .andTextBody("any")
                     .andExactHeaders(Map.of())
                     .fallbackForNonMatching(builder -> builder.status(fallbackStatus.value())
-                            .body(() -> fallbackBody.getBytes(StandardCharsets.UTF_8)))
+                            .body(() -> new ByteArrayInputStream(fallbackBody.getBytes(StandardCharsets.UTF_8))))
                     .onRandomPort();
 
             subject.useServer(impServer -> {
@@ -1250,7 +1250,7 @@ public class ImpServerIntegrationTest implements FastTest {
                     .andTextBody("any")
                     .andExactHeaders(Map.of())
                     .fallbackForNonMatching(builder -> builder.status(fallbackStatus.value())
-                            .body(() -> fallbackBody.getBytes(StandardCharsets.UTF_8)))
+                            .body(() -> new ByteArrayInputStream(fallbackBody.getBytes(StandardCharsets.UTF_8))))
                     .onRandomPort();
 
             subject.useServer(impServer -> {
@@ -1278,7 +1278,7 @@ public class ImpServerIntegrationTest implements FastTest {
                     .andTextBody("any")
                     .andExactHeaders(Map.of())
                     .fallbackForNonMatching(builder -> builder.status(fallbackStatus.value())
-                            .body(() -> fallbackBody.getBytes(StandardCharsets.UTF_8)))
+                            .body(() -> new ByteArrayInputStream(fallbackBody.getBytes(StandardCharsets.UTF_8))))
                     .onRandomPort();
 
             subject.useServer(impServer -> {

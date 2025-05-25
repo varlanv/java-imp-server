@@ -1,6 +1,8 @@
 package com.varlanv.imp;
 
 import com.sun.net.httpserver.HttpExchange;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,13 +20,15 @@ final class Teapot implements ImpFn<HttpExchange, ImpResponse> {
     @Override
     public ImpResponse unsafeApply(HttpExchange httpExchange) {
         var matchersId = candidates.stream().map(ResponseCandidate::id).collect(Collectors.toList());
-        ImpSupplier<byte[]> bodySupplier = () -> String.format(
-                        "No matching handler for request. Returning 418 [I'm a teapot]. " + "Available matcher IDs: %s",
-                        matchersId)
-                .getBytes(StandardCharsets.UTF_8);
+        ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFn =
+                ignored -> () -> new ByteArrayInputStream(String.format(
+                                "No matching handler for request. Returning 418 [I'm a teapot]. "
+                                        + "Available matcher IDs: %s",
+                                matchersId)
+                        .getBytes(StandardCharsets.UTF_8));
         return ImpResponse.builder()
                 .trustedStatus(ImpHttpStatus.I_AM_A_TEAPOT)
-                .body(bodySupplier)
+                .bodyFromRequest(bodyFn)
                 .trustedHeaders(headers -> {
                     var h = new HashMap<>(headers);
                     h.put("Content-Type", List.of(ImpContentType.PLAIN_TEXT.stringValue()));
