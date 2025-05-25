@@ -78,6 +78,10 @@ final class JaywayJsonPathResult implements JsonPathResult {
                 return Objects.equals(expected, BigDecimal.valueOf((Double) ref.value));
             } else if (ref.value instanceof BigDecimal) {
                 return Objects.equals(expected, ref.value);
+            } else if (ref.value instanceof Long) {
+                return Objects.equals(expected, BigDecimal.valueOf((Long) ref.value));
+            } else if (ref.value instanceof Integer) {
+                return Objects.equals(expected, BigDecimal.valueOf((Integer) ref.value));
             }
         }
         return false;
