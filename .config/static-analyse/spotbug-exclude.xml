@@ -4,11 +4,8 @@
         <Bug code="EI, EI2, CT"/>
     </Match>
     <Match>
-        <Bug code="FS"/>
-        <Or>
-            <Class name="com.varlanv.testkonvence.commontest.TestSamples"/>
-            <Class name="com.varlanv.testkonvence.gradle.plugin.TestKonvencePluginFunctionalTest"/>
-        </Or>
+        <Bug code="RV"/>
+        <Class name="com.varlanv.imp.it.ImpServerIntegrationTest$TemplateSuite"/>
     </Match>
     <Match>
         <Bug code="NP"/>

@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Range;
 
@@ -388,9 +389,29 @@ public final class ImpTemplateSpec {
             Preconditions.nonNull(action, "action");
             var specEnd = action.apply(new RequestMatchingSpecStart());
             Preconditions.nonNull(specEnd, "matchRequest function result");
-            var responseCandidate = specEnd.toResponseCandidate();
+            var newResponseCandidate = specEnd.toResponseCandidate();
+            for (var existingResponseCandidate : responseCandidates) {
+                if (existingResponseCandidate.id().equals(newResponseCandidate.id())) {
+                    throw new IllegalArgumentException(String.format(
+                            "Duplicated matcher id detected: [%s]. " + "Consider using unique id for each matcher. "
+                                    + "Currently known matcher ids: %s",
+                            newResponseCandidate.id(),
+                            responseCandidates.stream()
+                                    .map(ResponseCandidate::id)
+                                    .collect(Collectors.toList())));
+                } else if (existingResponseCandidate.priority() == newResponseCandidate.priority()) {
+                    throw new IllegalArgumentException(String.format(
+                            "Duplicated matcher priority detected: trying to set priority [%d] for matcher [%s], "
+                                    + "but is already set for matcher [%s]. "
+                                    + "Using same priority for different matchers can lead to unexpected, non-deterministic behavior. "
+                                    + "Consider using unique priority for each matcher.",
+                            newResponseCandidate.priority(),
+                            newResponseCandidate.id(),
+                            existingResponseCandidate.id()));
+                }
+            }
             return new RequestMatchingSpecContinue(
-                    InternalUtils.addToNewListFinal(responseCandidates, responseCandidate));
+                    InternalUtils.addToNewListFinal(responseCandidates, newResponseCandidate));
         }
 
         public SpecFinal fallbackForNonMatching(

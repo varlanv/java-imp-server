@@ -2313,6 +2313,57 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
+        @DisplayName("should fail immediately when trying to add two matchers with same id")
+        void should_fail_immediately_when_trying_to_add_two_matchers_with_same_id() {
+            var matcherId = "matcherId";
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .matchRequest(spec -> spec.id(matcherId)
+                                    .priority(2)
+                                    .match(match -> {})
+                                    .respondWithStatus(200)
+                                    .andTextBody("")
+                                    .andNoAdditionalHeaders())
+                            .matchRequest(spec -> spec.id(matcherId)
+                                    .priority(1)
+                                    .match(match -> {})
+                                    .respondWithStatus(200)
+                                    .andTextBody("")
+                                    .andNoAdditionalHeaders()))
+                    .withMessage(
+                            "Duplicated matcher id detected: [%s]. Consider using unique id for each matcher. "
+                                    + "Currently known matcher ids: [%s]",
+                            matcherId, matcherId);
+        }
+
+        @Test
+        @DisplayName("should fail immediately when trying to add two matchers with same priority")
+        void should_fail_immediately_when_trying_to_add_two_matchers_with_same_priority() {
+            var matcherPriority = 1;
+            var matcherId1 = "matcherId1";
+            var matcherId2 = "matcherId2";
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .matchRequest(spec -> spec.id(matcherId1)
+                                    .priority(matcherPriority)
+                                    .match(match -> {})
+                                    .respondWithStatus(200)
+                                    .andTextBody("")
+                                    .andNoAdditionalHeaders())
+                            .matchRequest(spec -> spec.id(matcherId2)
+                                    .priority(matcherPriority)
+                                    .match(match -> {})
+                                    .respondWithStatus(200)
+                                    .andTextBody("")
+                                    .andNoAdditionalHeaders()))
+                    .withMessage(
+                            "Duplicated matcher priority detected: trying to set priority [%d] for matcher [%s], "
+                                    + "but is already set for matcher [%s]. Using same priority for different matchers can lead to unexpected, "
+                                    + "non-deterministic behavior. Consider using unique priority for each matcher.",
+                            matcherPriority, matcherId2, matcherId1);
+        }
+
+        @Test
         @DisplayName(
                 "should take matcher with lowest priority value when multiple matchers matched request and matcher is first in list")
         void
