@@ -44,6 +44,8 @@ public final class ImpResponse {
 
     public static final class BuilderStatus {
 
+        BuilderStatus() {}
+
         public BuilderBody status(@Range(from = 100, to = 511) int statusCode) {
             return new BuilderBody(Preconditions.validHttpStatusCode(statusCode));
         }

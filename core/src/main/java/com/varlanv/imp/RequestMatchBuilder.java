@@ -2,6 +2,8 @@ package com.varlanv.imp;
 
 public final class RequestMatchBuilder {
 
+    RequestMatchBuilder() {}
+
     private final SingleAssign<ImpPredicate<ImpHeadersMatch>> headersPredicate =
             new SingleAssign<>(ImpPredicate.alwaysTrue(), "headersPredicate");
     private final SingleAssign<ImpPredicate<ImpBodyMatch>> bodyPredicate =

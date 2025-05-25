@@ -6,7 +6,7 @@ public final class RequestMatch {
     private final ImpPredicate<ImpBodyMatch> bodyPredicate;
     private final ImpPredicate<ImpUrlMatch> urlPredicate;
 
-    public RequestMatch(
+    RequestMatch(
             ImpPredicate<ImpHeadersMatch> headersPredicate,
             ImpPredicate<ImpBodyMatch> bodyPredicate,
             ImpPredicate<ImpUrlMatch> urlPredicate) {

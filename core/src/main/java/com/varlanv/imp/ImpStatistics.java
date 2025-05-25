@@ -5,7 +5,7 @@ public final class ImpStatistics {
     private final int hitCount;
     private final int missCount;
 
-    public ImpStatistics(int hitCount, int missCount) {
+    ImpStatistics(int hitCount, int missCount) {
         this.hitCount = hitCount;
         this.missCount = missCount;
     }

@@ -15,6 +15,8 @@ public final class ImpTemplateSpec {
 
     public static final class Start {
 
+        Start() {}
+
         public SpecFinal alwaysRespond(ImpAlwaysRespond action) {
             Preconditions.nonNull(action, "action");
             var specEnd = action.apply(new AlwaysRespondSpecStart());
@@ -244,6 +246,8 @@ public final class ImpTemplateSpec {
     }
 
     public static final class AlwaysRespondSpecStart {
+
+        AlwaysRespondSpecStart() {}
 
         public AlwaysRespondSpecBody withStatus(@Range(from = 100, to = 511) int status) {
             return new AlwaysRespondSpecBody(Preconditions.validHttpStatusCode(status));
