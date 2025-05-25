@@ -43,11 +43,9 @@ class SpringApplicationIntegrationTest implements SlowTest {
     @Nested
     class CreatedFixture {
 
-        private final ImpBorrowed borrowedServer = sharedServer
-                .borrow()
-                .alwaysRespondWithStatus(201)
+        private final ImpBorrowed borrowedServer = sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(201)
                 .andTextBody("Created")
-                .andNoAdditionalHeaders();
+                .andNoAdditionalHeaders());
 
         @Test
         @DisplayName("should return new response on borrowed server")

@@ -13,6 +13,24 @@ import org.jetbrains.annotations.Range;
 
 public final class ImpTemplateSpec {
 
+    public static final class Start {
+
+        public SpecFinal alwaysRespond(ImpAlwaysRespond action) {
+            Preconditions.nonNull(action, "action");
+            var specEnd = action.apply(new AlwaysRespondSpecStart());
+            Preconditions.nonNull(specEnd, "alwaysRespond function result");
+            return new SpecFinal(List.of(specEnd.toResponseCandidate()), ignored -> new Teapot(List.of()));
+        }
+
+        public RequestMatchingSpecContinue matchRequest(ImpRequestMatch action) {
+            Preconditions.nonNull(action, "action");
+            var specEnd = action.apply(new RequestMatchingSpecStart());
+            Preconditions.nonNull(specEnd, "matchRequest function result");
+            var responseCandidate = specEnd.toResponseCandidate();
+            return new RequestMatchingSpecContinue(List.of(responseCandidate));
+        }
+    }
+
     public static final class RequestMatchingSpecStart {
 
         public RequestMatchingSpecId id(String id) {
@@ -37,6 +55,7 @@ public final class ImpTemplateSpec {
     public static final class RequestMatchingSpecPriority {
 
         private final String id;
+
         private final int priority;
 
         RequestMatchingSpecPriority(String id, int priority) {
@@ -56,6 +75,7 @@ public final class ImpTemplateSpec {
 
         private final String id;
         private final int priority;
+
         private final RequestMatch match;
 
         RequestMatchingSpecMatch(String id, int priority, RequestMatch match) {
@@ -74,6 +94,7 @@ public final class ImpTemplateSpec {
         private final String id;
         private final int priority;
         private final RequestMatch match;
+
         private final ImpHttpStatus responseStatus;
 
         RequestMatchingSpecStatus(String id, int priority, RequestMatch match, ImpHttpStatus responseStatus) {
@@ -137,6 +158,7 @@ public final class ImpTemplateSpec {
         private final RequestMatch match;
         private final ImpHttpStatus responseStatus;
         private final String contentType;
+
         private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
 
         RequestMatchingSpecHeaders(
@@ -188,6 +210,7 @@ public final class ImpTemplateSpec {
         private final RequestMatch requestMatch;
         private final ImpHttpStatus responseStatus;
         private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction;
+
         private final ImpHeadersOperator responseHeadersOperator;
 
         RequestMatchingSpecEnd(
@@ -220,24 +243,6 @@ public final class ImpTemplateSpec {
         }
     }
 
-    public static final class Start {
-
-        public RequestMatchingSpecContinue matchRequest(ImpRequestMatch action) {
-            Preconditions.nonNull(action, "action");
-            var specEnd = action.apply(new RequestMatchingSpecStart());
-            Preconditions.nonNull(specEnd, "matchRequest function result");
-            var responseCandidate = specEnd.toResponseCandidate();
-            return new RequestMatchingSpecContinue(List.of(responseCandidate));
-        }
-
-        public SpecFinal alwaysRespond(ImpAlwaysRespond action) {
-            Preconditions.nonNull(action, "action");
-            var specEnd = action.apply(new AlwaysRespondSpecStart());
-            Preconditions.nonNull(specEnd, "alwaysRespond function result");
-            return new SpecFinal(List.of(specEnd.toResponseCandidate()), ignored -> new Teapot(List.of()));
-        }
-    }
-
     public static final class AlwaysRespondSpecStart {
 
         public AlwaysRespondSpecBody withStatus(@Range(from = 100, to = 511) int status) {
@@ -257,37 +262,45 @@ public final class ImpTemplateSpec {
             Preconditions.nonNull(textBody, "textBody");
             return defaultRespondHeaders(
                     ImpContentType.PLAIN_TEXT,
-                    ignored -> () -> new ByteArrayInputStream(textBody.getBytes(StandardCharsets.UTF_8)));
+                    NamedFn.from(
+                            "andTextBody",
+                            ignored -> () -> new ByteArrayInputStream(textBody.getBytes(StandardCharsets.UTF_8))));
         }
 
         public AlwaysRespondSpecHeaders andJsonBody(@Language("json") String jsonBody) {
             Preconditions.nonNull(jsonBody, "jsonBody");
             return defaultRespondHeaders(
                     ImpContentType.JSON,
-                    ignored -> () -> new ByteArrayInputStream(jsonBody.getBytes(StandardCharsets.UTF_8)));
+                    NamedFn.from(
+                            "andJsonBody",
+                            ignored -> () -> new ByteArrayInputStream(jsonBody.getBytes(StandardCharsets.UTF_8))));
         }
 
         public AlwaysRespondSpecHeaders andXmlBody(@Language("xml") String xmlBody) {
             Preconditions.nonNull(xmlBody, "xmlBody");
             return defaultRespondHeaders(
                     ImpContentType.XML,
-                    ignored -> () -> new ByteArrayInputStream(xmlBody.getBytes(StandardCharsets.UTF_8)));
+                    NamedFn.from(
+                            "andXmlBody",
+                            ignored -> () -> new ByteArrayInputStream(xmlBody.getBytes(StandardCharsets.UTF_8))));
         }
 
         public AlwaysRespondSpecHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultRespondHeaders(ImpContentType.OCTET_STREAM, ignored -> dataStreamSupplier);
+            return defaultRespondHeaders(
+                    ImpContentType.OCTET_STREAM, NamedFn.from("andDataStreamBody", ignored -> dataStreamSupplier));
         }
 
         public AlwaysRespondSpecHeaders andCustomContentTypeStream(
                 String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultRespondHeaders(contentType, ignored -> dataStreamSupplier);
+            return defaultRespondHeaders(
+                    contentType, NamedFn.from("andCustomContentTypeStream", ignored -> dataStreamSupplier));
         }
 
         private AlwaysRespondSpecHeaders defaultRespondHeaders(
-                CharSequence contentType, ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
+                CharSequence contentType, NamedFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
             return new AlwaysRespondSpecHeaders(responseStatus, contentType.toString(), bodyFunction);
         }
     }
@@ -296,12 +309,12 @@ public final class ImpTemplateSpec {
 
         private final ImpHttpStatus status;
         private final String responseContentType;
-        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction;
+        private final NamedFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction;
 
-        public AlwaysRespondSpecHeaders(
+        AlwaysRespondSpecHeaders(
                 ImpHttpStatus status,
                 String responseContentType,
-                ImpFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction) {
+                NamedFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction) {
             this.status = status;
             this.responseContentType = responseContentType;
             this.responseBodyFunction = responseBodyFunction;
@@ -338,12 +351,12 @@ public final class ImpTemplateSpec {
     public static final class AlwaysRespondSpecEnd {
 
         private final ImpHttpStatus status;
-        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
+        private final NamedFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
         private final ImpHeadersOperator headersOperator;
 
         AlwaysRespondSpecEnd(
                 ImpHttpStatus status,
-                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction,
+                NamedFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction,
                 ImpHeadersOperator headersOperator) {
             this.status = status;
             this.bodyFunction = bodyFunction;
@@ -353,7 +366,7 @@ public final class ImpTemplateSpec {
         ResponseCandidate toResponseCandidate() {
             return new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
                     .trustedStatus(status)
-                    .bodyFromRequest(bodyFunction)
+                    .trustedBody(bodyFunction)
                     .trustedHeaders(headersOperator)
                     .build());
         }

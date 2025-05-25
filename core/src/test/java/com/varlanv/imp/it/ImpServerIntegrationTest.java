@@ -2530,11 +2530,9 @@ public class ImpServerIntegrationTest implements FastTest {
             try {
                 var borrowedTextBody = "some borrowed text";
                 var borrowedStatus = 400;
-                var impBorrowed = sharedServer
-                        .borrow()
-                        .alwaysRespondWithStatus(borrowedStatus)
+                var impBorrowed = sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(borrowedStatus)
                         .andTextBody(borrowedTextBody)
-                        .andNoAdditionalHeaders();
+                        .andNoAdditionalHeaders());
 
                 impBorrowed.useServer(server -> {
                     var response = sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString())
@@ -2566,11 +2564,9 @@ public class ImpServerIntegrationTest implements FastTest {
             try (var executor = Executors.newSingleThreadExecutor()) {
                 var future = executor.submit(
                         () -> sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString()));
-                var impBorrowed = sharedServer
-                        .borrow()
-                        .alwaysRespondWithStatus(400)
+                var impBorrowed = sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(400)
                         .andTextBody("some borrowed text")
-                        .andNoAdditionalHeaders();
+                        .andNoAdditionalHeaders());
                 sendRequestFuture.join();
                 assertThatThrownBy(() -> impBorrowed.useServer(server -> {}))
                         .isInstanceOf(IllegalStateException.class)
@@ -2589,11 +2585,9 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("borrowed server port should be same as original server port")
         void borrowed_server_port_should_be_same_as_original_server_port() {
             useDefaultSharedServer(sharedServer -> {
-                var impBorrowed = sharedServer
-                        .borrow()
-                        .alwaysRespondWithStatus(400)
+                var impBorrowed = sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(400)
                         .andTextBody("anyBorrowed")
-                        .andNoAdditionalHeaders();
+                        .andNoAdditionalHeaders());
 
                 impBorrowed.useServer(server -> {
                     assertThat(server.port()).isEqualTo(sharedServer.port());
@@ -2624,11 +2618,9 @@ public class ImpServerIntegrationTest implements FastTest {
                             spec -> spec.withStatus(200).andTextBody("any").andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
 
-            var borrowedServer = sharedServer
-                    .borrow()
-                    .alwaysRespondWithStatus(200)
+            var borrowedServer = sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
                     .andTextBody("any")
-                    .andNoAdditionalHeaders();
+                    .andNoAdditionalHeaders());
 
             sharedServer.dispose();
 
@@ -2650,11 +2642,9 @@ public class ImpServerIntegrationTest implements FastTest {
             try {
                 var borrowedTextBody = "some borrowed text";
                 var borrowedStatus = 400;
-                var impBorrowed = sharedServer
-                        .borrow()
-                        .alwaysRespondWithStatus(borrowedStatus)
+                var impBorrowed = sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(borrowedStatus)
                         .andTextBody(borrowedTextBody)
-                        .andNoAdditionalHeaders();
+                        .andNoAdditionalHeaders());
                 impBorrowed.useServer(server -> sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString()));
 
                 var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
@@ -2672,9 +2662,8 @@ public class ImpServerIntegrationTest implements FastTest {
             useDefaultSharedServer(sharedServer -> {
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(200)
-                        .andTextBody("any")
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(
+                                spec -> spec.withStatus(200).andTextBody("any").andNoAdditionalHeaders())
                         .useServer(server -> {
                             assertThat(sharedServer.isDisposed()).isFalse();
                             assertThat(sharedServer.isDisposed()).isFalse();
@@ -2688,9 +2677,8 @@ public class ImpServerIntegrationTest implements FastTest {
             useDefaultSharedServer(sharedServer -> {
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(200)
-                        .andTextBody("any")
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(
+                                spec -> spec.withStatus(200).andTextBody("any").andNoAdditionalHeaders())
                         .useServer(server -> {});
                 assertThat(sharedServer.isDisposed()).isFalse();
             });
@@ -2720,11 +2708,9 @@ public class ImpServerIntegrationTest implements FastTest {
             try {
                 var borrowedTextBody = "some borrowed text";
                 var borrowedStatus = 400;
-                var impBorrowed = sharedServer
-                        .borrow()
-                        .alwaysRespondWithStatus(borrowedStatus)
+                var impBorrowed = sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(borrowedStatus)
                         .andTextBody(borrowedTextBody)
-                        .andNoAdditionalHeaders();
+                        .andNoAdditionalHeaders());
                 impBorrowed.useServer(server -> {
                     var statistics = server.statistics();
                     assertThat(statistics.hitCount()).isZero();
@@ -2759,9 +2745,9 @@ public class ImpServerIntegrationTest implements FastTest {
             try {
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(400)
-                        .andTextBody("some borrowed text")
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec -> spec.withStatus(400)
+                                .andTextBody("some borrowed text")
+                                .andNoAdditionalHeaders())
                         .useServer(server -> {
                             sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
@@ -2783,9 +2769,9 @@ public class ImpServerIntegrationTest implements FastTest {
             useDefaultSharedServer(sharedServer -> {
                 var statistics = sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(400)
-                        .andTextBody("some borrowed text")
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec -> spec.withStatus(400)
+                                .andTextBody("some borrowed text")
+                                .andNoAdditionalHeaders())
                         .useServer(server -> {
                             assertThat(server.statistics().hitCount()).isZero();
                             sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString())
@@ -2805,10 +2791,11 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("`andTextBody` should fail immediately on borrowed server when pass null")
         void andtextbody_should_fail_immediately_on_borrowed_server_when_pass_null() {
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
                 //noinspection DataFlowIssue
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andTextBody(null))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andTextBody(null)
+                                .andNoAdditionalHeaders()))
                         .withMessage("nulls are not supported - textBody");
             });
         }
@@ -2817,10 +2804,11 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("`andJsonBody` should fail immediately on borrowed server when pass null")
         void andjsonbody_should_fail_immediately_on_borrowed_server_when_pass_null() {
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
                 //noinspection DataFlowIssue
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andJsonBody(null))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andJsonBody(null)
+                                .andNoAdditionalHeaders()))
                         .withMessage("nulls are not supported - jsonBody");
             });
         }
@@ -2829,10 +2817,11 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("`andXmlBody` should fail immediately on borrowed server when pass null")
         void andxmlbody_should_fail_immediately_on_borrowed_server_when_pass_null() {
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
                 //noinspection DataFlowIssue
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andXmlBody(null))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andXmlBody(null)
+                                .andNoAdditionalHeaders()))
                         .withMessage("nulls are not supported - xmlBody");
             });
         }
@@ -2841,10 +2830,11 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("`andDataStreamBody` should fail immediately on borrowed server when pass null")
         void anddatastreambody_should_fail_immediately_on_borrowed_server_when_pass_null() {
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
                 //noinspection DataFlowIssue
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andDataStreamBody(null))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andDataStreamBody(null)
+                                .andNoAdditionalHeaders()))
                         .withMessage("nulls are not supported - dataStreamSupplier");
             });
         }
@@ -2853,10 +2843,11 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("`andCustomContentTypeStream` should fail immediately on borrowed server when pass nulls")
         void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_nulls() {
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
                 //noinspection DataFlowIssue
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andCustomContentTypeStream(null, null))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andCustomContentTypeStream(null, null)
+                                .andNoAdditionalHeaders()))
                         .withMessage("null or blank strings are not supported - contentType");
             });
         }
@@ -2866,11 +2857,11 @@ public class ImpServerIntegrationTest implements FastTest {
                 "`andCustomContentTypeStream` should fail immediately on borrowed server when pass null contentType")
         void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_null_contenttype() {
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
                 //noinspection DataFlowIssue
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andCustomContentTypeStream(
-                                null, () -> new ByteArrayInputStream(new byte[0])))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0]))
+                                .andNoAdditionalHeaders()))
                         .withMessage("null or blank strings are not supported - contentType");
             });
         }
@@ -2880,10 +2871,10 @@ public class ImpServerIntegrationTest implements FastTest {
                 "`andCustomContentTypeStream` should fail immediately on borrowed server when pass empty contentType")
         void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_empty_contenttype() {
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andCustomContentTypeStream(
-                                "", () -> new ByteArrayInputStream(new byte[0])))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0]))
+                                .andNoAdditionalHeaders()))
                         .withMessage("null or blank strings are not supported - contentType");
             });
         }
@@ -2893,10 +2884,10 @@ public class ImpServerIntegrationTest implements FastTest {
                 "`andCustomContentTypeStream` should fail immediately on borrowed server when pass blank contentType")
         void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_blank_contenttype() {
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andCustomContentTypeStream(
-                                "  ", () -> new ByteArrayInputStream(new byte[0])))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0]))
+                                .andNoAdditionalHeaders()))
                         .withMessage("null or blank strings are not supported - contentType");
             });
         }
@@ -2905,10 +2896,11 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("`andCustomContentTypeStream` should fail immediately on borrowed server when pass null stream")
         void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_null_stream() {
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond = sharedServer.borrow().alwaysRespondWithStatus(200);
                 //noinspection DataFlowIssue
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andCustomContentTypeStream("any", null))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andCustomContentTypeStream("any", null)
+                                .andNoAdditionalHeaders()))
                         .withMessage("nulls are not supported - dataStreamSupplier");
             });
         }
@@ -2917,11 +2909,11 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("`andHeaders` should fail immediately on borrowed server when pass null map")
         void andheaders_should_fail_immediately_on_borrowed_server_when_pass_null_map() {
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond =
-                        sharedServer.borrow().alwaysRespondWithStatus(200).andTextBody("any");
                 //noinspection DataFlowIssue
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andHeaders(null))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andTextBody("")
+                                .andExactHeaders(null)))
                         .withMessage("nulls are not supported - headers");
             });
         }
@@ -2936,9 +2928,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var newStatus = 200;
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(newStatus)
-                        .andTextBody(newBody)
-                        .andHeaders(newHeaders)
+                        .alwaysRespond(spec ->
+                                spec.withStatus(newStatus).andTextBody(newBody).andExactHeaders(newHeaders))
                         .useServer(borrowedServer -> {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
@@ -2961,9 +2952,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var newStatus = 200;
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(newStatus)
-                        .andTextBody(newBody)
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec ->
+                                spec.withStatus(newStatus).andTextBody(newBody).andNoAdditionalHeaders())
                         .useServer(borrowedServer -> {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
@@ -2985,10 +2975,10 @@ public class ImpServerIntegrationTest implements FastTest {
             map.put("key", List.of("val1"));
             map.put(null, List.of("val2"));
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond =
-                        sharedServer.borrow().alwaysRespondWithStatus(200).andTextBody("any");
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andHeaders(map))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andTextBody("")
+                                .andExactHeaders(map)))
                         .withMessage(
                                 "null key are not supported in headers, but found null key in entry [ null=[val2] ]");
             });
@@ -3001,10 +2991,10 @@ public class ImpServerIntegrationTest implements FastTest {
             map.put("key1", List.of("val1"));
             map.put("key2", null);
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond =
-                        sharedServer.borrow().alwaysRespondWithStatus(200).andTextBody("any");
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andHeaders(map))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andTextBody("")
+                                .andExactHeaders(map)))
                         .withMessage(
                                 "null values are not supported in headers, but found null values in entry [ key2=null ]");
             });
@@ -3017,10 +3007,10 @@ public class ImpServerIntegrationTest implements FastTest {
             map.put("key1", List.of("val1"));
             map.put(null, null);
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond =
-                        sharedServer.borrow().alwaysRespondWithStatus(200).andTextBody("any");
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andHeaders(map))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andTextBody("")
+                                .andExactHeaders(map)))
                         .withMessage(
                                 "null key are not supported in headers, but found null key in entry [ null=null ]");
             });
@@ -3037,10 +3027,10 @@ public class ImpServerIntegrationTest implements FastTest {
             map.put("key1", List.of("val1"));
             map.put("key2", valueList);
             useDefaultSharedServer(sharedServer -> {
-                var alwaysRespond =
-                        sharedServer.borrow().alwaysRespondWithStatus(200).andTextBody("any");
                 assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> alwaysRespond.andHeaders(map))
+                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                .andTextBody("")
+                                .andExactHeaders(map)))
                         .withMessage(
                                 "null values are not supported in headers, but found null values in entry [ key2=[val1, null] ]");
             });
@@ -3053,9 +3043,9 @@ public class ImpServerIntegrationTest implements FastTest {
             var expectedBody = "some body";
             useDefaultSharedServer(sharedServer -> sharedServer
                     .borrow()
-                    .alwaysRespondWithStatus(expectedStatus)
-                    .andTextBody(expectedBody)
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec -> spec.withStatus(expectedStatus)
+                            .andTextBody(expectedBody)
+                            .andNoAdditionalHeaders())
                     .useServer(borrowedServer -> {
                         var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                 .join();
@@ -3074,9 +3064,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var newStatus = 200;
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(newStatus)
-                        .andJsonBody(newBody)
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec ->
+                                spec.withStatus(newStatus).andJsonBody(newBody).andNoAdditionalHeaders())
                         .useServer(borrowedServer -> {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
@@ -3097,9 +3086,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var newStatus = 200;
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(newStatus)
-                        .andXmlBody(newBody)
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec ->
+                                spec.withStatus(newStatus).andXmlBody(newBody).andNoAdditionalHeaders())
                         .useServer(borrowedServer -> {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
@@ -3119,9 +3107,10 @@ public class ImpServerIntegrationTest implements FastTest {
                 var newStatus = 200;
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(newStatus)
-                        .andDataStreamBody(() -> new ByteArrayInputStream(newBody.getBytes(StandardCharsets.UTF_8)))
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec -> spec.withStatus(newStatus)
+                                .andDataStreamBody(
+                                        () -> new ByteArrayInputStream(newBody.getBytes(StandardCharsets.UTF_8)))
+                                .andNoAdditionalHeaders())
                         .useServer(borrowedServer -> {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
@@ -3142,11 +3131,11 @@ public class ImpServerIntegrationTest implements FastTest {
                 var newContentType = "ctype";
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(newStatus)
-                        .andCustomContentTypeStream(
-                                newContentType,
-                                () -> new ByteArrayInputStream(newBody.getBytes(StandardCharsets.UTF_8)))
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec -> spec.withStatus(newStatus)
+                                .andCustomContentTypeStream(
+                                        newContentType,
+                                        () -> new ByteArrayInputStream(newBody.getBytes(StandardCharsets.UTF_8)))
+                                .andNoAdditionalHeaders())
                         .useServer(borrowedServer -> {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
@@ -3167,11 +3156,11 @@ public class ImpServerIntegrationTest implements FastTest {
                 var dataSupplierException = new RuntimeException("some message");
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(newStatus)
-                        .andCustomContentTypeStream(newContentType, () -> {
-                            throw dataSupplierException;
-                        })
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec -> spec.withStatus(newStatus)
+                                .andCustomContentTypeStream(newContentType, () -> {
+                                    throw dataSupplierException;
+                                })
+                                .andNoAdditionalHeaders())
                         .useServer(borrowedServer -> {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
@@ -3195,11 +3184,11 @@ public class ImpServerIntegrationTest implements FastTest {
                 var dataSupplierException = new RuntimeException("some message");
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(newStatus)
-                        .andDataStreamBody(() -> {
-                            throw dataSupplierException;
-                        })
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec -> spec.withStatus(newStatus)
+                                .andDataStreamBody(() -> {
+                                    throw dataSupplierException;
+                                })
+                                .andNoAdditionalHeaders())
                         .useServer(borrowedServer -> {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
@@ -3227,9 +3216,8 @@ public class ImpServerIntegrationTest implements FastTest {
             try {
                 sharedServer
                         .borrow()
-                        .alwaysRespondWithStatus(400)
-                        .andTextBody("changed text")
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec ->
+                                spec.withStatus(400).andTextBody("changed text").andNoAdditionalHeaders())
                         .useServer(borrowedServer -> {
                             assertThat(borrowedServer.port()).isEqualTo(port);
                             var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
