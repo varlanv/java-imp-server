@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ApplicationIntegrationTest implements SlowTest {
+class SpringApplicationIntegrationTest implements SlowTest {
 
     private static final ImpShared sharedServer;
     private static final int defaultServerStatus = 200;
@@ -24,9 +24,9 @@ class ApplicationIntegrationTest implements SlowTest {
 
     static {
         sharedServer = ImpServer.httpTemplate()
-                .alwaysRespondWithStatus(defaultServerStatus)
-                .andTextBody(defaultServerResponse)
-                .andNoAdditionalHeaders()
+                .alwaysRespond(spec -> spec.withStatus(defaultServerStatus)
+                        .andTextBody(defaultServerResponse)
+                        .andNoAdditionalHeaders())
                 .startSharedOnRandomPort();
         System.setProperty("com.varlanv.imp.client.port", String.valueOf(sharedServer.port()));
     }

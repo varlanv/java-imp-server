@@ -37,9 +37,7 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("Should be able to start server with random port")
         void should_be_able_to_start_server_with_random_port() {
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec -> spec.withStatus(200).andTextBody("").andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {});
         }
@@ -48,9 +46,7 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("Fresh server should have zero hits and misses")
         void fresh_server_should_have_zero_hits_and_misses() {
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec -> spec.withStatus(200).andTextBody("").andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {
                         assertThat(impServer.statistics().hitCount()).isZero();
@@ -63,9 +59,7 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_return_random_ports_each_time_for_template_with_random_port() {
             var ports = new ConcurrentLinkedQueue<Integer>();
             var impTemplate = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec -> spec.withStatus(200).andTextBody("").andNoAdditionalHeaders())
                     .onRandomPort();
 
             var serversCount = 10;
@@ -88,9 +82,8 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("When server has one hit, should add it to statistics")
         void when_server_has_one_hit_should_add_it_to_statistics() {
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("somePort")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec ->
+                            spec.withStatus(200).andTextBody("some body").andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {
                         var request = HttpRequest.newBuilder(
@@ -109,9 +102,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 "When server has zero hits, then read statistics, then make hit - then should not modify original statistic")
         void when_server_has_zero_hits_then_read_statistics_then_make_hit_then_should_not_modify_original_statistic() {
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("somePort")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec ->
+                            spec.withStatus(200).andTextBody("some body").andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {
                         var statistics = impServer.statistics();
@@ -132,9 +124,8 @@ public class ImpServerIntegrationTest implements FastTest {
         void
                 when_server_has_one_hit_then_read_statistics_then_make_another_hit_then_should_not_modify_original_statistic() {
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("somePort")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody("somePort").andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {
                         var request = HttpRequest.newBuilder(
@@ -158,9 +149,8 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("When server has many hits, should add all to statistics")
         void when_server_has_many_hits_should_add_all_to_statistics() {
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("somePort")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody("somePort").andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {
                         var count = 50;
@@ -186,9 +176,8 @@ public class ImpServerIntegrationTest implements FastTest {
             @DisplayName("When sanding many requests in parallel, should count all statistic")
             void when_sanding_many_requests_in_parallel_should_count_all_statistic() {
                 ImpServer.httpTemplate()
-                        .alwaysRespondWithStatus(200)
-                        .andTextBody("somePort")
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec ->
+                                spec.withStatus(200).andTextBody("somePort").andNoAdditionalHeaders())
                         .onRandomPort()
                         .useServer(impServer -> {
                             var count = 50;
@@ -242,9 +231,8 @@ public class ImpServerIntegrationTest implements FastTest {
             """;
 
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andJsonBody(expected)
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andJsonBody(expected).andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {
                         var request = httpRequestBuilderSupplier
@@ -272,10 +260,11 @@ public class ImpServerIntegrationTest implements FastTest {
             var contentType = "some/content/type";
 
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andCustomContentTypeStream(
-                            contentType, () -> new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8)))
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec -> spec.withStatus(200)
+                            .andCustomContentTypeStream(
+                                    contentType,
+                                    () -> new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8)))
+                            .andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {
                         var request = httpRequestBuilderSupplier
@@ -303,9 +292,8 @@ public class ImpServerIntegrationTest implements FastTest {
             var expected = "some text";
 
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody(expected)
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody(expected).andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {
                         var request = httpRequestBuilderSupplier
@@ -332,9 +320,10 @@ public class ImpServerIntegrationTest implements FastTest {
             var expected = "some text";
 
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andDataStreamBody(() -> new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8)))
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec -> spec.withStatus(200)
+                            .andDataStreamBody(
+                                    () -> new ByteArrayInputStream(expected.getBytes(StandardCharsets.UTF_8)))
+                            .andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {
                         var request = httpRequestBuilderSupplier
@@ -361,9 +350,9 @@ public class ImpServerIntegrationTest implements FastTest {
             consumeTempFile(tempFile -> {
                 Files.writeString(tempFile, expectedText);
                 ImpServer.httpTemplate()
-                        .alwaysRespondWithStatus(200)
-                        .andDataStreamBody(() -> Files.newInputStream(tempFile))
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec -> spec.withStatus(200)
+                                .andDataStreamBody(() -> Files.newInputStream(tempFile))
+                                .andNoAdditionalHeaders())
                         .onRandomPort()
                         .useServer(impServer -> {
                             for (var futureResponse :
@@ -394,9 +383,9 @@ public class ImpServerIntegrationTest implements FastTest {
             consumeTempFile(tempFile -> {
                 Files.writeString(tempFile, expectedText);
                 ImpServer.httpTemplate()
-                        .alwaysRespondWithStatus(200)
-                        .andDataStreamBody(dataStream::get)
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec -> spec.withStatus(200)
+                                .andDataStreamBody(dataStream::get)
+                                .andNoAdditionalHeaders())
                         .onRandomPort()
                         .useServer(impServer -> {
                             sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
@@ -415,9 +404,9 @@ public class ImpServerIntegrationTest implements FastTest {
             consumeTempFile(tempFile -> {
                 Files.writeString(tempFile, expectedText);
                 ImpServer.httpTemplate()
-                        .alwaysRespondWithStatus(200)
-                        .andCustomContentTypeStream("someContent", dataStream::get)
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec -> spec.withStatus(200)
+                                .andCustomContentTypeStream("someContent", dataStream::get)
+                                .andNoAdditionalHeaders())
                         .onRandomPort()
                         .useServer(impServer -> {
                             sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
@@ -435,9 +424,9 @@ public class ImpServerIntegrationTest implements FastTest {
             try (var res = resourcesStreamSupplier.get()) {
                 var expectedJson = new String(res.readAllBytes(), StandardCharsets.UTF_8);
                 ImpServer.httpTemplate()
-                        .alwaysRespondWithStatus(200)
-                        .andCustomContentTypeStream("application/json", resourcesStreamSupplier)
-                        .andNoAdditionalHeaders()
+                        .alwaysRespond(spec -> spec.withStatus(200)
+                                .andCustomContentTypeStream("application/json", resourcesStreamSupplier)
+                                .andNoAdditionalHeaders())
                         .onRandomPort()
                         .useServer(impServer -> {
                             var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
@@ -461,9 +450,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 """;
 
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andXmlBody(expected)
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andXmlBody(expected).andNoAdditionalHeaders())
                     .onRandomPort()
                     .useServer(impServer -> {
                         var request = httpRequestBuilderSupplier
@@ -489,9 +477,8 @@ public class ImpServerIntegrationTest implements FastTest {
             var port = randomPort();
             var someText = "some text";
             ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody(someText)
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody(someText).andNoAdditionalHeaders())
                     .onPort(port)
                     .useServer(impServer -> {
                         var request = HttpRequest.newBuilder(
@@ -518,9 +505,9 @@ public class ImpServerIntegrationTest implements FastTest {
             var sleepDuration = Duration.ofMillis(500);
             var startedLatch = new CountDownLatch(1);
             new Thread(() -> ImpServer.httpTemplate()
-                            .alwaysRespondWithStatus(200)
-                            .andTextBody("some text")
-                            .andNoAdditionalHeaders()
+                            .alwaysRespond(spec -> spec.withStatus(200)
+                                    .andTextBody("some text")
+                                    .andNoAdditionalHeaders())
                             .onPort(port)
                             .useServer(impServer -> {
                                 startedLatch.countDown();
@@ -534,9 +521,9 @@ public class ImpServerIntegrationTest implements FastTest {
 
             assertThatExceptionOfType(IllegalStateException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate()
-                            .alwaysRespondWithStatus(200)
-                            .andTextBody("some text")
-                            .andNoAdditionalHeaders()
+                            .alwaysRespond(spec -> spec.withStatus(200)
+                                    .andTextBody("some text")
+                                    .andNoAdditionalHeaders())
                             .onPort(port)
                             .useServer(impServer -> {}))
                     .withMessage("Could not acquire port [%d] after [5] retries - port is in use", port);
@@ -2302,9 +2289,8 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("when shared server is running, isDisposed should return true")
         void when_shared_server_is_running_isdisposed_should_return_true() {
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody("any").andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
             try {
                 assertThat(sharedServer.isDisposed()).isFalse();
@@ -2319,9 +2305,8 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("when shared server is stopped, isDisposed should return false")
         void when_shared_server_is_stopped_isdisposed_should_return_false() {
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody("any").andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
 
             sharedServer.dispose();
@@ -2336,9 +2321,8 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_be_able_to_send_multiple_requests_to_shared_server() {
             var body = "some text";
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody(body)
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody(body).andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
 
             ImpRunnable action = () -> {
@@ -2370,9 +2354,8 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("when shared server is stopped, then dont accept further requests")
         void when_shared_server_is_stopped_then_dont_accept_further_requests() throws Exception {
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("some text")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec ->
+                            spec.withStatus(200).andTextBody("some text").andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
             sharedServer.dispose();
 
@@ -2388,16 +2371,14 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("when try to start server with `startSharedOnPort` but port already taken, then fail immediately")
         void when_try_to_start_server_with_startsharedonport_but_port_already_taken_then_fail_immediately() {
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("some text")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec ->
+                            spec.withStatus(200).andTextBody("some text").andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
 
             try {
                 var specEnd = ImpServer.httpTemplate()
-                        .alwaysRespondWithStatus(200)
-                        .andTextBody("some text")
-                        .andNoAdditionalHeaders();
+                        .alwaysRespond(spec ->
+                                spec.withStatus(200).andTextBody("some text").andNoAdditionalHeaders());
                 var port = sharedServer.port();
 
                 assertThatExceptionOfType(IllegalStateException.class)
@@ -2413,9 +2394,8 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_be_able_to_start_shared_server_on_specific_port_when_it_is_not_taken() {
             var port = randomPort();
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("some text")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec ->
+                            spec.withStatus(200).andTextBody("some text").andNoAdditionalHeaders())
                     .startSharedOnPort(port);
             try {
                 var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
@@ -2435,9 +2415,8 @@ public class ImpServerIntegrationTest implements FastTest {
             var exactHeaders =
                     Map.of("content-type", List.of("application/json"), "another-header", List.of("some value"));
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("some text")
-                    .andExactHeaders(exactHeaders)
+                    .alwaysRespond(spec ->
+                            spec.withStatus(200).andTextBody("some text").andExactHeaders(exactHeaders))
                     .startSharedOnRandomPort();
             try {
                 var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
@@ -2461,9 +2440,8 @@ public class ImpServerIntegrationTest implements FastTest {
             var additionalHeaders =
                     Map.of("content-type", List.of("application/json"), "another-header", List.of("some value"));
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("some text")
-                    .andAdditionalHeaders(additionalHeaders)
+                    .alwaysRespond(spec ->
+                            spec.withStatus(200).andTextBody("some text").andAdditionalHeaders(additionalHeaders))
                     .startSharedOnRandomPort();
             try {
                 var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
@@ -2486,9 +2464,8 @@ public class ImpServerIntegrationTest implements FastTest {
         void when_shared_server_is_stopped_many_times_then_no_exception_thrown_and_server_is_still_stopped()
                 throws Exception {
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("some text")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec ->
+                            spec.withStatus(200).andTextBody("some text").andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
             assertThat(sharedServer.isDisposed()).isFalse();
             sharedServer.dispose();
@@ -2546,9 +2523,8 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_be_able_to_send_request_while_borrowing_server() {
             var body = "some text";
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody(body)
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody(body).andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
 
             try {
@@ -2578,13 +2554,13 @@ public class ImpServerIntegrationTest implements FastTest {
             var sharedServerResponseFuture = new CompletableFuture<String>();
             var sendRequestFuture = new CompletableFuture<String>();
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andDataStreamBody(() -> {
-                        sendRequestFuture.complete("");
-                        sharedServerResponseFuture.get(3, TimeUnit.SECONDS);
-                        return new ByteArrayInputStream("some body".getBytes(StandardCharsets.UTF_8));
-                    })
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec -> spec.withStatus(200)
+                            .andDataStreamBody(() -> {
+                                sendRequestFuture.complete("");
+                                sharedServerResponseFuture.get(3, TimeUnit.SECONDS);
+                                return new ByteArrayInputStream("some body".getBytes(StandardCharsets.UTF_8));
+                            })
+                            .andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
 
             try (var executor = Executors.newSingleThreadExecutor()) {
@@ -2629,9 +2605,8 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should throw exception when try to borrow from already stopped shared server")
         void should_throw_exception_when_try_to_borrow_from_already_stopped_shared_server() {
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody("any").andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
 
             sharedServer.dispose();
@@ -2645,9 +2620,8 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should throw exception when try to start borrowed server, when parent server is already stopped")
         void should_throw_exception_when_try_to_start_borrowed_server_when_parent_server_is_already_stopped() {
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody("any").andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
 
             var borrowedServer = sharedServer
@@ -2669,9 +2643,8 @@ public class ImpServerIntegrationTest implements FastTest {
             var originalBody = "some text";
             var originalStatus = 200;
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(originalStatus)
-                    .andTextBody(originalBody)
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec ->
+                            spec.withStatus(200).andTextBody(originalBody).andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
 
             try {
@@ -3248,9 +3221,8 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_be_able_to_borrow_server_from_shared_server_that_was_started_on_specific_port() {
             var port = randomPort();
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(200)
-                    .andTextBody("some text")
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec ->
+                            spec.withStatus(200).andTextBody("some text").andNoAdditionalHeaders())
                     .startSharedOnPort(port);
             try {
                 sharedServer
@@ -3283,9 +3255,9 @@ public class ImpServerIntegrationTest implements FastTest {
             var originalBody = "some text";
             int originalStatus = 200;
             var sharedServer = ImpServer.httpTemplate()
-                    .alwaysRespondWithStatus(originalStatus)
-                    .andTextBody(originalBody)
-                    .andNoAdditionalHeaders()
+                    .alwaysRespond(spec -> spec.withStatus(originalStatus)
+                            .andTextBody(originalBody)
+                            .andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
             try {
                 consumer.accept(sharedServer);
@@ -3306,7 +3278,10 @@ public class ImpServerIntegrationTest implements FastTest {
             for (var invalidHttpStatusCode : List.of(-1, 1, 99, 104, 512, Integer.MAX_VALUE)) {
                 assertThatExceptionOfType(IllegalArgumentException.class)
                         .as("should reject http status code [%d]", invalidHttpStatusCode)
-                        .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespondWithStatus(invalidHttpStatusCode))
+                        .isThrownBy(() -> ImpServer.httpTemplate()
+                                .alwaysRespond(spec -> spec.withStatus(invalidHttpStatusCode)
+                                        .andTextBody("")
+                                        .andNoAdditionalHeaders()))
                         .withMessage("Invalid http status code [%d]", invalidHttpStatusCode);
             }
         }
@@ -3317,7 +3292,10 @@ public class ImpServerIntegrationTest implements FastTest {
             for (var httpStatus : ImpHttpStatus.values()) {
                 assertThatNoException()
                         .as("Should work for http status code [%d]", httpStatus.value())
-                        .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespondWithStatus(httpStatus.value()));
+                        .isThrownBy(
+                                () -> ImpServer.httpTemplate().alwaysRespond(spec -> spec.withStatus(httpStatus.value())
+                                        .andTextBody("")
+                                        .andNoAdditionalHeaders()));
             }
         }
 
@@ -3327,8 +3305,8 @@ public class ImpServerIntegrationTest implements FastTest {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate()
-                            .alwaysRespondWithStatus(200)
-                            .andTextBody(null))
+                            .alwaysRespond(spec ->
+                                    spec.withStatus(200).andTextBody(null).andNoAdditionalHeaders()))
                     .withMessage("nulls are not supported - textBody");
         }
 
@@ -3338,8 +3316,8 @@ public class ImpServerIntegrationTest implements FastTest {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate()
-                            .alwaysRespondWithStatus(200)
-                            .andXmlBody(null))
+                            .alwaysRespond(spec ->
+                                    spec.withStatus(200).andXmlBody(null).andNoAdditionalHeaders()))
                     .withMessage("nulls are not supported - xmlBody");
         }
 
@@ -3349,8 +3327,8 @@ public class ImpServerIntegrationTest implements FastTest {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate()
-                            .alwaysRespondWithStatus(200)
-                            .andJsonBody(null))
+                            .alwaysRespond(spec ->
+                                    spec.withStatus(200).andJsonBody(null).andNoAdditionalHeaders()))
                     .withMessage("nulls are not supported - jsonBody");
         }
 
@@ -3359,9 +3337,9 @@ public class ImpServerIntegrationTest implements FastTest {
         void andcustomcontenttypestream_should_fail_immediately_if_provided_null_contenttype() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .alwaysRespondWithStatus(200)
-                            .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0])))
+                    .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespond(spec -> spec.withStatus(200)
+                            .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
                     .withMessage("null or blank strings are not supported - contentType");
         }
 
@@ -3370,9 +3348,9 @@ public class ImpServerIntegrationTest implements FastTest {
         void andcustomcontenttypestream_should_fail_immediately_if_provided_null_streamsupplier() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .alwaysRespondWithStatus(200)
-                            .andCustomContentTypeStream("someType", null))
+                    .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespond(spec -> spec.withStatus(200)
+                            .andCustomContentTypeStream("someType", null)
+                            .andNoAdditionalHeaders()))
                     .withMessage("nulls are not supported - dataStreamSupplier");
         }
 
@@ -3382,9 +3360,9 @@ public class ImpServerIntegrationTest implements FastTest {
         void andcustomcontenttypestream_should_fail_immediately_if_provided_null_streamsupplier_and_contenttypeqq() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .alwaysRespondWithStatus(200)
-                            .andCustomContentTypeStream(null, null))
+                    .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespond(spec -> spec.withStatus(200)
+                            .andCustomContentTypeStream(null, null)
+                            .andNoAdditionalHeaders()))
                     .withMessage("null or blank strings are not supported - contentType");
         }
 
@@ -3392,9 +3370,9 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("'andCustomContentTypeStream' should fail immediately if provided empty contentType")
         void andcustomcontenttypestream_should_fail_immediately_if_provided_empty_contenttype() {
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .alwaysRespondWithStatus(200)
-                            .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0])))
+                    .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespond(spec -> spec.withStatus(200)
+                            .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
                     .withMessage("null or blank strings are not supported - contentType");
         }
 
@@ -3402,9 +3380,9 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("'andCustomContentTypeStream' should fail immediately if provided blank contentType")
         void andcustomcontenttypestream_should_fail_immediately_if_provided_blank_contenttype() {
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .alwaysRespondWithStatus(200)
-                            .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0])))
+                    .isThrownBy(() -> ImpServer.httpTemplate().alwaysRespond(spec -> spec.withStatus(200)
+                            .andCustomContentTypeStream("   ", () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
                     .withMessage("null or blank strings are not supported - contentType");
         }
 

@@ -5,7 +5,9 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Range;
 
@@ -228,8 +230,132 @@ public final class ImpTemplateSpec {
             return new RequestMatchingSpecContinue(List.of(responseCandidate));
         }
 
-        public AlwaysRespondBody alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
-            return new AlwaysRespondBody(Preconditions.validHttpStatusCode(status));
+        public SpecFinal alwaysRespond(ImpAlwaysRespond action) {
+            Preconditions.nonNull(action, "action");
+            var specEnd = action.apply(new AlwaysRespondSpecStart());
+            Preconditions.nonNull(specEnd, "alwaysRespond function result");
+            return new SpecFinal(List.of(specEnd.toResponseCandidate()), ignored -> new Teapot(List.of()));
+        }
+    }
+
+    public static final class AlwaysRespondSpecStart {
+
+        public AlwaysRespondSpecBody withStatus(@Range(from = 100, to = 511) int status) {
+            return new AlwaysRespondSpecBody(Preconditions.validHttpStatusCode(status));
+        }
+    }
+
+    public static final class AlwaysRespondSpecBody {
+
+        private final ImpHttpStatus responseStatus;
+
+        AlwaysRespondSpecBody(ImpHttpStatus responseStatus) {
+            this.responseStatus = responseStatus;
+        }
+
+        public AlwaysRespondSpecHeaders andTextBody(String textBody) {
+            Preconditions.nonNull(textBody, "textBody");
+            return defaultRespondHeaders(
+                    ImpContentType.PLAIN_TEXT,
+                    ignored -> () -> new ByteArrayInputStream(textBody.getBytes(StandardCharsets.UTF_8)));
+        }
+
+        public AlwaysRespondSpecHeaders andJsonBody(@Language("json") String jsonBody) {
+            Preconditions.nonNull(jsonBody, "jsonBody");
+            return defaultRespondHeaders(
+                    ImpContentType.JSON,
+                    ignored -> () -> new ByteArrayInputStream(jsonBody.getBytes(StandardCharsets.UTF_8)));
+        }
+
+        public AlwaysRespondSpecHeaders andXmlBody(@Language("xml") String xmlBody) {
+            Preconditions.nonNull(xmlBody, "xmlBody");
+            return defaultRespondHeaders(
+                    ImpContentType.XML,
+                    ignored -> () -> new ByteArrayInputStream(xmlBody.getBytes(StandardCharsets.UTF_8)));
+        }
+
+        public AlwaysRespondSpecHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
+            Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
+            return defaultRespondHeaders(ImpContentType.OCTET_STREAM, ignored -> dataStreamSupplier);
+        }
+
+        public AlwaysRespondSpecHeaders andCustomContentTypeStream(
+                String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
+            Preconditions.nonBlank(contentType, "contentType");
+            Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
+            return defaultRespondHeaders(contentType, ignored -> dataStreamSupplier);
+        }
+
+        private AlwaysRespondSpecHeaders defaultRespondHeaders(
+                CharSequence contentType, ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
+            return new AlwaysRespondSpecHeaders(responseStatus, contentType.toString(), bodyFunction);
+        }
+    }
+
+    public static final class AlwaysRespondSpecHeaders {
+
+        private final ImpHttpStatus status;
+        private final String responseContentType;
+        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction;
+
+        public AlwaysRespondSpecHeaders(
+                ImpHttpStatus status,
+                String responseContentType,
+                ImpFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction) {
+            this.status = status;
+            this.responseContentType = responseContentType;
+            this.responseBodyFunction = responseBodyFunction;
+        }
+
+        public AlwaysRespondSpecEnd andAdditionalHeaders(Map<String, List<String>> headers) {
+            Preconditions.noNullsInHeaders(headers, "headers");
+            var headersCopy = Map.copyOf(headers);
+            return new AlwaysRespondSpecEnd(status, responseBodyFunction, existingHeaders -> {
+                var newHeaders = new Headers();
+                newHeaders.putAll(headersCopy);
+                newHeaders.put("Content-Type", List.of(responseContentType));
+                newHeaders.putAll(existingHeaders);
+                return Map.copyOf(newHeaders);
+            });
+        }
+
+        public AlwaysRespondSpecEnd andExactHeaders(Map<String, List<String>> headers) {
+            Preconditions.noNullsInHeaders(headers, "headers");
+            var headersCopy = Map.copyOf(headers);
+            return new AlwaysRespondSpecEnd(status, responseBodyFunction, existingHeaders -> headersCopy);
+        }
+
+        public AlwaysRespondSpecEnd andNoAdditionalHeaders() {
+            return new AlwaysRespondSpecEnd(status, responseBodyFunction, headers -> {
+                var newHeaders = new Headers();
+                newHeaders.putAll(headers);
+                newHeaders.put("Content-Type", List.of(responseContentType));
+                return Map.copyOf(newHeaders);
+            });
+        }
+    }
+
+    public static final class AlwaysRespondSpecEnd {
+
+        private final ImpHttpStatus status;
+        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
+        private final ImpHeadersOperator headersOperator;
+
+        AlwaysRespondSpecEnd(
+                ImpHttpStatus status,
+                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction,
+                ImpHeadersOperator headersOperator) {
+            this.status = status;
+            this.bodyFunction = bodyFunction;
+            this.headersOperator = headersOperator;
+        }
+
+        ResponseCandidate toResponseCandidate() {
+            return new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
+                    .trustedStatus(status)
+                    .bodyFromRequest(bodyFunction)
+                    .trustedHeaders(headersOperator)
+                    .build());
         }
     }
 
@@ -275,138 +401,6 @@ public final class ImpTemplateSpec {
         }
 
         public ImpTemplate onPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
-            return buildTemplate(PortSupplier.fixed(port), fallback);
-        }
-
-        public ImpTemplate onRandomPort() {
-            return buildTemplate(PortSupplier.ofSupplier(InternalUtils::randomPort, true), fallback);
-        }
-
-        public ImpShared startSharedOnPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
-            return buildTemplate(PortSupplier.fixed(port), fallback).startShared();
-        }
-
-        public ImpShared startSharedOnRandomPort() {
-            return buildTemplate(PortSupplier.ofSupplier(InternalUtils::randomPort, true), fallback)
-                    .startShared();
-        }
-
-        private DefaultImpTemplate buildTemplate(
-                PortSupplier portSupplier, ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
-            return new DefaultImpTemplate(ImmutableTemplateConfig.builder()
-                    .futureServer(new FutureServer(portSupplier))
-                    .decision(new ResponseDecision(responseCandidates))
-                    .fallback(fallback.apply(responseCandidates))
-                    .build());
-        }
-    }
-
-    public static final class AlwaysRespondBody {
-
-        private final ImpHttpStatus status;
-
-        AlwaysRespondBody(ImpHttpStatus status) {
-            this.status = status;
-        }
-
-        public AlwaysRespondHeaders andTextBody(String textBody) {
-            Preconditions.nonNull(textBody, "textBody");
-            return defaultRespondHeaders(
-                    ImpContentType.PLAIN_TEXT,
-                    ignored -> () -> new ByteArrayInputStream(textBody.getBytes(StandardCharsets.UTF_8)));
-        }
-
-        public AlwaysRespondHeaders andJsonBody(@Language("json") String jsonBody) {
-            Preconditions.nonNull(jsonBody, "jsonBody");
-            return defaultRespondHeaders(
-                    ImpContentType.JSON,
-                    ignored -> () -> new ByteArrayInputStream(jsonBody.getBytes(StandardCharsets.UTF_8)));
-        }
-
-        public AlwaysRespondHeaders andXmlBody(@Language("xml") String xmlBody) {
-            Preconditions.nonNull(xmlBody, "xmlBody");
-            return defaultRespondHeaders(
-                    ImpContentType.XML,
-                    ignored -> () -> new ByteArrayInputStream(xmlBody.getBytes(StandardCharsets.UTF_8)));
-        }
-
-        public AlwaysRespondHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
-            Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultRespondHeaders(ImpContentType.OCTET_STREAM, ignored -> dataStreamSupplier);
-        }
-
-        public AlwaysRespondHeaders andCustomContentTypeStream(
-                String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
-            Preconditions.nonBlank(contentType, "contentType");
-            Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultRespondHeaders(contentType, ignored -> dataStreamSupplier);
-        }
-
-        private AlwaysRespondHeaders defaultRespondHeaders(
-                CharSequence contentType, ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
-            return new AlwaysRespondHeaders(status, contentType.toString(), bodyFunction);
-        }
-    }
-
-    public static final class AlwaysRespondHeaders {
-
-        private final ImpHttpStatus status;
-        private final String contentType;
-        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
-
-        public AlwaysRespondHeaders(
-                ImpHttpStatus status,
-                String contentType,
-                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
-            this.status = status;
-            this.contentType = contentType;
-            this.bodyFunction = bodyFunction;
-        }
-
-        public AlwaysRespondFinal andAdditionalHeaders(Map<String, List<String>> headers) {
-            Preconditions.noNullsInHeaders(headers, "headers");
-            var headersCopy = Map.copyOf(headers);
-            return new AlwaysRespondFinal(status, bodyFunction, existingHeaders -> {
-                var newHeaders = new Headers();
-                newHeaders.putAll(headersCopy);
-                newHeaders.put("Content-Type", List.of(contentType));
-                newHeaders.putAll(existingHeaders);
-                return Map.copyOf(newHeaders);
-            });
-        }
-
-        public AlwaysRespondFinal andExactHeaders(Map<String, List<String>> headers) {
-            Preconditions.noNullsInHeaders(headers, "headers");
-            var headersCopy = Map.copyOf(headers);
-            return new AlwaysRespondFinal(status, bodyFunction, existingHeaders -> headersCopy);
-        }
-
-        public AlwaysRespondFinal andNoAdditionalHeaders() {
-            return new AlwaysRespondFinal(status, bodyFunction, headers -> {
-                var newHeaders = new Headers();
-                newHeaders.putAll(headers);
-                newHeaders.put("Content-Type", List.of(contentType));
-                return Map.copyOf(newHeaders);
-            });
-        }
-    }
-
-    public static final class AlwaysRespondFinal {
-
-        private final ImpHttpStatus status;
-        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
-        private final ImpHeadersOperator headersOperator;
-
-        public AlwaysRespondFinal(
-                ImpHttpStatus status,
-                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction,
-                ImpHeadersOperator headersOperator) {
-            this.status = status;
-            this.bodyFunction = bodyFunction;
-            this.headersOperator = headersOperator;
-        }
-
-        public ImpTemplate onPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
             return buildTemplate(PortSupplier.fixed(port));
         }
 
@@ -426,13 +420,8 @@ public final class ImpTemplateSpec {
         private DefaultImpTemplate buildTemplate(PortSupplier portSupplier) {
             return new DefaultImpTemplate(ImmutableTemplateConfig.builder()
                     .futureServer(new FutureServer(portSupplier))
-                    .decision(new ResponseDecision(
-                            new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
-                                    .trustedStatus(status)
-                                    .bodyFromRequest(bodyFunction)
-                                    .trustedHeaders(headersOperator)
-                                    .build())))
-                    .fallback(new Teapot(List.of()))
+                    .decision(new ResponseDecision(responseCandidates))
+                    .fallback(fallback.apply(responseCandidates))
                     .build());
         }
     }
