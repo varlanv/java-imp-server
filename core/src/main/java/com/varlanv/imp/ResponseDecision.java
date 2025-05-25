@@ -1,7 +1,9 @@
 package com.varlanv.imp;
 
 import com.sun.net.httpserver.HttpExchange;
+import java.util.Comparator;
 import java.util.List;
+import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
 
 final class ResponseDecision {
@@ -12,15 +14,12 @@ final class ResponseDecision {
         this.candidates = List.copyOf(candidates);
     }
 
-    ResponseDecision(ResponseCandidate candidates) {
-        this.candidates = List.of(candidates);
-    }
-
     @Nullable ResponseCandidate pick(HttpExchange exchange) {
+        var matchedCandidates = new TreeSet<>(Comparator.comparingInt(ResponseCandidate::priority));
         for (var candidate : candidates) {
             try {
                 if (candidate.requestPredicate().test(exchange)) {
-                    return candidate;
+                    matchedCandidates.add(candidate);
                 }
             } catch (Exception e) {
                 ImpLog.error(e);
@@ -33,6 +32,13 @@ final class ResponseDecision {
                         e);
             }
         }
-        return null;
+        var size = matchedCandidates.size();
+        if (size == 0) {
+            return null;
+        } else if (size == 1) {
+            return matchedCandidates.iterator().next();
+        } else {
+            return matchedCandidates.first();
+        }
     }
 }

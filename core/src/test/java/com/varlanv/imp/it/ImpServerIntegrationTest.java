@@ -2280,6 +2280,68 @@ public class ImpServerIntegrationTest implements FastTest {
                         assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
                     });
         }
+
+        @Test
+        @DisplayName(
+                "should take matcher with lowest priority value when multiple matchers matched request and matcher is last in list")
+        void
+                should_take_matcher_with_lowest_priority_value_when_multiple_matchers_matched_request_and_matcher_is_last_in_list() {
+            var expectedResponseBody = "response body";
+            ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId1")
+                            .priority(2)
+                            .match(match -> {})
+                            .respondWithStatus(200)
+                            .andTextBody("should not be matched")
+                            .andNoAdditionalHeaders())
+                    .matchRequest(spec -> spec.id("matcherId2")
+                            .priority(1)
+                            .match(match -> {})
+                            .respondWithStatus(200)
+                            .andTextBody(expectedResponseBody)
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort()
+                    .useServer(impServer -> {
+                        var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                                .join();
+                        assertThat(response.body()).isEqualTo(expectedResponseBody);
+                        var responseHeaders = response.headers().map();
+                        assertThat(responseHeaders).hasSize(3);
+                        assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+                    });
+        }
+
+        @Test
+        @DisplayName(
+                "should take matcher with lowest priority value when multiple matchers matched request and matcher is first in list")
+        void
+                should_take_matcher_with_lowest_priority_value_when_multiple_matchers_matched_request_and_matcher_is_first_in_list() {
+            var expectedResponseBody = "response body";
+            ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId1")
+                            .priority(1)
+                            .match(match -> {})
+                            .respondWithStatus(200)
+                            .andTextBody(expectedResponseBody)
+                            .andNoAdditionalHeaders())
+                    .matchRequest(spec -> spec.id("matcherId2")
+                            .priority(2)
+                            .match(match -> {})
+                            .respondWithStatus(200)
+                            .andTextBody("should not be matched")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort()
+                    .useServer(impServer -> {
+                        var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                                .join();
+                        assertThat(response.body()).isEqualTo(expectedResponseBody);
+                        var responseHeaders = response.headers().map();
+                        assertThat(responseHeaders).hasSize(3);
+                        assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+                    });
+        }
     }
 
     @Nested
@@ -2589,9 +2651,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .andTextBody("anyBorrowed")
                         .andNoAdditionalHeaders());
 
-                impBorrowed.useServer(server -> {
-                    assertThat(server.port()).isEqualTo(sharedServer.port());
-                });
+                impBorrowed.useServer(server -> assertThat(server.port()).isEqualTo(sharedServer.port()));
             });
         }
 
@@ -2659,16 +2719,14 @@ public class ImpServerIntegrationTest implements FastTest {
         @Test
         @DisplayName("isDisposed should return false when running inside borrowed server")
         void isdisposed_should_return_false_when_running_inside_borrowed_server() {
-            useDefaultSharedServer(sharedServer -> {
-                sharedServer
-                        .borrow()
-                        .alwaysRespond(
-                                spec -> spec.withStatus(200).andTextBody("any").andNoAdditionalHeaders())
-                        .useServer(server -> {
-                            assertThat(sharedServer.isDisposed()).isFalse();
-                            assertThat(sharedServer.isDisposed()).isFalse();
-                        });
-            });
+            useDefaultSharedServer(sharedServer -> sharedServer
+                    .borrow()
+                    .alwaysRespond(
+                            spec -> spec.withStatus(200).andTextBody("any").andNoAdditionalHeaders())
+                    .useServer(server -> {
+                        assertThat(sharedServer.isDisposed()).isFalse();
+                        assertThat(sharedServer.isDisposed()).isFalse();
+                    }));
         }
 
         @Test
@@ -2870,26 +2928,22 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName(
                 "`andCustomContentTypeStream` should fail immediately on borrowed server when pass empty contentType")
         void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_empty_contenttype() {
-            useDefaultSharedServer(sharedServer -> {
-                assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
-                                .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0]))
-                                .andNoAdditionalHeaders()))
-                        .withMessage("null or blank strings are not supported - contentType");
-            });
+            useDefaultSharedServer(sharedServer -> assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                            .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
+                    .withMessage("null or blank strings are not supported - contentType"));
         }
 
         @Test
         @DisplayName(
                 "`andCustomContentTypeStream` should fail immediately on borrowed server when pass blank contentType")
         void andcustomcontenttypestream_should_fail_immediately_on_borrowed_server_when_pass_blank_contenttype() {
-            useDefaultSharedServer(sharedServer -> {
-                assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
-                                .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0]))
-                                .andNoAdditionalHeaders()))
-                        .withMessage("null or blank strings are not supported - contentType");
-            });
+            useDefaultSharedServer(sharedServer -> assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                            .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
+                    .withMessage("null or blank strings are not supported - contentType"));
         }
 
         @Test
@@ -2974,14 +3028,11 @@ public class ImpServerIntegrationTest implements FastTest {
             var map = new HashMap<String, List<String>>();
             map.put("key", List.of("val1"));
             map.put(null, List.of("val2"));
-            useDefaultSharedServer(sharedServer -> {
-                assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
-                                .andTextBody("")
-                                .andExactHeaders(map)))
-                        .withMessage(
-                                "null key are not supported in headers, but found null key in entry [ null=[val2] ]");
-            });
+            useDefaultSharedServer(sharedServer -> assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                            .andTextBody("")
+                            .andExactHeaders(map)))
+                    .withMessage("null key are not supported in headers, but found null key in entry [ null=[val2] ]"));
         }
 
         @Test
@@ -2990,14 +3041,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var map = new HashMap<String, List<String>>();
             map.put("key1", List.of("val1"));
             map.put("key2", null);
-            useDefaultSharedServer(sharedServer -> {
-                assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
-                                .andTextBody("")
-                                .andExactHeaders(map)))
-                        .withMessage(
-                                "null values are not supported in headers, but found null values in entry [ key2=null ]");
-            });
+            useDefaultSharedServer(sharedServer -> assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                            .andTextBody("")
+                            .andExactHeaders(map)))
+                    .withMessage(
+                            "null values are not supported in headers, but found null values in entry [ key2=null ]"));
         }
 
         @Test
@@ -3006,14 +3055,11 @@ public class ImpServerIntegrationTest implements FastTest {
             var map = new HashMap<String, List<String>>();
             map.put("key1", List.of("val1"));
             map.put(null, null);
-            useDefaultSharedServer(sharedServer -> {
-                assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
-                                .andTextBody("")
-                                .andExactHeaders(map)))
-                        .withMessage(
-                                "null key are not supported in headers, but found null key in entry [ null=null ]");
-            });
+            useDefaultSharedServer(sharedServer -> assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                            .andTextBody("")
+                            .andExactHeaders(map)))
+                    .withMessage("null key are not supported in headers, but found null key in entry [ null=null ]"));
         }
 
         @Test
@@ -3026,14 +3072,13 @@ public class ImpServerIntegrationTest implements FastTest {
             valueList.add(null);
             map.put("key1", List.of("val1"));
             map.put("key2", valueList);
-            useDefaultSharedServer(sharedServer -> {
-                assertThatExceptionOfType(IllegalArgumentException.class)
-                        .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
-                                .andTextBody("")
-                                .andExactHeaders(map)))
-                        .withMessage(
-                                "null values are not supported in headers, but found null values in entry [ key2=[val1, null] ]");
-            });
+            useDefaultSharedServer(
+                    sharedServer -> assertThatExceptionOfType(IllegalArgumentException.class)
+                            .isThrownBy(() -> sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(200)
+                                    .andTextBody("")
+                                    .andExactHeaders(map)))
+                            .withMessage(
+                                    "null values are not supported in headers, but found null values in entry [ key2=[val1, null] ]"));
         }
 
         @ParameterizedTest
@@ -3459,7 +3504,6 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("'onRequestMatching' should fail immediately if provided invalid http status")
         void onrequestmatching_should_fail_immediately_if_provided_invalid_http_status() {
             for (var invalidHttpStatusCode : List.of(-1, 1, 99, 104, 512, Integer.MAX_VALUE)) {
-                //noinspection DataFlowIssue
                 assertThatExceptionOfType(IllegalArgumentException.class)
                         .as("should reject http status code [%d]", invalidHttpStatusCode)
                         .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")

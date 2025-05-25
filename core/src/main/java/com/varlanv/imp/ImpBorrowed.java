@@ -2,11 +2,11 @@ package com.varlanv.imp;
 
 public final class ImpBorrowed {
 
-    private final StartedServerConfig config;
+    private final StartedServerConfig borrowedConfig;
     private final DefaultImpShared parent;
 
-    ImpBorrowed(StartedServerConfig config, DefaultImpShared parent) {
-        this.config = config;
+    ImpBorrowed(StartedServerConfig borrowedConfig, DefaultImpShared parent) {
+        this.borrowedConfig = borrowedConfig;
         this.parent = parent;
     }
 
@@ -24,6 +24,6 @@ public final class ImpBorrowed {
                             + "server before entering `useServer` lambda, or use non-shared server instead.",
                     counter));
         }
-        return parent.useWithMutatedContext(config, consumer);
+        return parent.useWithMutatedContext(borrowedConfig, consumer);
     }
 }
