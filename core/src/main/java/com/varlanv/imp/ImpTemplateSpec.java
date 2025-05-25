@@ -4,9 +4,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.Range;
 
@@ -19,7 +17,7 @@ public final class ImpTemplateSpec {
             Preconditions.nonBlank(id, "id");
             var builder = new RequestMatchBuilder();
             specConsumer.accept(builder);
-            return new OnRequestMatchingStatus(id, builder.build());
+            return new OnRequestMatchingStatus(id, builder.build(), List.of());
         }
 
         public AlwaysRespondBody alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
@@ -31,45 +29,56 @@ public final class ImpTemplateSpec {
 
         private final String matchId;
         private final RequestMatch requestMatch;
+        private final List<ResponseCandidate> responseCandidates;
 
-        OnRequestMatchingStatus(String matchId, RequestMatch requestMatch) {
+        OnRequestMatchingStatus(String matchId, RequestMatch requestMatch, List<ResponseCandidate> responseCandidates) {
             this.matchId = matchId;
             this.requestMatch = requestMatch;
+            this.responseCandidates = responseCandidates;
         }
 
         public OnRequestMatchingBody respondWithStatus(@Range(from = 100, to = 511) int status) {
-            return new OnRequestMatchingBody(this, Preconditions.validHttpStatusCode(status));
+            return new OnRequestMatchingBody(
+                    matchId, requestMatch, Preconditions.validHttpStatusCode(status), responseCandidates);
         }
     }
 
     public static final class OnRequestMatchingBody {
 
-        private final OnRequestMatchingStatus parent;
+        private final String matchId;
+        private final RequestMatch requestMatch;
         private final ImpHttpStatus status;
+        private final List<ResponseCandidate> responseCandidates;
 
-        OnRequestMatchingBody(OnRequestMatchingStatus parent, ImpHttpStatus status) {
-            this.parent = parent;
+        OnRequestMatchingBody(
+                String matchId,
+                RequestMatch requestMatch,
+                ImpHttpStatus status,
+                List<ResponseCandidate> responseCandidates) {
+            this.matchId = matchId;
+            this.requestMatch = requestMatch;
             this.status = status;
+            this.responseCandidates = responseCandidates;
         }
 
         public OnRequestMatchingHeaders andTextBody(String textBody) {
             Preconditions.nonNull(textBody, "textBody");
-            return defaultImpTemplate(ImpContentType.PLAIN_TEXT, () -> textBody.getBytes(StandardCharsets.UTF_8));
+            return toHeadersMatching(ImpContentType.PLAIN_TEXT, () -> textBody.getBytes(StandardCharsets.UTF_8));
         }
 
         public OnRequestMatchingHeaders andJsonBody(@Language("json") String jsonBody) {
             Preconditions.nonNull(jsonBody, "jsonBody");
-            return defaultImpTemplate(ImpContentType.JSON, () -> jsonBody.getBytes(StandardCharsets.UTF_8));
+            return toHeadersMatching(ImpContentType.JSON, () -> jsonBody.getBytes(StandardCharsets.UTF_8));
         }
 
         public OnRequestMatchingHeaders andXmlBody(@Language("xml") String xmlBody) {
             Preconditions.nonNull(xmlBody, "xmlBody");
-            return defaultImpTemplate(ImpContentType.XML, () -> xmlBody.getBytes(StandardCharsets.UTF_8));
+            return toHeadersMatching(ImpContentType.XML, () -> xmlBody.getBytes(StandardCharsets.UTF_8));
         }
 
         public OnRequestMatchingHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultImpTemplate(
+            return toHeadersMatching(
                     ImpContentType.OCTET_STREAM, () -> dataStreamSupplier.get().readAllBytes());
         }
 
@@ -77,48 +86,60 @@ public final class ImpTemplateSpec {
                 String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
-            return defaultImpTemplate(
-                    contentType, () -> dataStreamSupplier.get().readAllBytes());
+            return toHeadersMatching(contentType, () -> dataStreamSupplier.get().readAllBytes());
         }
 
-        private OnRequestMatchingHeaders defaultImpTemplate(
-                CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
-            return new OnRequestMatchingHeaders(this, contentType.toString(), bodySupplier);
+        private OnRequestMatchingHeaders toHeadersMatching(CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
+            return new OnRequestMatchingHeaders(
+                    matchId, requestMatch, status, contentType.toString(), bodySupplier, responseCandidates);
         }
     }
 
     public static final class OnRequestMatchingHeaders {
 
-        private final OnRequestMatchingBody parent;
+        private final String matchId;
+        private final RequestMatch requestMatch;
+        private final ImpHttpStatus status;
         private final String contentType;
         private final ImpSupplier<byte[]> bodySupplier;
+        private final List<ResponseCandidate> responseCandidates;
 
-        public OnRequestMatchingHeaders(
-                OnRequestMatchingBody parent, String contentType, ImpSupplier<byte[]> bodySupplier) {
-            this.parent = parent;
+        OnRequestMatchingHeaders(
+                String matchId,
+                RequestMatch requestMatch,
+                ImpHttpStatus status,
+                String contentType,
+                ImpSupplier<byte[]> bodySupplier,
+                List<ResponseCandidate> responseCandidates) {
+            this.matchId = matchId;
+            this.requestMatch = requestMatch;
+            this.status = status;
             this.contentType = contentType;
             this.bodySupplier = bodySupplier;
+            this.responseCandidates = responseCandidates;
         }
 
         public ContentContinue andAdditionalHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return new ContentContinue(this, existingHeaders -> {
-                var newHeaders = new HashMap<>(existingHeaders);
-                newHeaders.put("Content-Type", List.of(contentType));
-                newHeaders.putAll(headersCopy);
-                return Map.copyOf(newHeaders);
-            });
+            return new ContentContinue(
+                    matchId, requestMatch, status, bodySupplier, responseCandidates, existingHeaders -> {
+                        var newHeaders = new HashMap<>(existingHeaders);
+                        newHeaders.put("Content-Type", List.of(contentType));
+                        newHeaders.putAll(headersCopy);
+                        return Map.copyOf(newHeaders);
+                    });
         }
 
         public ContentContinue andExactHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return new ContentContinue(this, existingHeaders -> headersCopy);
+            return new ContentContinue(
+                    matchId, requestMatch, status, bodySupplier, responseCandidates, existingHeaders -> headersCopy);
         }
 
         public ContentContinue andNoAdditionalHeaders() {
-            return new ContentContinue(this, headers -> {
+            return new ContentContinue(matchId, requestMatch, status, bodySupplier, responseCandidates, headers -> {
                 var newHeaders = new HashMap<>(headers);
                 newHeaders.put("Content-Type", List.of(contentType));
                 return Map.copyOf(newHeaders);
@@ -128,33 +149,102 @@ public final class ImpTemplateSpec {
 
     public static final class ContentContinue {
 
-        private final OnRequestMatchingHeaders parent;
+        private final String matchId;
+        private final RequestMatch requestMatch;
+        private final ImpHttpStatus status;
+        private final ImpSupplier<byte[]> bodySupplier;
+        private final List<ResponseCandidate> responseCandidates;
         private final ImpHeadersOperator responseHeadersOperator;
 
-        ContentContinue(OnRequestMatchingHeaders parent, ImpHeadersOperator responseImpHeadersOperator) {
-            this.parent = parent;
-            this.responseHeadersOperator = responseImpHeadersOperator;
+        ContentContinue(
+                String matchId,
+                RequestMatch requestMatch,
+                ImpHttpStatus status,
+                ImpSupplier<byte[]> bodySupplier,
+                List<ResponseCandidate> responseCandidates,
+                ImpHeadersOperator responseHeadersOperator) {
+            this.matchId = matchId;
+            this.requestMatch = requestMatch;
+            this.status = status;
+            this.bodySupplier = bodySupplier;
+            this.responseHeadersOperator = responseHeadersOperator;
+            this.responseCandidates = responseCandidates;
+        }
+
+        public AlsoOnMatching alsoOnRequestMatching(String id, ImpConsumer<RequestMatchBuilder> specConsumer) {
+            Preconditions.nonNull(specConsumer, "consumer");
+            Preconditions.nonBlank(id, "id");
+            var builder = new RequestMatchBuilder();
+            specConsumer.accept(builder);
+            var requestMatch = builder.build();
+            var responseCandidate = new ResponseCandidate(
+                    matchId,
+                    request -> requestMatch.headersPredicate().test(new ImpHeadersMatch(request.getRequestHeaders()))
+                            && requestMatch.bodyPredicate().test(new ImpBodyMatch(request::getRequestBody))
+                            && requestMatch.urlPredicate().test(new ImpUrlMatch(request.getRequestURI())),
+                    () -> ImpResponse.builder()
+                            .trustedStatus(status)
+                            .body(bodySupplier)
+                            .trustedHeaders(responseHeadersOperator)
+                            .build());
+            return new AlsoOnMatching(
+                    id, requestMatch, InternalUtils.addToNewListFinal(responseCandidates, responseCandidate));
         }
 
         public ContentFinal fallbackForNonMatching(
                 ImpFn<ImpResponse.BuilderStatus, ImpResponse.BuilderHeaders> builderFn) {
             var impResponse = builderFn.apply(ImpResponse.builder()).build();
-            return new ContentFinal(this, candidates -> exchange -> impResponse);
+            return new ContentFinal(
+                    InternalUtils.addToNewListFinal(responseCandidates, buildResponseCandidate()),
+                    candidates -> exchange -> impResponse);
         }
 
         public ContentFinal rejectNonMatching() {
-            return new ContentFinal(this, Teapot::new);
+            return new ContentFinal(
+                    InternalUtils.addToNewListFinal(responseCandidates, buildResponseCandidate()), Teapot::new);
+        }
+
+        private ResponseCandidate buildResponseCandidate() {
+            return new ResponseCandidate(
+                    matchId,
+                    request -> requestMatch.headersPredicate().test(new ImpHeadersMatch(request.getRequestHeaders()))
+                            && requestMatch.bodyPredicate().test(new ImpBodyMatch(request::getRequestBody))
+                            && requestMatch.urlPredicate().test(new ImpUrlMatch(request.getRequestURI())),
+                    () -> ImpResponse.builder()
+                            .trustedStatus(status)
+                            .body(bodySupplier)
+                            .trustedHeaders(responseHeadersOperator)
+                            .build());
+        }
+    }
+
+    public static final class AlsoOnMatching {
+
+        private final String matchId;
+        private final RequestMatch requestMatch;
+        private final List<ResponseCandidate> responseCandidates;
+
+        AlsoOnMatching(String matchId, RequestMatch requestMatch, List<ResponseCandidate> responseCandidates) {
+            this.matchId = matchId;
+            this.requestMatch = requestMatch;
+            this.responseCandidates = responseCandidates;
+        }
+
+        public OnRequestMatchingBody respondWithStatus(@Range(from = 100, to = 511) int status) {
+            return new OnRequestMatchingBody(
+                    matchId, requestMatch, Preconditions.validHttpStatusCode(status), responseCandidates);
         }
     }
 
     public static final class ContentFinal {
 
-        private final ContentContinue parent;
+        private final List<ResponseCandidate> responseCandidates;
         private final ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback;
 
         ContentFinal(
-                ContentContinue parent, ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
-            this.parent = parent;
+                List<ResponseCandidate> responseCandidates,
+                ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
+            this.responseCandidates = responseCandidates;
             this.fallback = fallback;
         }
 
@@ -177,21 +267,10 @@ public final class ImpTemplateSpec {
 
         private DefaultImpTemplate buildTemplate(
                 PortSupplier portSupplier, ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
-            var requestMatch = parent.parent.parent.parent.requestMatch;
-            var candidates = List.of(new ResponseCandidate(
-                    parent.parent.parent.parent.matchId,
-                    request -> requestMatch.headersPredicate().test(new ImpHeadersMatch(request.getRequestHeaders()))
-                            && requestMatch.bodyPredicate().test(new ImpBodyMatch(request::getRequestBody))
-                            && requestMatch.urlPredicate().test(new ImpUrlMatch(request.getRequestURI())),
-                    () -> ImpResponse.builder()
-                            .trustedStatus(parent.parent.parent.status)
-                            .body(parent.parent.bodySupplier)
-                            .trustedHeaders(parent.responseHeadersOperator)
-                            .build()));
             return new DefaultImpTemplate(ImmutableTemplateConfig.builder()
                     .futureServer(new FutureServer(portSupplier))
-                    .decision(new ResponseDecision(candidates))
-                    .fallback(fallback.apply(candidates))
+                    .decision(new ResponseDecision(responseCandidates))
+                    .fallback(fallback.apply(responseCandidates))
                     .build());
         }
     }
@@ -240,18 +319,18 @@ public final class ImpTemplateSpec {
         }
 
         private AlwaysRespondHeaders defaultRespondHeaders(CharSequence contentType, ImpSupplier<byte[]> bodySupplier) {
-            return new AlwaysRespondHeaders(this, contentType.toString(), bodySupplier);
+            return new AlwaysRespondHeaders(status, contentType.toString(), bodySupplier);
         }
     }
 
     public static final class AlwaysRespondHeaders {
 
-        private final AlwaysRespondBody parent;
+        private final ImpHttpStatus status;
         private final String contentType;
         private final ImpSupplier<byte[]> bodySupplier;
 
-        public AlwaysRespondHeaders(AlwaysRespondBody parent, String contentType, ImpSupplier<byte[]> bodySupplier) {
-            this.parent = parent;
+        public AlwaysRespondHeaders(ImpHttpStatus status, String contentType, ImpSupplier<byte[]> bodySupplier) {
+            this.status = status;
             this.contentType = contentType;
             this.bodySupplier = bodySupplier;
         }
@@ -259,7 +338,7 @@ public final class ImpTemplateSpec {
         public AlwaysRespondFinal andAdditionalHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return new AlwaysRespondFinal(this, existingHeaders -> {
+            return new AlwaysRespondFinal(status, bodySupplier, existingHeaders -> {
                 var newHeaders = new Headers();
                 newHeaders.putAll(headersCopy);
                 newHeaders.put("Content-Type", List.of(contentType));
@@ -271,11 +350,11 @@ public final class ImpTemplateSpec {
         public AlwaysRespondFinal andExactHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return new AlwaysRespondFinal(this, existingHeaders -> headersCopy);
+            return new AlwaysRespondFinal(status, bodySupplier, existingHeaders -> headersCopy);
         }
 
         public AlwaysRespondFinal andNoAdditionalHeaders() {
-            return new AlwaysRespondFinal(this, headers -> {
+            return new AlwaysRespondFinal(status, bodySupplier, headers -> {
                 var newHeaders = new Headers();
                 newHeaders.putAll(headers);
                 newHeaders.put("Content-Type", List.of(contentType));
@@ -286,11 +365,14 @@ public final class ImpTemplateSpec {
 
     public static final class AlwaysRespondFinal {
 
-        private final AlwaysRespondHeaders parent;
+        private final ImpHttpStatus status;
+        private final ImpSupplier<byte[]> bodySupplier;
         private final ImpHeadersOperator headersOperator;
 
-        public AlwaysRespondFinal(AlwaysRespondHeaders parent, ImpHeadersOperator headersOperator) {
-            this.parent = parent;
+        public AlwaysRespondFinal(
+                ImpHttpStatus status, ImpSupplier<byte[]> bodySupplier, ImpHeadersOperator headersOperator) {
+            this.status = status;
+            this.bodySupplier = bodySupplier;
             this.headersOperator = headersOperator;
         }
 
@@ -316,8 +398,8 @@ public final class ImpTemplateSpec {
                     .futureServer(new FutureServer(portSupplier))
                     .decision(new ResponseDecision(
                             new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
-                                    .trustedStatus(parent.parent.status)
-                                    .body(parent.bodySupplier)
+                                    .trustedStatus(status)
+                                    .body(bodySupplier)
                                     .trustedHeaders(headersOperator)
                                     .build())))
                     .fallback(new Teapot(List.of()))
