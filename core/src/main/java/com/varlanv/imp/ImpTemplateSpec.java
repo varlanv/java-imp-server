@@ -11,149 +11,167 @@ import org.jetbrains.annotations.Range;
 
 public final class ImpTemplateSpec {
 
-    public static final class Start {
+    public static final class RequestMatchingSpecStart {
 
-        public OnRequestMatchingStatus onRequestMatching(String id, ImpConsumer<RequestMatchBuilder> specConsumer) {
-            Preconditions.nonNull(specConsumer, "consumer");
+        public RequestMatchingSpecId id(String id) {
             Preconditions.nonBlank(id, "id");
+            return new RequestMatchingSpecId(id);
+        }
+    }
+
+    public static final class RequestMatchingSpecId {
+
+        private final String id;
+
+        RequestMatchingSpecId(String id) {
+            this.id = id;
+        }
+
+        public RequestMatchingSpecPriority priority(int priority) {
+            return new RequestMatchingSpecPriority(id, priority);
+        }
+    }
+
+    public static final class RequestMatchingSpecPriority {
+
+        private final String id;
+        private final int priority;
+
+        RequestMatchingSpecPriority(String id, int priority) {
+            this.id = id;
+            this.priority = priority;
+        }
+
+        public RequestMatchingSpecMatch match(ImpConsumer<RequestMatchBuilder> specConsumer) {
+            Preconditions.nonNull(specConsumer, "consumer");
             var builder = new RequestMatchBuilder();
             specConsumer.accept(builder);
-            return new OnRequestMatchingStatus(id, builder.build(), List.of());
-        }
-
-        public AlwaysRespondBody alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
-            return new AlwaysRespondBody(Preconditions.validHttpStatusCode(status));
+            return new RequestMatchingSpecMatch(id, priority, builder.build());
         }
     }
 
-    public static final class OnRequestMatchingStatus {
+    public static final class RequestMatchingSpecMatch {
 
-        private final String matchId;
-        private final RequestMatch requestMatch;
-        private final List<ResponseCandidate> responseCandidates;
+        private final String id;
+        private final int priority;
+        private final RequestMatch match;
 
-        OnRequestMatchingStatus(String matchId, RequestMatch requestMatch, List<ResponseCandidate> responseCandidates) {
-            this.matchId = matchId;
-            this.requestMatch = requestMatch;
-            this.responseCandidates = responseCandidates;
+        RequestMatchingSpecMatch(String id, int priority, RequestMatch match) {
+            this.id = id;
+            this.priority = priority;
+            this.match = match;
         }
 
-        public OnRequestMatchingBody respondWithStatus(@Range(from = 100, to = 511) int status) {
-            return new OnRequestMatchingBody(
-                    matchId, requestMatch, Preconditions.validHttpStatusCode(status), responseCandidates);
+        public RequestMatchingSpecStatus respondWithStatus(@Range(from = 100, to = 511) int status) {
+            return new RequestMatchingSpecStatus(id, priority, match, Preconditions.validHttpStatusCode(status));
         }
     }
 
-    public static final class OnRequestMatchingBody {
+    public static final class RequestMatchingSpecStatus {
 
-        private final String matchId;
-        private final RequestMatch requestMatch;
-        private final ImpHttpStatus status;
-        private final List<ResponseCandidate> responseCandidates;
+        private final String id;
+        private final int priority;
+        private final RequestMatch match;
+        private final ImpHttpStatus responseStatus;
 
-        OnRequestMatchingBody(
-                String matchId,
-                RequestMatch requestMatch,
-                ImpHttpStatus status,
-                List<ResponseCandidate> responseCandidates) {
-            this.matchId = matchId;
-            this.requestMatch = requestMatch;
-            this.status = status;
-            this.responseCandidates = responseCandidates;
+        RequestMatchingSpecStatus(String id, int priority, RequestMatch match, ImpHttpStatus responseStatus) {
+            this.id = id;
+            this.priority = priority;
+            this.match = match;
+            this.responseStatus = responseStatus;
         }
 
-        public OnRequestMatchingHeaders andBodyBasedOnRequest(
+        public RequestMatchingSpecHeaders andBodyBasedOnRequest(
                 String contentType, ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(bodyFunction, "bodyFunction");
             return toHeadersMatching(contentType, bodyFunction);
         }
 
-        public OnRequestMatchingHeaders andTextBody(String textBody) {
+        public RequestMatchingSpecHeaders andTextBody(String textBody) {
             Preconditions.nonNull(textBody, "textBody");
             return toHeadersMatching(
                     ImpContentType.PLAIN_TEXT,
                     ignored -> () -> new ByteArrayInputStream(textBody.getBytes(StandardCharsets.UTF_8)));
         }
 
-        public OnRequestMatchingHeaders andJsonBody(@Language("json") String jsonBody) {
+        public RequestMatchingSpecHeaders andJsonBody(@Language("json") String jsonBody) {
             Preconditions.nonNull(jsonBody, "jsonBody");
             return toHeadersMatching(
                     ImpContentType.JSON,
                     ignored -> () -> new ByteArrayInputStream(jsonBody.getBytes(StandardCharsets.UTF_8)));
         }
 
-        public OnRequestMatchingHeaders andXmlBody(@Language("xml") String xmlBody) {
+        public RequestMatchingSpecHeaders andXmlBody(@Language("xml") String xmlBody) {
             Preconditions.nonNull(xmlBody, "xmlBody");
             return toHeadersMatching(
                     ImpContentType.XML,
                     ignored -> () -> new ByteArrayInputStream(xmlBody.getBytes(StandardCharsets.UTF_8)));
         }
 
-        public OnRequestMatchingHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
+        public RequestMatchingSpecHeaders andDataStreamBody(ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return toHeadersMatching(ImpContentType.OCTET_STREAM, ignored -> dataStreamSupplier);
         }
 
-        public OnRequestMatchingHeaders andCustomContentTypeStream(
+        public RequestMatchingSpecHeaders andCustomContentTypeStream(
                 String contentType, ImpSupplier<InputStream> dataStreamSupplier) {
             Preconditions.nonBlank(contentType, "contentType");
             Preconditions.nonNull(dataStreamSupplier, "dataStreamSupplier");
             return toHeadersMatching(contentType, ignored -> dataStreamSupplier);
         }
 
-        private OnRequestMatchingHeaders toHeadersMatching(
-                CharSequence contentType, ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodySupplier) {
-            return new OnRequestMatchingHeaders(
-                    matchId, requestMatch, status, contentType.toString(), bodySupplier, responseCandidates);
+        private RequestMatchingSpecHeaders toHeadersMatching(
+                CharSequence contentType, ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
+            return new RequestMatchingSpecHeaders(
+                    id, priority, match, responseStatus, contentType.toString(), bodyFunction);
         }
     }
 
-    public static final class OnRequestMatchingHeaders {
+    public static final class RequestMatchingSpecHeaders {
 
-        private final String matchId;
-        private final RequestMatch requestMatch;
-        private final ImpHttpStatus status;
+        private final String id;
+        private final int priority;
+        private final RequestMatch match;
+        private final ImpHttpStatus responseStatus;
         private final String contentType;
         private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
-        private final List<ResponseCandidate> responseCandidates;
 
-        OnRequestMatchingHeaders(
-                String matchId,
-                RequestMatch requestMatch,
-                ImpHttpStatus status,
+        RequestMatchingSpecHeaders(
+                String id,
+                int priority,
+                RequestMatch match,
+                ImpHttpStatus responseStatus,
                 String contentType,
-                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction,
-                List<ResponseCandidate> responseCandidates) {
-            this.matchId = matchId;
-            this.requestMatch = requestMatch;
-            this.status = status;
+                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
+            this.id = id;
+            this.priority = priority;
+            this.match = match;
+            this.responseStatus = responseStatus;
             this.contentType = contentType;
             this.bodyFunction = bodyFunction;
-            this.responseCandidates = responseCandidates;
         }
 
-        public ContentContinue andAdditionalHeaders(Map<String, List<String>> headers) {
+        public RequestMatchingSpecEnd andAdditionalHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return new ContentContinue(
-                    matchId, requestMatch, status, bodyFunction, responseCandidates, existingHeaders -> {
-                        var newHeaders = new HashMap<>(existingHeaders);
-                        newHeaders.put("Content-Type", List.of(contentType));
-                        newHeaders.putAll(headersCopy);
-                        return Map.copyOf(newHeaders);
-                    });
+            return new RequestMatchingSpecEnd(id, priority, match, responseStatus, bodyFunction, existingHeaders -> {
+                var newHeaders = new HashMap<>(existingHeaders);
+                newHeaders.put("Content-Type", List.of(contentType));
+                newHeaders.putAll(headersCopy);
+                return Map.copyOf(newHeaders);
+            });
         }
 
-        public ContentContinue andExactHeaders(Map<String, List<String>> headers) {
+        public RequestMatchingSpecEnd andExactHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return new ContentContinue(
-                    matchId, requestMatch, status, bodyFunction, responseCandidates, existingHeaders -> headersCopy);
+            return new RequestMatchingSpecEnd(
+                    id, priority, match, responseStatus, bodyFunction, existingHeaders -> headersCopy);
         }
 
-        public ContentContinue andNoAdditionalHeaders() {
-            return new ContentContinue(matchId, requestMatch, status, bodyFunction, responseCandidates, headers -> {
+        public RequestMatchingSpecEnd andNoAdditionalHeaders() {
+            return new RequestMatchingSpecEnd(id, priority, match, responseStatus, bodyFunction, headers -> {
                 var newHeaders = new HashMap<>(headers);
                 newHeaders.put("Content-Type", List.of(contentType));
                 return Map.copyOf(newHeaders);
@@ -161,92 +179,95 @@ public final class ImpTemplateSpec {
         }
     }
 
-    public static final class ContentContinue {
+    public static final class RequestMatchingSpecEnd {
 
-        private final String matchId;
+        private final String id;
+        private final int priority;
         private final RequestMatch requestMatch;
-        private final ImpHttpStatus status;
-        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
-        private final List<ResponseCandidate> responseCandidates;
+        private final ImpHttpStatus responseStatus;
+        private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction;
         private final ImpHeadersOperator responseHeadersOperator;
 
-        ContentContinue(
-                String matchId,
+        RequestMatchingSpecEnd(
+                String id,
+                int priority,
                 RequestMatch requestMatch,
-                ImpHttpStatus status,
-                ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction,
-                List<ResponseCandidate> responseCandidates,
+                ImpHttpStatus responseStatus,
+                ImpFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction,
                 ImpHeadersOperator responseHeadersOperator) {
-            this.matchId = matchId;
+            this.id = id;
+            this.priority = priority;
             this.requestMatch = requestMatch;
-            this.status = status;
-            this.bodyFunction = bodyFunction;
+            this.responseStatus = responseStatus;
+            this.responseBodyFunction = responseBodyFunction;
             this.responseHeadersOperator = responseHeadersOperator;
-            this.responseCandidates = responseCandidates;
         }
 
-        public AlsoOnMatching alsoOnRequestMatching(String id, ImpConsumer<RequestMatchBuilder> specConsumer) {
-            Preconditions.nonNull(specConsumer, "consumer");
-            Preconditions.nonBlank(id, "id");
-            var builder = new RequestMatchBuilder();
-            specConsumer.accept(builder);
-            var requestMatch = builder.build();
-            return new AlsoOnMatching(
-                    id, requestMatch, InternalUtils.addToNewListFinal(responseCandidates, buildResponseCandidate()));
-        }
-
-        public ContentFinal fallbackForNonMatching(
-                ImpFn<ImpResponse.BuilderStatus, ImpResponse.BuilderHeaders> fallbackFn) {
-            Preconditions.nonNull(fallbackFn, "fallbackFn");
-            var impResponse = fallbackFn.apply(ImpResponse.builder()).build();
-            return new ContentFinal(
-                    InternalUtils.addToNewListFinal(responseCandidates, buildResponseCandidate()),
-                    candidates -> exchange -> impResponse);
-        }
-
-        public ContentFinal rejectNonMatching() {
-            return new ContentFinal(
-                    InternalUtils.addToNewListFinal(responseCandidates, buildResponseCandidate()), Teapot::new);
-        }
-
-        private ResponseCandidate buildResponseCandidate() {
+        ResponseCandidate toResponseCandidate() {
             return new ResponseCandidate(
-                    matchId,
+                    id,
+                    priority,
                     request -> requestMatch.headersPredicate().test(new ImpHeadersMatch(request.getRequestHeaders()))
                             && requestMatch.bodyPredicate().test(new ImpBodyMatch(request::getRequestBody))
                             && requestMatch.urlPredicate().test(new ImpUrlMatch(request.getRequestURI())),
                     () -> ImpResponse.builder()
-                            .trustedStatus(status)
-                            .bodyFromRequest(bodyFunction)
+                            .trustedStatus(responseStatus)
+                            .bodyFromRequest(responseBodyFunction)
                             .trustedHeaders(responseHeadersOperator)
                             .build());
         }
     }
 
-    public static final class AlsoOnMatching {
+    public static final class Start {
 
-        private final String matchId;
-        private final RequestMatch requestMatch;
-        private final List<ResponseCandidate> responseCandidates;
-
-        AlsoOnMatching(String matchId, RequestMatch requestMatch, List<ResponseCandidate> responseCandidates) {
-            this.matchId = matchId;
-            this.requestMatch = requestMatch;
-            this.responseCandidates = responseCandidates;
+        public RequestMatchingSpecContinue matchRequest(ImpRequestMatch action) {
+            Preconditions.nonNull(action, "action");
+            var specEnd = action.apply(new RequestMatchingSpecStart());
+            Preconditions.nonNull(specEnd, "matchRequest function result");
+            var responseCandidate = specEnd.toResponseCandidate();
+            return new RequestMatchingSpecContinue(List.of(responseCandidate));
         }
 
-        public OnRequestMatchingBody respondWithStatus(@Range(from = 100, to = 511) int status) {
-            return new OnRequestMatchingBody(
-                    matchId, requestMatch, Preconditions.validHttpStatusCode(status), responseCandidates);
+        public AlwaysRespondBody alwaysRespondWithStatus(@Range(from = 100, to = 511) int status) {
+            return new AlwaysRespondBody(Preconditions.validHttpStatusCode(status));
         }
     }
 
-    public static final class ContentFinal {
+    public static final class RequestMatchingSpecContinue {
+
+        private final List<ResponseCandidate> responseCandidates;
+
+        RequestMatchingSpecContinue(List<ResponseCandidate> responseCandidates) {
+            this.responseCandidates = responseCandidates;
+        }
+
+        public RequestMatchingSpecContinue matchRequest(ImpRequestMatch action) {
+            Preconditions.nonNull(action, "action");
+            var specEnd = action.apply(new RequestMatchingSpecStart());
+            Preconditions.nonNull(specEnd, "matchRequest function result");
+            var responseCandidate = specEnd.toResponseCandidate();
+            return new RequestMatchingSpecContinue(
+                    InternalUtils.addToNewListFinal(responseCandidates, responseCandidate));
+        }
+
+        public SpecFinal fallbackForNonMatching(
+                ImpFn<ImpResponse.BuilderStatus, ImpResponse.BuilderHeaders> fallbackFn) {
+            Preconditions.nonNull(fallbackFn, "fallbackFn");
+            var impResponse = fallbackFn.apply(ImpResponse.builder()).build();
+            return new SpecFinal(responseCandidates, candidates -> exchange -> impResponse);
+        }
+
+        public SpecFinal rejectNonMatching() {
+            return new SpecFinal(responseCandidates, Teapot::new);
+        }
+    }
+
+    public static final class SpecFinal {
 
         private final List<ResponseCandidate> responseCandidates;
         private final ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback;
 
-        ContentFinal(
+        SpecFinal(
                 List<ResponseCandidate> responseCandidates,
                 ImpFn<List<ResponseCandidate>, ImpFn<HttpExchange, ImpResponse>> fallback) {
             this.responseCandidates = responseCandidates;

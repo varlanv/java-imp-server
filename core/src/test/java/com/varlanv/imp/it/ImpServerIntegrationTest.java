@@ -549,11 +549,12 @@ public class ImpServerIntegrationTest implements FastTest {
                 String contentTypeHeaderKey) {
             var expected = "some text";
             ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "id", request -> request.headersPredicate(h -> h.containsKey(contentTypeHeaderKey)))
-                    .respondWithStatus(200)
-                    .andTextBody(expected)
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsKey(contentTypeHeaderKey)))
+                            .respondWithStatus(200)
+                            .andTextBody(expected)
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort()
                     .useServer(impServer -> {
@@ -578,12 +579,13 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_return_fallback_response_when_none_of_matchers_matched_request_and_expected_text_body() {
             var matcherId = "some matcher id";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            matcherId,
-                            request -> request.headersPredicate(h -> h.containsKey("unknown-not-matched-header")))
-                    .respondWithStatus(200)
-                    .andTextBody("should never return")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id(matcherId)
+                            .priority(0)
+                            .match(request ->
+                                    request.headersPredicate(h -> h.containsKey("unknown-not-matched-header")))
+                            .respondWithStatus(200)
+                            .andTextBody("should never return")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
             subject.useServer(impServer -> {
@@ -610,12 +612,13 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_return_fallback_response_when_none_of_matchers_matched_request_and_expected_json_body() {
             var matcherId = "some matcher id";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            matcherId,
-                            request -> request.headersPredicate(h -> h.containsKey("unknown-not-matched-header")))
-                    .respondWithStatus(200)
-                    .andJsonBody("{}")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id(matcherId)
+                            .priority(0)
+                            .match(request ->
+                                    request.headersPredicate(h -> h.containsKey("unknown-not-matched-header")))
+                            .respondWithStatus(200)
+                            .andJsonBody("{}")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
             subject.useServer(impServer -> {
@@ -644,10 +647,12 @@ public class ImpServerIntegrationTest implements FastTest {
             @Language("json")
             var expected = "{ \"some\": \"json\" }";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
-                    .respondWithStatus(200)
-                    .andJsonBody(expected)
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .respondWithStatus(200)
+                            .andJsonBody(expected)
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -674,10 +679,12 @@ public class ImpServerIntegrationTest implements FastTest {
             @Language("xml")
             var expected = "<root><entry>value</entry></root>";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
-                    .respondWithStatus(200)
-                    .andXmlBody(expected)
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .respondWithStatus(200)
+                            .andXmlBody(expected)
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -704,10 +711,12 @@ public class ImpServerIntegrationTest implements FastTest {
                 should_return_expected_response_when_matched_user_agent_header_key_by_containskey_and_expect_stream_body() {
             var expected = "some-data".getBytes(StandardCharsets.UTF_8);
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
-                    .respondWithStatus(200)
-                    .andDataStreamBody(() -> new ByteArrayInputStream(expected))
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .respondWithStatus(200)
+                            .andDataStreamBody(() -> new ByteArrayInputStream(expected))
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -735,10 +744,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var expected = "some-data".getBytes(StandardCharsets.UTF_8);
             var contentType = "customContentType";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("id", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
-                    .respondWithStatus(200)
-                    .andCustomContentTypeStream(contentType, () -> new ByteArrayInputStream(expected))
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .respondWithStatus(200)
+                            .andCustomContentTypeStream(contentType, () -> new ByteArrayInputStream(expected))
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -765,10 +776,12 @@ public class ImpServerIntegrationTest implements FastTest {
                 should_return_expected_status_when_matched_user_agent_header_key_by_containskey_and_expect_specific_status() {
             var expectedStatus = 404;
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
-                    .respondWithStatus(expectedStatus)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .respondWithStatus(expectedStatus)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -787,10 +800,12 @@ public class ImpServerIntegrationTest implements FastTest {
                 should_return_additional_headers_when_matched_user_agent_header_key_by_containskey_and_expect_additional_headers() {
             var additionalHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2", "value3"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andAdditionalHeaders(additionalHeaders)
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andAdditionalHeaders(additionalHeaders))
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -812,10 +827,12 @@ public class ImpServerIntegrationTest implements FastTest {
                 should_return_only_exact_headers_when_matched_user_agent_header_key_by_containskey_and_expect_exact_headers() {
             var exactHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2", "value3"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.headersPredicate(h -> h.containsKey("user-agent")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andExactHeaders(exactHeaders)
+                    .matchRequest(spec -> spec.id("any")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andExactHeaders(exactHeaders))
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -837,11 +854,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var expectedMatchValue = "value2";
             var sentHeaders = Map.of("header1", List.of("value1", expectedMatchValue));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any", request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -863,11 +881,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var sentHeaders = Map.of("header1", List.of("value1", expectedMatchValue));
             var port = randomPort();
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any", request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onPort(port);
 
@@ -887,12 +906,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_return_error_when_can_t_match_by_headers_predicate_containsvalue() {
             var sentHeaders = Map.of("header1", List.of("value1", "value2"), "header2", List.of("value3"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId",
-                            request -> request.headersPredicate(h -> h.containsValue("some not existing value")))
-                    .respondWithStatus(200)
-                    .andTextBody("anyBody")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsValue("some not existing value")))
+                            .respondWithStatus(200)
+                            .andTextBody("anyBody")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -913,13 +932,13 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_return_error_when_can_t_match_by_headers_predicate_containspair() {
             var sentHeaders = Map.of("header1", List.of("value1", "value2"), "header2", List.of("value2", "value3"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId",
-                            request ->
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request ->
                                     request.headersPredicate(h -> h.containsPair("header1", "some not existing value")))
-                    .respondWithStatus(200)
-                    .andTextBody("anyBody")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("anyBody")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -939,13 +958,13 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when empty content-type in request and 'containsPair' specified")
         void should_return_error_when_empty_content_type_in_request_and_containspair_specified() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId",
-                            request ->
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request ->
                                     request.headersPredicate(h -> h.containsPair("header1", "some not existing value")))
-                    .respondWithStatus(200)
-                    .andTextBody("anyBody")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("anyBody")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -964,12 +983,13 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when empty content-type in request and 'containsAllKeys' specified")
         void should_return_error_when_empty_content_type_in_request_and_containsallkeys_specified() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId",
-                            request -> request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
-                    .respondWithStatus(200)
-                    .andTextBody("anyBody")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request ->
+                                    request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
+                            .respondWithStatus(200)
+                            .andTextBody("anyBody")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -988,12 +1008,13 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when 'containsAllKeys' specified, but not matches requested headers")
         void should_return_error_when_containsallkeys_specified_but_not_matches_requested_headers() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId",
-                            request -> request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
-                    .respondWithStatus(200)
-                    .andTextBody("anyBody")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request ->
+                                    request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
+                            .respondWithStatus(200)
+                            .andTextBody("anyBody")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1016,12 +1037,13 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_successfully_match_by_headers_predicate_containsallkeys() {
             var sentHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2", "value3"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any",
-                            request -> request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request ->
+                                    request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1042,13 +1064,13 @@ public class ImpServerIntegrationTest implements FastTest {
             var expectedMatchPair = Map.entry("header2", "value3");
             var sentHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2", "value3"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any",
-                            request -> request.headersPredicate(
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(
                                     h -> h.containsPair(expectedMatchPair.getKey(), expectedMatchPair.getValue())))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1068,13 +1090,13 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_return_error_when_can_t_match_by_headers_predicate_containspairlist() {
             var sentHeaders = Map.of("header1", List.of("value1", "value2"), "header2", List.of("value2", "value3"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId",
-                            request -> request.headersPredicate(
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(
                                     h -> h.containsPairList("header1", List.of("some not existing value"))))
-                    .respondWithStatus(200)
-                    .andTextBody("anyBody")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("anyBody")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1094,13 +1116,13 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when empty content-type in request and 'containsPairList' specified")
         void should_return_error_when_empty_content_type_in_request_and_containspairlist_specified() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId",
-                            request -> request.headersPredicate(
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(
                                     h -> h.containsPairList("header1", List.of("some not existing value"))))
-                    .respondWithStatus(200)
-                    .andTextBody("anyBody")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("anyBody")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1122,13 +1144,13 @@ public class ImpServerIntegrationTest implements FastTest {
             var sentHeaders =
                     Map.of("header1", List.of("value1"), expectedMatchPair.getKey(), expectedMatchPair.getValue());
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any",
-                            request -> request.headersPredicate(
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(
                                     h -> h.containsPairList(expectedMatchPair.getKey(), expectedMatchPair.getValue())))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1147,10 +1169,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should successfully match by headers predicate 'hasContentType'")
         void should_successfully_match_by_headers_predicate_hascontenttype() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.headersPredicate(h -> h.hasContentType("text/plain")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.hasContentType("text/plain")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1171,11 +1195,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when 'hasContentType' doesn't match")
         void should_return_error_when_hascontenttype_doesn_t_match() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId", request -> request.headersPredicate(h -> h.hasContentType("application/json")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1193,11 +1218,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when 'hasContentType' specified, but contentType is null in request")
         void should_return_error_when_hascontenttype_specified_but_contenttype_is_null_in_request() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId", request -> request.headersPredicate(h -> h.hasContentType("application/json")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andExactHeaders(Map.of())
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andExactHeaders(Map.of()))
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1219,11 +1245,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var fallbackStatus = ImpHttpStatus.BAD_REQUEST;
             var fallbackBody = "fallback";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId", request -> request.headersPredicate(h -> h.hasContentType("application/json")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andExactHeaders(Map.of())
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andExactHeaders(Map.of()))
                     .fallbackForNonMatching(builder -> builder.status(fallbackStatus.value())
                             .body(() -> new ByteArrayInputStream(fallbackBody.getBytes(StandardCharsets.UTF_8))))
                     .onRandomPort();
@@ -1244,11 +1271,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var fallbackStatus = ImpHttpStatus.BAD_REQUEST;
             var fallbackBody = "fallback";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId", request -> request.headersPredicate(h -> h.hasContentType("application/json")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andExactHeaders(Map.of())
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andExactHeaders(Map.of()))
                     .fallbackForNonMatching(builder -> builder.status(fallbackStatus.value())
                             .body(() -> new ByteArrayInputStream(fallbackBody.getBytes(StandardCharsets.UTF_8))))
                     .onRandomPort();
@@ -1272,11 +1300,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var fallbackStatus = ImpHttpStatus.BAD_REQUEST;
             var fallbackBody = "fallback";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "anyId", request -> request.headersPredicate(h -> h.hasContentType("application/json")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andExactHeaders(Map.of())
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andExactHeaders(Map.of()))
                     .fallbackForNonMatching(builder -> builder.status(fallbackStatus.value())
                             .body(() -> new ByteArrayInputStream(fallbackBody.getBytes(StandardCharsets.UTF_8))))
                     .onRandomPort();
@@ -1293,11 +1322,11 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("`onRequestMatching` if closure throws exception then fail immediately")
-        void onrequestmatching_if_closure_throws_exception_then_fail_immediately() {
+        @DisplayName("`matchRequest` if closure throws exception then fail immediately")
+        void matchrequest_if_closure_throws_exception_then_fail_immediately() {
             var matcherException = new RuntimeException("matcher exception");
             assertThatExceptionOfType(RuntimeException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("anyId", request -> {
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> {
                         throw matcherException;
                     }))
                     .withMessage(matcherException.getMessage());
@@ -1309,14 +1338,14 @@ public class ImpServerIntegrationTest implements FastTest {
             var matcherException = new RuntimeException("matcher exception");
             var matcherId = "anyId";
             ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            matcherId,
-                            request -> request.headersPredicate(headers -> {
+                    .matchRequest(spec -> spec.id(matcherId)
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> {
                                 throw matcherException;
                             }))
-                    .respondWithStatus(200)
-                    .andTextBody("some text")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("some text")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort()
                     .useServer(impServer -> {
@@ -1344,10 +1373,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var requestBody = "Some Text body";
             var expectedMatch = "Text";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContains(expectedMatch)))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.bodyContains(expectedMatch)))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1367,10 +1398,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_fail_when_don_t_match_by_body_predicate_bodycontains() {
             var requestBody = "Some Text body";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContains("text")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.bodyContains("text")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1381,7 +1414,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var responseHeaders = response.headers().map();
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [any]");
+                                + "Available matcher IDs: [anyId]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -1393,11 +1426,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var requestBody = "Some Text body";
             var expectedMatch = "text";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase(expectedMatch)))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase(expectedMatch)))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1417,10 +1451,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_successfully_match_by_body_predicate_bodymatches() {
             var requestBody = "Some Text body";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyMatches(".*ext.*")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.bodyMatches(".*ext.*")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1440,10 +1476,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_return_error_when_fail_to_match_by_body_predicate_bodymatches() {
             var requestBody = "Some Text body";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyMatches(".*extt.*")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.bodyMatches(".*extt.*")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1454,7 +1492,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var responseHeaders = response.headers().map();
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [any]");
+                                + "Available matcher IDs: [anyId]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -1465,10 +1503,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_fail_when_fail_to_match_by_body_predicate_bodycontainsignorecase() {
             var requestBody = "Some Text body";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("texttt")))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("texttt")))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1479,7 +1519,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var responseHeaders = response.headers().map();
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [any]");
+                                + "Available matcher IDs: [anyId]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -1491,11 +1531,13 @@ public class ImpServerIntegrationTest implements FastTest {
             var requestBody = "Some Text body";
             var requestHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("text"))
-                            .headersPredicate(h -> h.containsPair("header1", "value1")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("text"))
+                                    .headersPredicate(h -> h.containsPair("header1", "value1")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1521,11 +1563,13 @@ public class ImpServerIntegrationTest implements FastTest {
             var requestBody = "Some Text body";
             var requestHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("text"))
-                            .headersPredicate(h -> h.containsPair("header1", "value1qweqwe")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("text"))
+                                    .headersPredicate(h -> h.containsPair("header1", "value1qweqwe")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1541,7 +1585,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var responseHeaders = response.headers().map();
                 assertThat(response.body())
                         .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -1553,12 +1597,13 @@ public class ImpServerIntegrationTest implements FastTest {
             var requestBody = "Some Text body";
             var requestHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2"));
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any", request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("texttttt"))
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("texttttt"))
                                     .headersPredicate(h -> h.containsPair("header1", "value1")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1574,7 +1619,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var responseHeaders = response.headers().map();
                 assertThat(response.body())
                         .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -1585,13 +1630,13 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_successfully_match_by_body_predicate_testbodystring() {
             var requestBody = "Some Text body";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any",
-                            request ->
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request ->
                                     request.bodyPredicate(b -> b.testBodyString(bodyString -> !bodyString.isEmpty())))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1611,10 +1656,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void should_return_error_when_fail_to_match_by_body_predicate_testbodystring() {
             var requestBody = "Some Text body";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.bodyPredicate(b -> b.testBodyString(String::isEmpty)))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.testBodyString(String::isEmpty)))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1625,7 +1672,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var responseHeaders = response.headers().map();
                 assertThat(response.body())
                         .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -1638,14 +1685,14 @@ public class ImpServerIntegrationTest implements FastTest {
             var testBodyStringException = new RuntimeException("testBodyString exception");
             var matcherId = "matcherId";
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            matcherId,
-                            request -> request.bodyPredicate(b -> b.testBodyString(str -> {
+                    .matchRequest(spec -> spec.id(matcherId)
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(b -> b.testBodyString(str -> {
                                 throw testBodyStringException;
                             })))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1671,10 +1718,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error wen fail to match by url predicate 'urlMatches'")
         void should_return_error_wen_fail_to_match_by_url_predicate_urlmatches() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlMatches(".*local.*")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.urlMatches(".*local.*")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1683,7 +1732,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .join();
                 assertThat(response.body())
                         .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
                 var responseHeaders = response.headers().map();
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
@@ -1694,10 +1743,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should successfully match by url predicate 'urlMatches' at root path")
         void should_successfully_match_by_url_predicate_urlmatches_at_root_path() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlMatches("/")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.urlMatches("/")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1715,10 +1766,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should successfully match by url predicate 'urlMatches' at specific path")
         void should_successfully_match_by_url_predicate_urlmatches_at_specific_path() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlMatches(".*some/.*")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.urlMatches(".*some/.*")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1740,10 +1793,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when fail to match by url predicate 'urlContains' at specific path")
         void should_return_error_when_fail_to_match_by_url_predicate_urlcontains_at_specific_path() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlContains("me/pa")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.urlContains("me/pa")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1756,7 +1811,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .join();
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [any]");
+                                + "Available matcher IDs: [anyId]");
                 var responseHeaders = response.headers().map();
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
@@ -1767,10 +1822,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should successfully match by url predicate 'urlContains' at specific path")
         void should_successfully_match_by_url_predicate_urlcontains_at_specific_path() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlContains("ome/P")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.urlContains("ome/P")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1792,10 +1849,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should successfully match by url predicate 'urlContainsIgnoreCase' at specific path")
         void should_successfully_match_by_url_predicate_urlcontainsignorecase_at_specific_path() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlContainsIgnoreCase("ome/p")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.urlContainsIgnoreCase("ome/p")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1817,10 +1876,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should successfully match by url predicate 'hasQueryParamKey'")
         void should_successfully_match_by_url_predicate_hasqueryparamkey() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParamKey("query1")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.hasQueryParamKey("query1")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1843,10 +1904,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should successfully match by url predicate 'hasQueryParamKey' when query value is not present")
         void should_successfully_match_by_url_predicate_hasqueryparamkey_when_query_value_is_not_present() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParamKey("qw")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.hasQueryParamKey("qw")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1869,10 +1932,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should successfully match by url predicate 'hasQueryParamKey' when query value is empty after =")
         void should_successfully_match_by_url_predicate_hasqueryparamkey_when_query_value_is_empty_after() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParamKey("qw")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.hasQueryParamKey("qw")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1895,10 +1960,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when fail to match by url predicate 'hasQueryParamKey'")
         void should_return_error_when_fail_to_match_by_url_predicate_hasqueryparamkey() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParamKey("query3")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.hasQueryParamKey("query3")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1912,7 +1979,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .join();
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [any]");
+                                + "Available matcher IDs: [anyId]");
                 var responseHeaders = response.headers().map();
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
@@ -1923,10 +1990,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when query is empty but request to match by url predicate 'hasQueryParamKey'")
         void should_return_error_when_query_is_empty_but_request_to_match_by_url_predicate_hasqueryparamkey() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParamKey("query1")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.hasQueryParamKey("query1")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1939,7 +2008,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .join();
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [any]");
+                                + "Available matcher IDs: [anyId]");
                 var responseHeaders = response.headers().map();
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
@@ -1950,10 +2019,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should successfully match by url predicate 'hasQueryParam'")
         void should_successfully_match_by_url_predicate_hasqueryparam() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param1")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param1")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1976,10 +2047,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when fail to match by url predicate 'hasQueryParam'")
         void should_return_error_when_fail_to_match_by_url_predicate_hasqueryparam() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param2")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param2")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -1993,7 +2066,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .join();
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [any]");
+                                + "Available matcher IDs: [anyId]");
                 var responseHeaders = response.headers().map();
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
@@ -2004,10 +2077,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when query is empty but request to match by url predicate 'hasQueryParam'")
         void should_return_error_when_query_is_empty_but_request_to_match_by_url_predicate_hasqueryparam() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param2")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param2")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -2020,7 +2095,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .join();
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [any]");
+                                + "Available matcher IDs: [anyId]");
                 var responseHeaders = response.headers().map();
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
@@ -2031,10 +2106,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should return error when fail to match by url predicate 'urlContainsIgnoreCase' at specific path")
         void should_return_error_when_fail_to_match_by_url_predicate_urlcontainsignorecase_at_specific_path() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlContainsIgnoreCase("ome/ppp")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.urlContainsIgnoreCase("ome/ppp")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -2047,7 +2124,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .join();
                 assertThat(response.body())
                         .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [any]");
+                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
                 var responseHeaders = response.headers().map();
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
@@ -2058,11 +2135,13 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should fail when match success match by url predicate but fail to match by body")
         void should_fail_when_match_success_match_by_url_predicate_but_fail_to_match_by_body() {
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching("any", request -> request.urlPredicate(u -> u.urlMatches(".*some/.*"))
-                            .bodyPredicate(b -> b.bodyContains("text")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.urlPredicate(u -> u.urlMatches(".*some/.*"))
+                                    .bodyPredicate(b -> b.bodyContains("text")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -2075,7 +2154,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .join();
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [any]");
+                                + "Available matcher IDs: [anyId]");
                 var responseHeaders = response.headers().map();
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
@@ -2093,13 +2172,13 @@ public class ImpServerIntegrationTest implements FastTest {
                 }
                 """;
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any",
-                            request -> request.bodyPredicate(
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(
                                     b -> b.jsonPath("$.key").stringEquals("val")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -2125,13 +2204,13 @@ public class ImpServerIntegrationTest implements FastTest {
                 }
                 """;
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any",
-                            request -> request.bodyPredicate(
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(
                                     b -> b.jsonPath("$.key").stringEquals("val2")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -2142,7 +2221,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var responseHeaders = response.headers().map();
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [any]");
+                                + "Available matcher IDs: [anyId]");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -2163,13 +2242,13 @@ public class ImpServerIntegrationTest implements FastTest {
             var jsonPath = "$.ke][]y";
             @SuppressWarnings("LanguageMismatch")
             var subject = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any",
-                            request -> request.bodyPredicate(
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.bodyPredicate(
                                     b -> b.jsonPath(jsonPath).stringEquals("val2")))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort();
 
@@ -2181,8 +2260,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 assertThat(response.statusCode()).isEqualTo(418);
                 assertThat(response.body())
                         .isEqualTo(
-                                "Exception was thrown by request predicate with id [any]. "
-                                        + "Please check your ImpServer configuration for [any] request matcher. "
+                                "Exception was thrown by request predicate with id [anyId]. "
+                                        + "Please check your ImpServer configuration for [anyId] request matcher. "
                                         + "Thrown error is [com.jayway.jsonpath.InvalidPathException]: Could not parse token starting at position 5. Expected ?, ', 0-9, * ");
                 assertThat(responseHeaders).hasSize(2);
             });
@@ -2192,13 +2271,15 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("should be able to build response based on request body with `andBodyBasedOnRequest`")
         void should_be_able_to_build_response_based_on_request_body_with_andbodybasedonrequest() {
             ImpServer.httpTemplate()
-                    .onRequestMatching("matcherId", matchBuilder -> {})
-                    .respondWithStatus(200)
-                    .andBodyBasedOnRequest(
-                            "text/plain",
-                            request -> () ->
-                                    new ByteArrayInputStream(request.body().getBytes(StandardCharsets.UTF_8)))
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(1)
+                            .match(match -> {})
+                            .respondWithStatus(200)
+                            .andBodyBasedOnRequest(
+                                    "text/plain",
+                                    request -> () -> new ByteArrayInputStream(
+                                            request.body().getBytes(StandardCharsets.UTF_8)))
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .onRandomPort()
                     .useServer(impServer -> {
@@ -2434,11 +2515,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var sentHeaders = Map.of("header1", List.of("value1", expectedMatchValue));
             var port = randomPort();
             var sharedServer = ImpServer.httpTemplate()
-                    .onRequestMatching(
-                            "any", request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
-                    .respondWithStatus(200)
-                    .andTextBody("response body")
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .startSharedOnPort(port);
             try {
@@ -2649,10 +2731,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var expectedHeader = "some-header";
             var headers = Map.of(expectedHeader, List.of("some-value"));
             var sharedServer = ImpServer.httpTemplate()
-                    .onRequestMatching("anyId", spec -> spec.headersPredicate(h -> h.containsKey(expectedHeader)))
-                    .respondWithStatus(originalStatus)
-                    .andTextBody(originalBody)
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsKey(expectedHeader)))
+                            .respondWithStatus(originalStatus)
+                            .andTextBody(originalBody)
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .startSharedOnRandomPort();
 
@@ -2686,10 +2770,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var expectedHeader = "some-header";
             var headers = Map.of(expectedHeader, List.of("some-value"));
             var sharedServer = ImpServer.httpTemplate()
-                    .onRequestMatching("anyId", spec -> spec.headersPredicate(h -> h.containsKey(expectedHeader)))
-                    .respondWithStatus(originalStatus)
-                    .andTextBody(originalBody)
-                    .andNoAdditionalHeaders()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(h -> h.containsKey(expectedHeader)))
+                            .respondWithStatus(originalStatus)
+                            .andTextBody(originalBody)
+                            .andNoAdditionalHeaders())
                     .rejectNonMatching()
                     .startSharedOnRandomPort();
 
@@ -3323,43 +3409,59 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("'onRequestMatching' when null then throw exception")
-        void onrequestmatching_when_null_then_throw_exception() {
+        @DisplayName("'matchRequest' when null function then throw exception")
+        void matchrequest_when_null_function_then_throw_exception() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("id", null))
-                    .withMessage("nulls are not supported - consumer");
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(null))
+                    .withMessage("nulls are not supported - action");
         }
 
         @Test
+        @SuppressWarnings("DataFlowIssue")
         @DisplayName("'onRequestMatching' when null id then throw exception")
         void onrequestmatching_when_null_id_then_throw_exception() {
-            //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching(null, b -> {}))
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> {
+                        spec.id(null);
+                        return null;
+                    }))
                     .withMessage("null or blank strings are not supported - id");
         }
 
         @Test
+        @SuppressWarnings("DataFlowIssue")
         @DisplayName("'onRequestMatching' when empty id then throw exception")
         void onrequestmatching_when_empty_id_then_throw_exception() {
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("", b -> {}))
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> {
+                        spec.id("");
+                        return null;
+                    }))
                     .withMessage("null or blank strings are not supported - id");
         }
 
         @Test
+        @SuppressWarnings("DataFlowIssue")
         @DisplayName("'onRequestMatching' when blank id then throw exception")
         void onrequestmatching_when_blank_id_then_throw_exception() {
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("  ", b -> {}))
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> {
+                        spec.id("   ");
+                        return null;
+                    }))
                     .withMessage("null or blank strings are not supported - id");
         }
 
         @Test
-        @DisplayName("'onRequestMatching' when noop consumer then ok")
-        void onrequestmatching_when_noop_consumer_then_ok() {
-            assertThatNoException().isThrownBy(() -> ImpServer.httpTemplate().onRequestMatching("id", builder -> {}));
+        @DisplayName("'onRequestMatching' when noop match consumer then ok")
+        void onrequestmatching_when_noop_match_consumer_then_ok() {
+            assertThatNoException().isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                    .priority(0)
+                    .match(request -> {})
+                    .respondWithStatus(200)
+                    .andTextBody("")
+                    .andNoAdditionalHeaders()));
         }
 
         @Test
@@ -3367,27 +3469,39 @@ public class ImpServerIntegrationTest implements FastTest {
         void onrequestmatching_when_consumer_sets_null_headers_predicate_then_fail_immediately() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() ->
-                            ImpServer.httpTemplate().onRequestMatching("id", builder -> builder.headersPredicate(null)))
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(null))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
                     .withMessage("nulls are not supported - headersPredicate");
         }
 
         @Test
         @DisplayName("'onRequestMatching' when consumer sets normal headers predicate then ok")
         void onrequestmatching_when_consumer_sets_normal_headers_predicate_then_ok() {
-            assertThatNoException().isThrownBy(() -> ImpServer.httpTemplate()
-                    .onRequestMatching("id", builder -> builder.headersPredicate(p -> true)));
+            assertThatNoException().isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                    .priority(0)
+                    .match(request -> request.headersPredicate(headers -> true))
+                    .respondWithStatus(200)
+                    .andTextBody("")
+                    .andNoAdditionalHeaders()));
         }
 
         @Test
         @DisplayName("'onRequestMatching' should fail immediately if provided invalid http status")
         void onrequestmatching_should_fail_immediately_if_provided_invalid_http_status() {
             for (var invalidHttpStatusCode : List.of(-1, 1, 99, 104, 512, Integer.MAX_VALUE)) {
+                //noinspection DataFlowIssue
                 assertThatExceptionOfType(IllegalArgumentException.class)
                         .as("should reject http status code [%d]", invalidHttpStatusCode)
-                        .isThrownBy(() -> ImpServer.httpTemplate()
-                                .onRequestMatching("id", r -> {})
-                                .respondWithStatus(invalidHttpStatusCode))
+                        .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                                .priority(0)
+                                .match(request -> {})
+                                .respondWithStatus(invalidHttpStatusCode)
+                                .andTextBody("")
+                                .andNoAdditionalHeaders()))
                         .withMessage("Invalid http status code [%d]", invalidHttpStatusCode);
             }
         }
@@ -3398,9 +3512,12 @@ public class ImpServerIntegrationTest implements FastTest {
             for (var httpStatus : ImpHttpStatus.values()) {
                 assertThatNoException()
                         .as("Should work for http status code [%d]", httpStatus.value())
-                        .isThrownBy(() -> ImpServer.httpTemplate()
-                                .onRequestMatching("id", r -> {})
-                                .respondWithStatus(httpStatus.value()));
+                        .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                                .priority(0)
+                                .match(request -> request.headersPredicate(headers -> true))
+                                .respondWithStatus(httpStatus.value())
+                                .andTextBody("")
+                                .andNoAdditionalHeaders()));
             }
         }
 
@@ -3409,10 +3526,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void onrequestmatching_andtextbody_should_reject_null() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> true))
                             .respondWithStatus(200)
-                            .andTextBody(null))
+                            .andTextBody(null)
+                            .andNoAdditionalHeaders()))
                     .withMessage("nulls are not supported - textBody");
         }
 
@@ -3421,10 +3540,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void onrequestmatching_andjsonbody_should_reject_null() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> true))
                             .respondWithStatus(200)
-                            .andJsonBody(null))
+                            .andJsonBody(null)
+                            .andNoAdditionalHeaders()))
                     .withMessage("nulls are not supported - jsonBody");
         }
 
@@ -3433,10 +3554,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void onrequestmatching_andxmlbody_should_reject_null() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> true))
                             .respondWithStatus(200)
-                            .andXmlBody(null))
+                            .andXmlBody(null)
+                            .andNoAdditionalHeaders()))
                     .withMessage("nulls are not supported - xmlBody");
         }
 
@@ -3445,10 +3568,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void onrequestmatching_customcontenttypestream_should_reject_null_content_type() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> true))
                             .respondWithStatus(200)
-                            .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0])))
+                            .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
                     .withMessage("null or blank strings are not supported - contentType");
         }
 
@@ -3456,10 +3581,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("'onRequestMatching customContentTypeStream' should reject empty content type")
         void onrequestmatching_customcontenttypestream_should_reject_empty_content_type() {
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> true))
                             .respondWithStatus(200)
-                            .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0])))
+                            .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
                     .withMessage("null or blank strings are not supported - contentType");
         }
 
@@ -3467,10 +3594,12 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("'onRequestMatching customContentTypeStream' should reject blank content type")
         void onrequestmatching_customcontenttypestream_should_reject_blank_content_type() {
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> true))
                             .respondWithStatus(200)
-                            .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0])))
+                            .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
                     .withMessage("null or blank strings are not supported - contentType");
         }
 
@@ -3479,10 +3608,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void onrequestmatching_customcontenttypestream_should_reject_null_datastreamsupplier() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> true))
                             .respondWithStatus(200)
-                            .andCustomContentTypeStream("contentType", null))
+                            .andCustomContentTypeStream("contenttpye", null)
+                            .andNoAdditionalHeaders()))
                     .withMessage("nulls are not supported - dataStreamSupplier");
         }
 
@@ -3491,10 +3622,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void onrequestmatching_anddatastreambody_should_reject_null_datastreambody() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> true))
                             .respondWithStatus(200)
-                            .andDataStreamBody(null))
+                            .andDataStreamBody(null)
+                            .andNoAdditionalHeaders()))
                     .withMessage("nulls are not supported - dataStreamSupplier");
         }
 
@@ -3504,10 +3637,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void onrequestmatching_customcontenttypestream_should_reject_null_contenttype_with_datastreamsupplier() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> true))
                             .respondWithStatus(200)
-                            .andCustomContentTypeStream(null, null))
+                            .andCustomContentTypeStream(null, null)
+                            .andNoAdditionalHeaders()))
                     .withMessage("null or blank strings are not supported - contentType");
         }
 
@@ -3516,11 +3651,12 @@ public class ImpServerIntegrationTest implements FastTest {
         void onrequestmatching_andadditionalheaders_should_reject_null_headers() {
             //noinspection DataFlowIssue
             assertThatExceptionOfType(RuntimeException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> request.headersPredicate(headers -> true))
                             .respondWithStatus(200)
                             .andTextBody("")
-                            .andAdditionalHeaders(null))
+                            .andAdditionalHeaders(null)))
                     .withMessage("nulls are not supported - headers");
         }
 
@@ -3530,11 +3666,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var headers = new HashMap<String, List<String>>();
             headers.put(null, null);
             assertThatExceptionOfType(RuntimeException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> {})
                             .respondWithStatus(200)
                             .andTextBody("")
-                            .andAdditionalHeaders(headers))
+                            .andAdditionalHeaders(headers)))
                     .withMessage("null key are not supported in headers, but found null key in entry [ null=null ]");
         }
 
@@ -3544,11 +3681,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var headers = new HashMap<String, List<String>>();
             headers.put(null, List.of("something"));
             assertThatExceptionOfType(RuntimeException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> {})
                             .respondWithStatus(200)
                             .andTextBody("")
-                            .andAdditionalHeaders(headers))
+                            .andAdditionalHeaders(headers)))
                     .withMessage(
                             "null key are not supported in headers, but found null key in entry [ null=[something] ]");
         }
@@ -3559,11 +3697,12 @@ public class ImpServerIntegrationTest implements FastTest {
             var headers = new HashMap<String, List<String>>();
             headers.put("something", null);
             assertThatExceptionOfType(RuntimeException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate()
-                            .onRequestMatching("id", r -> {})
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request -> {})
                             .respondWithStatus(200)
                             .andTextBody("")
-                            .andAdditionalHeaders(headers))
+                            .andAdditionalHeaders(headers)))
                     .withMessage(
                             "null values are not supported in headers, but found null values in entry [ something=null ]");
         }
@@ -3571,11 +3710,14 @@ public class ImpServerIntegrationTest implements FastTest {
         @Test
         @DisplayName("should fail-fast when attempt to reassign headers matchers")
         void should_fail_fast_when_attempt_to_reassign_headers_matchers() {
-            var contentStart = ImpServer.httpTemplate();
             assertThatExceptionOfType(IllegalStateException.class)
-                    .isThrownBy(
-                            () -> contentStart.onRequestMatching("anyId", request -> request.headersPredicate(h -> true)
-                                    .headersPredicate(h -> true)))
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(request ->
+                                    request.headersPredicate(headers -> true).headersPredicate(headers -> true))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
                     .withMessage(
                             "Attempting to reassign 'headersPredicate'. Assign operations for 'headersPredicate' are not additive and should be done only once.");
         }

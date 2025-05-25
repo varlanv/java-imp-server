@@ -21,13 +21,13 @@ public class JaywayNotAvailableIntegrationTest implements FastTest {
         }
         """;
         var subject = ImpServer.httpTemplate()
-                .onRequestMatching(
-                        "any",
-                        request ->
+                .matchRequest(spec -> spec.id("anyId")
+                        .priority(0)
+                        .match(request ->
                                 request.bodyPredicate(b -> b.jsonPath("$.key").stringEquals("val")))
-                .respondWithStatus(200)
-                .andTextBody("response body")
-                .andNoAdditionalHeaders()
+                        .respondWithStatus(200)
+                        .andTextBody("response body")
+                        .andNoAdditionalHeaders())
                 .rejectNonMatching()
                 .onRandomPort();
 
@@ -38,8 +38,8 @@ public class JaywayNotAvailableIntegrationTest implements FastTest {
             assertThat(response.statusCode()).isEqualTo(418);
             assertThat(response.body())
                     .isEqualTo(
-                            "Exception was thrown by request predicate with id [any]. "
-                                    + "Please check your ImpServer configuration for [any] request matcher. "
+                            "Exception was thrown by request predicate with id [anyId]. "
+                                    + "Please check your ImpServer configuration for [anyId] request matcher. "
                                     + "Thrown error is [java.lang.IllegalStateException]: JsonPath library is not found on classpath. "
                                     + "Library [ com.jayway.jsonpath:json-path ] is required on classpath to work with jsonPath matchers.");
             assertThat(responseHeaders).hasSize(2);

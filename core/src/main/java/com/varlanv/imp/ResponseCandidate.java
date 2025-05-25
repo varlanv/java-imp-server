@@ -6,18 +6,23 @@ final class ResponseCandidate {
 
     static final String DEFAULT_ID = "__default_imp_request_handler__";
     private final String id;
+    private final int priority;
     private final ImpPredicate<HttpExchange> requestPredicate;
     private final ImpSupplier<ImpResponse> responseSupplier;
 
     ResponseCandidate(
-            String id, ImpPredicate<HttpExchange> requestPredicate, ImpSupplier<ImpResponse> responseSupplier) {
+            String id,
+            int priority,
+            ImpPredicate<HttpExchange> requestPredicate,
+            ImpSupplier<ImpResponse> responseSupplier) {
         this.id = id;
+        this.priority = priority;
         this.requestPredicate = requestPredicate;
         this.responseSupplier = responseSupplier;
     }
 
     ResponseCandidate(ImpPredicate<HttpExchange> requestPredicate, ImpSupplier<ImpResponse> responseSupplier) {
-        this(DEFAULT_ID, requestPredicate, responseSupplier);
+        this(DEFAULT_ID, 0, requestPredicate, responseSupplier);
     }
 
     ImpPredicate<HttpExchange> requestPredicate() {
@@ -30,5 +35,9 @@ final class ResponseCandidate {
 
     public String id() {
         return id;
+    }
+
+    public int priority() {
+        return priority;
     }
 }
