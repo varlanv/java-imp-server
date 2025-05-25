@@ -4,37 +4,37 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.PathNotFoundException;
 import java.math.BigDecimal;
 import java.util.Objects;
-import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 
 final class JaywayJsonPathResult implements JsonPathResult {
 
-    private final MemoizedSupplier<Optional<?>> valueSupplier;
+    private final MemoizedSupplier<Ref> valueSupplier;
 
     JaywayJsonPathResult(MemoizedSupplier<DocumentContext> jsonPath, String path) {
         valueSupplier = MemoizedSupplier.of(() -> {
             var documentContext = jsonPath.get();
             try {
-                return Optional.ofNullable(documentContext.read(path));
+                return new Ref(documentContext.read(path), true);
             } catch (PathNotFoundException e) {
-                return Optional.empty();
+                return new Ref(null, false);
             }
         });
     }
 
     @Override
     public boolean isNull() {
-        var val = valueSupplier.get();
-        return val.isPresent();
+        var ref = valueSupplier.get();
+        return ref.isPresent && ref.value == null;
     }
 
     @Override
     public boolean isPresent() {
-        return valueSupplier.get().isPresent();
+        return valueSupplier.get().isPresent;
     }
 
     @Override
     public boolean isNotPresent() {
-        return valueSupplier.get().isEmpty();
+        return !isPresent();
     }
 
     @Override
@@ -59,13 +59,12 @@ final class JaywayJsonPathResult implements JsonPathResult {
 
     @Override
     public boolean numberEquals(long expected) {
-        var o = valueSupplier.get();
-        if (o.isPresent()) {
-            var val = o.get();
-            if (val instanceof Long) {
-                return (Long) val == expected;
-            } else if (val instanceof Integer) {
-                return (Integer) val == expected;
+        var ref = valueSupplier.get();
+        if (ref.isPresent) {
+            if (ref.value instanceof Long) {
+                return (Long) ref.value == expected;
+            } else if (ref.value instanceof Integer) {
+                return (Integer) ref.value == expected;
             }
         }
         return false;
@@ -73,28 +72,38 @@ final class JaywayJsonPathResult implements JsonPathResult {
 
     @Override
     public boolean decimalEquals(BigDecimal expected) {
-        var o = valueSupplier.get();
-        if (o.isPresent()) {
-            var val = o.get();
-            if (val instanceof Double) {
-                return Objects.equals(expected, BigDecimal.valueOf((Double) val));
-            } else if (val instanceof BigDecimal) {
-                return Objects.equals(expected, val);
+        var ref = valueSupplier.get();
+        if (ref.isPresent) {
+            if (ref.value instanceof Double) {
+                return Objects.equals(expected, BigDecimal.valueOf((Double) ref.value));
+            } else if (ref.value instanceof BigDecimal) {
+                return Objects.equals(expected, ref.value);
             }
         }
         return false;
     }
 
     private <T> boolean ifType(Class<T> type, ImpPredicate<T> predicate) {
-        var o = valueSupplier.get();
-        if (o.isPresent()) {
-            var val = o.get();
-            if (type.isInstance(val)) {
+        var ref = valueSupplier.get();
+        if (ref.isPresent) {
+            if (type.isInstance(ref.value)) {
                 @SuppressWarnings("unchecked")
-                var valCasted = (T) val;
+                var valCasted = (T) ref.value;
                 return predicate.test(valCasted);
             }
         }
         return false;
+    }
+
+    private static final class Ref {
+
+        @Nullable private final Object value;
+
+        private final boolean isPresent;
+
+        private Ref(@Nullable Object value, boolean isPresent) {
+            this.value = value;
+            this.isPresent = isPresent;
+        }
     }
 }

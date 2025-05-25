@@ -82,8 +82,32 @@ class JsonPathTest implements FastTest {
     }
 
     @Test
-    @DisplayName("`isTrue` returns false when null val")
-    void istrue_returns_false_when_null_val() {
+    @DisplayName("`isTrue` returns false when null val return false")
+    void istrue_returns_false_when_null_val_return_false() {
         assertThat(JsonPath.forJson(json).apply("$.nullKey").isTrue()).isFalse();
+    }
+
+    @Test
+    @DisplayName("`isNull` returns true when null val")
+    void isnull_returns_true_when_null_val() {
+        assertThat(JsonPath.forJson(json).apply("$.nullKey").isNull()).isTrue();
+    }
+
+    @Test
+    @DisplayName("`isNull` returns false when true val")
+    void isnull_returns_false_when_true_val() {
+        assertThat(JsonPath.forJson(json).apply("$.trueKey").isNull()).isFalse();
+    }
+
+    @Test
+    @DisplayName("`isNull` returns false when false val")
+    void isnull_returns_false_when_false_val() {
+        assertThat(JsonPath.forJson(json).apply("$.falseKey").isNull()).isFalse();
+    }
+
+    @Test
+    @DisplayName("`isNull` returns false when string val")
+    void isnull_returns_false_when_string_val() {
+        assertThat(JsonPath.forJson(json).apply("$.stringKey").isNull()).isFalse();
     }
 }

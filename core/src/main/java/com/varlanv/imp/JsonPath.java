@@ -14,7 +14,9 @@ final class JsonPath {
             };
         } catch (ClassNotFoundException e) {
             jsonPathFnTmp = path -> {
-                throw new IllegalStateException("JsonPath library is not found on classpath");
+                throw new IllegalStateException(
+                        "JsonPath library is not found on classpath. "
+                                + "Library [ com.jayway.jsonpath:json-path ] is required on classpath to work with jsonPath matchers.");
             };
         }
         jsonPathFn = jsonPathFnTmp;
