@@ -8,6 +8,7 @@ public final class ImpBodyMatch {
 
     private final MemoizedSupplier<byte[]> bodySupplier;
     private final MemoizedSupplier<String> stringBodySupplier;
+    private final MemoizedSupplier<ImpFn<String, JsonPathResult>> jsonPathSupplier;
 
     ImpBodyMatch(ImpSupplier<InputStream> body) {
         this.bodySupplier = MemoizedSupplier.of(() -> {
@@ -16,6 +17,7 @@ public final class ImpBodyMatch {
             }
         });
         this.stringBodySupplier = MemoizedSupplier.of(() -> new String(bodySupplier.get(), StandardCharsets.UTF_8));
+        this.jsonPathSupplier = MemoizedSupplier.of(() -> JsonPath.forJson(stringBodySupplier.get()));
     }
 
     public boolean bodyContains(String substring) {
@@ -31,6 +33,11 @@ public final class ImpBodyMatch {
     public boolean bodyContainsIgnoreCase(String substring) {
         Preconditions.nonNull(substring, "substring");
         return stringBodySupplier.get().toLowerCase().contains(substring.toLowerCase());
+    }
+
+    public JsonPathResult jsonPath(@Language("jsonpath") String jsonPath) {
+        Preconditions.nonNull(jsonPath, "jsonPath");
+        return jsonPathSupplier.get().apply(jsonPath);
     }
 
     public boolean testBodyString(ImpPredicate<String> predicate) {

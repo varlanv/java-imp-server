@@ -9,6 +9,8 @@ internalConvention {
 }
 
 dependencies {
+    compileOnly(libs.jaywayJsonPath)
+    testImplementation(libs.jaywayJsonPath)
 //    testImplementation("com.github.dreamhead:moco-runner:1.5.0")
 //    testImplementation("org.wiremock:wiremock:3.13.0")
 }

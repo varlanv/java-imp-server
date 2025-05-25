@@ -2056,6 +2056,112 @@ public class ImpServerIntegrationTest implements FastTest {
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
         }
+
+        @Test
+        @DisplayName("should successfully match by body predicate 'jsonPath' 'stringEquals'")
+        void should_successfully_match_by_body_predicate_jsonpath_stringequals() {
+            @Language("json")
+            var requestBody =
+                    """
+                {
+                  "key": "val"
+                }
+                """;
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            "any",
+                            request -> request.bodyPredicate(
+                                    b -> b.jsonPath("$.key").stringEquals("val")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body()).isEqualTo("response body");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should return error when fail to match by body predicate 'jsonPath' 'stringEquals'")
+        void should_return_error_when_fail_to_match_by_body_predicate_jsonpath_stringequals() {
+            @Language("json")
+            var requestBody =
+                    """
+                {
+                  "key": "val"
+                }
+                """;
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            "any",
+                            request -> request.bodyPredicate(
+                                    b -> b.jsonPath("$.key").stringEquals("val2")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body())
+                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
+                                + "Available matcher IDs: [any]");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName(
+                "should return error when incorrect jsonpath provided for match by body predicate 'jsonPath' 'stringEquals'")
+        void should_return_error_when_incorrect_jsonpath_provided_for_match_by_body_predicate_jsonpath_stringequals() {
+            @Language("json")
+            var requestBody =
+                    """
+                {
+                  "key": "val"
+                }
+                """;
+            @Language("text")
+            var jsonPath = "$.ke][]y";
+            @SuppressWarnings("LanguageMismatch")
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            "any",
+                            request -> request.bodyPredicate(
+                                    b -> b.jsonPath(jsonPath).stringEquals("val2")))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.statusCode()).isEqualTo(418);
+                assertThat(response.body())
+                        .isEqualTo(
+                                "Exception was thrown by request predicate with id [any]. "
+                                        + "Please check your ImpServer configuration for [any] request matcher. "
+                                        + "Thrown error is [com.jayway.jsonpath.InvalidPathException]: Could not parse token starting at position 5. Expected ?, ', 0-9, * ");
+                assertThat(responseHeaders).hasSize(2);
+            });
+        }
     }
 
     @Nested
