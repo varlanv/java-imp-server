@@ -196,8 +196,9 @@ public final class ImpTemplateSpec {
         }
 
         public ContentFinal fallbackForNonMatching(
-                ImpFn<ImpResponse.BuilderStatus, ImpResponse.BuilderHeaders> builderFn) {
-            var impResponse = builderFn.apply(ImpResponse.builder()).build();
+                ImpFn<ImpResponse.BuilderStatus, ImpResponse.BuilderHeaders> fallbackFn) {
+            Preconditions.nonNull(fallbackFn, "fallbackFn");
+            var impResponse = fallbackFn.apply(ImpResponse.builder()).build();
             return new ContentFinal(
                     InternalUtils.addToNewListFinal(responseCandidates, buildResponseCandidate()),
                     candidates -> exchange -> impResponse);

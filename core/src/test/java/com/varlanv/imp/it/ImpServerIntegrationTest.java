@@ -2190,22 +2190,27 @@ public class ImpServerIntegrationTest implements FastTest {
 
         @Test
         @DisplayName("should be able to build response based on request body with `andBodyBasedOnRequest`")
-        void should_be_able_to_build_response_based_on_request_body_with_andbodybasedonrequest(){
+        void should_be_able_to_build_response_based_on_request_body_with_andbodybasedonrequest() {
             ImpServer.httpTemplate()
-                .onRequestMatching("matcherId", matchBuilder -> {})
-                .respondWithStatus(200)
-                .andBodyBasedOnRequest("text/plain", request -> () -> new ByteArrayInputStream(request.body().getBytes(StandardCharsets.UTF_8)))
-                .andNoAdditionalHeaders()
-                .rejectNonMatching()
-                .onRandomPort()
-                .useServer(impServer -> {
-                    var requestBody = "request body";
-                    var response = sendHttpRequestWithBody(impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString()).join();
-                    assertThat(response.body()).isEqualTo(requestBody);
-                    var responseHeaders = response.headers().map();
-                    assertThat(responseHeaders).hasSize(3);
-                    assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
-                });
+                    .onRequestMatching("matcherId", matchBuilder -> {})
+                    .respondWithStatus(200)
+                    .andBodyBasedOnRequest(
+                            "text/plain",
+                            request -> () ->
+                                    new ByteArrayInputStream(request.body().getBytes(StandardCharsets.UTF_8)))
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onRandomPort()
+                    .useServer(impServer -> {
+                        var requestBody = "request body";
+                        var response = sendHttpRequestWithBody(
+                                        impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                                .join();
+                        assertThat(response.body()).isEqualTo(requestBody);
+                        var responseHeaders = response.headers().map();
+                        assertThat(responseHeaders).hasSize(3);
+                        assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+                    });
         }
     }
 
