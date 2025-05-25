@@ -15,6 +15,7 @@ final class FutureServer {
 
     Server createServer() {
         var retries = 5;
+        RuntimeException exception = null;
         for (int iteration = 0; iteration < retries; iteration++) {
             try {
                 var port = portSupplier.value();
@@ -22,17 +23,23 @@ final class FutureServer {
                 return new Server(port, server);
             } catch (BindException e) {
                 if (iteration == retries - 1) {
-                    return InternalUtils.hide(e);
+                    if (portSupplier.isRandom()) {
+                        exception = new IllegalStateException(
+                                String.format("Could not acquire random port after [%d] retries", retries));
+                    } else {
+                        exception = new IllegalStateException(String.format(
+                                "Could not acquire port [%d] after [%d] retries - port is in use",
+                                portSupplier.value(), retries));
+                    }
                 }
             } catch (IOException e) {
                 return InternalUtils.hide(e);
             }
         }
-        if (portSupplier.isRandom()) {
-            throw new IllegalStateException(String.format("Could not acquire random port after [%d] retries", retries));
+        if (exception == null) {
+            throw new IllegalStateException("Unexpected exception - failed to start server");
         } else {
-            throw new IllegalStateException(String.format(
-                    "Could not acquire port [%d] after [%d] retries - port is in use", portSupplier.value(), retries));
+            throw exception;
         }
     }
 }

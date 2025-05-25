@@ -8,7 +8,6 @@ import com.varlanv.imp.commontest.FastTest;
 import com.varlanv.imp.commontest.LazyCloseAwareStream;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.net.BindException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpRequest;
@@ -533,14 +532,14 @@ public class ImpServerIntegrationTest implements FastTest {
                 throw new IllegalStateException("Server not started");
             }
 
-            assertThatThrownBy(() -> ImpServer.httpTemplate()
+            assertThatExceptionOfType(IllegalStateException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
                             .alwaysRespondWithStatus(200)
                             .andTextBody("some text")
                             .andNoAdditionalHeaders()
                             .onPort(port)
                             .useServer(impServer -> {}))
-                    .isInstanceOf(BindException.class)
-                    .hasMessageContaining("already in use");
+                    .withMessage("Could not acquire port [%d] after [5] retries - port is in use", port);
         }
 
         @ParameterizedTest
@@ -852,6 +851,32 @@ public class ImpServerIntegrationTest implements FastTest {
                         .join();
                 var responseHeaders = response.headers().map();
                 assertThat(response.body()).isEqualTo("any");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+            });
+        }
+
+        @Test
+        @DisplayName("should be able to start server with matchers on specific port")
+        void should_successfuly_match_by_headers_predicate_containsvalueqwe() {
+            var expectedMatchValue = "value2";
+            var sentHeaders = Map.of("header1", List.of("value1", expectedMatchValue));
+            var port = randomPort();
+            var subject = ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            "any", request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .onPort(port);
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithHeaders(
+                                impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body()).isEqualTo("response body");
                 assertThat(responseHeaders).hasSize(3);
                 assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
             });
@@ -2269,9 +2294,9 @@ public class ImpServerIntegrationTest implements FastTest {
                         .andNoAdditionalHeaders();
                 var port = sharedServer.port();
 
-                assertThatExceptionOfType(BindException.class)
+                assertThatExceptionOfType(IllegalStateException.class)
                         .isThrownBy(() -> specEnd.startSharedOnPort(port))
-                        .withMessage("Address already in use");
+                        .withMessage("Could not acquire port [%d] after [5] retries - port is in use", port);
             } finally {
                 sharedServer.dispose();
             }
@@ -2375,6 +2400,34 @@ public class ImpServerIntegrationTest implements FastTest {
                     .isThrownBy(() -> sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                             .join())
                     .withCauseInstanceOf(ConnectException.class);
+        }
+
+        @Test
+        @DisplayName("should be able to start shared server with matchers on specific port")
+        void should_successfuly_match_by_headers_predicate_containsvalueqwe() {
+            var expectedMatchValue = "value2";
+            var sentHeaders = Map.of("header1", List.of("value1", expectedMatchValue));
+            var port = randomPort();
+            var sharedServer = ImpServer.httpTemplate()
+                    .onRequestMatching(
+                            "any", request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
+                    .respondWithStatus(200)
+                    .andTextBody("response body")
+                    .andNoAdditionalHeaders()
+                    .rejectNonMatching()
+                    .startSharedOnPort(port);
+            try {
+                var response = sendHttpRequestWithHeaders(
+                                sharedServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
+                        .join();
+                var responseHeaders = response.headers().map();
+                assertThat(response.body()).isEqualTo("response body");
+                assertThat(responseHeaders).hasSize(3);
+                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+            } finally {
+                sharedServer.dispose();
+            }
         }
     }
 
