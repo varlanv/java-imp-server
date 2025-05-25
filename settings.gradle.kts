@@ -1,6 +1,6 @@
 pluginManagement {
     repositories {
-        if (providers.environmentVariable("CI").getOrNull() != null) {
+        if (providers.environmentVariable("CI").getOrNull() == null) {
             mavenLocal()
         }
         gradlePluginPortal()

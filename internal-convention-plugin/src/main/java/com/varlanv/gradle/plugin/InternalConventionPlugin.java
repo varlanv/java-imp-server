@@ -296,7 +296,6 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                                                 "-Xlint:all",
                                                 "-Werror"
                                             ));
-                                            compileTestJava.finalizedBy("spotbugs" + capitalize(sourceSet.getName()));
                                         });
                                     });
                                     jvmTestSuite.getTargets().all(
