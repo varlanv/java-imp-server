@@ -1,6 +1,5 @@
 package com.varlanv.imp;
 
-import com.sun.net.httpserver.HttpExchange;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
@@ -14,11 +13,11 @@ final class ResponseDecision {
         this.candidates = List.copyOf(candidates);
     }
 
-    @Nullable ResponseCandidate pick(HttpExchange exchange) {
+    @Nullable ResponseCandidate pick(ImpRequestView requestView) {
         var matchedCandidates = new TreeSet<>(Comparator.comparingInt(ResponseCandidate::priority));
         for (var candidate : candidates) {
             try {
-                if (candidate.requestPredicate().test(exchange)) {
+                if (candidate.condition().test(requestView)) {
                     matchedCandidates.add(candidate);
                 }
             } catch (Exception e) {

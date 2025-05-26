@@ -66,11 +66,10 @@ public final class ImpTemplateSpec {
             this.priority = priority;
         }
 
-        public RequestMatchingSpecMatch match(ImpConsumer<RequestMatchBuilder> specConsumer) {
-            Preconditions.nonNull(specConsumer, "consumer");
-            var builder = new RequestMatchBuilder();
-            specConsumer.accept(builder);
-            return new RequestMatchingSpecMatch(id, priority, builder.build());
+        public RequestMatchingSpecMatch match(ImpMatchFn matchFunction) {
+            Preconditions.nonNull(matchFunction, "matchFunction");
+            var condition = matchFunction.apply(new ImpMatch());
+            return new RequestMatchingSpecMatch(id, priority, condition);
         }
     }
 
@@ -78,17 +77,16 @@ public final class ImpTemplateSpec {
 
         private final String id;
         private final int priority;
+        private final ImpCondition condition;
 
-        private final RequestMatch match;
-
-        RequestMatchingSpecMatch(String id, int priority, RequestMatch match) {
+        RequestMatchingSpecMatch(String id, int priority, ImpCondition condition) {
             this.id = id;
             this.priority = priority;
-            this.match = match;
+            this.condition = condition;
         }
 
         public RequestMatchingSpecStatus respondWithStatus(@Range(from = 100, to = 511) int status) {
-            return new RequestMatchingSpecStatus(id, priority, match, Preconditions.validHttpStatusCode(status));
+            return new RequestMatchingSpecStatus(id, priority, condition, Preconditions.validHttpStatusCode(status));
         }
     }
 
@@ -96,14 +94,13 @@ public final class ImpTemplateSpec {
 
         private final String id;
         private final int priority;
-        private final RequestMatch match;
-
+        private final ImpCondition condition;
         private final ImpHttpStatus responseStatus;
 
-        RequestMatchingSpecStatus(String id, int priority, RequestMatch match, ImpHttpStatus responseStatus) {
+        RequestMatchingSpecStatus(String id, int priority, ImpCondition condition, ImpHttpStatus responseStatus) {
             this.id = id;
             this.priority = priority;
-            this.match = match;
+            this.condition = condition;
             this.responseStatus = responseStatus;
         }
 
@@ -150,7 +147,7 @@ public final class ImpTemplateSpec {
         private RequestMatchingSpecHeaders toHeadersMatching(
                 CharSequence contentType, ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
             return new RequestMatchingSpecHeaders(
-                    id, priority, match, responseStatus, contentType.toString(), bodyFunction);
+                    id, priority, condition, responseStatus, contentType.toString(), bodyFunction);
         }
     }
 
@@ -158,22 +155,21 @@ public final class ImpTemplateSpec {
 
         private final String id;
         private final int priority;
-        private final RequestMatch match;
+        private final ImpCondition condition;
         private final ImpHttpStatus responseStatus;
         private final String contentType;
-
         private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction;
 
         RequestMatchingSpecHeaders(
                 String id,
                 int priority,
-                RequestMatch match,
+                ImpCondition condition,
                 ImpHttpStatus responseStatus,
                 String contentType,
                 ImpFn<ImpRequestView, ImpSupplier<InputStream>> bodyFunction) {
             this.id = id;
             this.priority = priority;
-            this.match = match;
+            this.condition = condition;
             this.responseStatus = responseStatus;
             this.contentType = contentType;
             this.bodyFunction = bodyFunction;
@@ -182,23 +178,24 @@ public final class ImpTemplateSpec {
         public RequestMatchingSpecEnd andAdditionalHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
-            return new RequestMatchingSpecEnd(id, priority, match, responseStatus, bodyFunction, existingHeaders -> {
-                var newHeaders = new HashMap<>(existingHeaders);
-                newHeaders.put("Content-Type", List.of(contentType));
-                newHeaders.putAll(headersCopy);
-                return Map.copyOf(newHeaders);
-            });
+            return new RequestMatchingSpecEnd(
+                    id, priority, condition, responseStatus, bodyFunction, existingHeaders -> {
+                        var newHeaders = new HashMap<>(existingHeaders);
+                        newHeaders.put("Content-Type", List.of(contentType));
+                        newHeaders.putAll(headersCopy);
+                        return Map.copyOf(newHeaders);
+                    });
         }
 
         public RequestMatchingSpecEnd andExactHeaders(Map<String, List<String>> headers) {
             Preconditions.noNullsInHeaders(headers, "headers");
             var headersCopy = Map.copyOf(headers);
             return new RequestMatchingSpecEnd(
-                    id, priority, match, responseStatus, bodyFunction, existingHeaders -> headersCopy);
+                    id, priority, condition, responseStatus, bodyFunction, existingHeaders -> headersCopy);
         }
 
         public RequestMatchingSpecEnd andNoAdditionalHeaders() {
-            return new RequestMatchingSpecEnd(id, priority, match, responseStatus, bodyFunction, headers -> {
+            return new RequestMatchingSpecEnd(id, priority, condition, responseStatus, bodyFunction, headers -> {
                 var newHeaders = new HashMap<>(headers);
                 newHeaders.put("Content-Type", List.of(contentType));
                 return Map.copyOf(newHeaders);
@@ -210,7 +207,7 @@ public final class ImpTemplateSpec {
 
         private final String id;
         private final int priority;
-        private final RequestMatch requestMatch;
+        private final ImpCondition condition;
         private final ImpHttpStatus responseStatus;
         private final ImpFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction;
 
@@ -219,30 +216,24 @@ public final class ImpTemplateSpec {
         RequestMatchingSpecEnd(
                 String id,
                 int priority,
-                RequestMatch requestMatch,
+                ImpCondition condition,
                 ImpHttpStatus responseStatus,
                 ImpFn<ImpRequestView, ImpSupplier<InputStream>> responseBodyFunction,
                 ImpHeadersOperator responseHeadersOperator) {
             this.id = id;
             this.priority = priority;
-            this.requestMatch = requestMatch;
+            this.condition = condition;
             this.responseStatus = responseStatus;
             this.responseBodyFunction = responseBodyFunction;
             this.responseHeadersOperator = responseHeadersOperator;
         }
 
         ResponseCandidate toResponseCandidate() {
-            return new ResponseCandidate(
-                    id,
-                    priority,
-                    request -> requestMatch.headersPredicate().test(new ImpHeadersMatch(request.getRequestHeaders()))
-                            && requestMatch.bodyPredicate().test(new ImpBodyMatch(request::getRequestBody))
-                            && requestMatch.urlPredicate().test(new ImpUrlMatch(request.getRequestURI())),
-                    () -> ImpResponse.builder()
-                            .trustedStatus(responseStatus)
-                            .bodyFromRequest(responseBodyFunction)
-                            .trustedHeaders(responseHeadersOperator)
-                            .build());
+            return new ResponseCandidate(id, priority, condition, () -> ImpResponse.builder()
+                    .trustedStatus(responseStatus)
+                    .bodyFromRequest(responseBodyFunction)
+                    .trustedHeaders(responseHeadersOperator)
+                    .build());
         }
     }
 
@@ -369,7 +360,7 @@ public final class ImpTemplateSpec {
         }
 
         ResponseCandidate toResponseCandidate() {
-            return new ResponseCandidate(ImpPredicate.alwaysTrue(), () -> ImpResponse.builder()
+            return new ResponseCandidate(request -> true, () -> ImpResponse.builder()
                     .trustedStatus(status)
                     .trustedBody(bodyFunction)
                     .trustedHeaders(headersOperator)

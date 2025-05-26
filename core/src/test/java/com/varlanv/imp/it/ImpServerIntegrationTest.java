@@ -2,6 +2,7 @@ package com.varlanv.imp.it;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.jayway.jsonpath.InvalidPathException;
 import com.varlanv.imp.*;
 import com.varlanv.imp.commontest.BaseTest;
 import com.varlanv.imp.commontest.FastTest;
@@ -538,7 +539,7 @@ public class ImpServerIntegrationTest implements FastTest {
             ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsKey(contentTypeHeaderKey)))
+                            .match(match -> match.headers().containsKey(contentTypeHeaderKey))
                             .respondWithStatus(200)
                             .andTextBody(expected)
                             .andNoAdditionalHeaders())
@@ -568,8 +569,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id(matcherId)
                             .priority(0)
-                            .match(request ->
-                                    request.headersPredicate(h -> h.containsKey("unknown-not-matched-header")))
+                            .match(match -> match.headers().containsKey("unknown-not-matched-header"))
                             .respondWithStatus(200)
                             .andTextBody("should never return")
                             .andNoAdditionalHeaders())
@@ -601,8 +601,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id(matcherId)
                             .priority(0)
-                            .match(request ->
-                                    request.headersPredicate(h -> h.containsKey("unknown-not-matched-header")))
+                            .match(match -> match.headers().containsKey("unknown-not-matched-header"))
                             .respondWithStatus(200)
                             .andJsonBody("{}")
                             .andNoAdditionalHeaders())
@@ -636,7 +635,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .match(match -> match.headers().containsKey("user-agent"))
                             .respondWithStatus(200)
                             .andJsonBody(expected)
                             .andNoAdditionalHeaders())
@@ -668,7 +667,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .match(match -> match.headers().containsKey("user-agent"))
                             .respondWithStatus(200)
                             .andXmlBody(expected)
                             .andNoAdditionalHeaders())
@@ -700,7 +699,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .match(match -> match.headers().containsKey("user-agent"))
                             .respondWithStatus(200)
                             .andDataStreamBody(() -> new ByteArrayInputStream(expected))
                             .andNoAdditionalHeaders())
@@ -733,7 +732,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .match(match -> match.headers().containsKey("user-agent"))
                             .respondWithStatus(200)
                             .andCustomContentTypeStream(contentType, () -> new ByteArrayInputStream(expected))
                             .andNoAdditionalHeaders())
@@ -765,7 +764,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("matcherId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .match(match -> match.headers().containsKey("user-agent"))
                             .respondWithStatus(expectedStatus)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -789,7 +788,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("matcherId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .match(match -> match.headers().containsKey("user-agent"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andAdditionalHeaders(additionalHeaders))
@@ -816,7 +815,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("any")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsKey("user-agent")))
+                            .match(match -> match.headers().containsKey("user-agent"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andExactHeaders(exactHeaders))
@@ -843,7 +842,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("matcherId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
+                            .match(match -> match.headers().containsValue(expectedMatchValue))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -870,7 +869,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("matcherId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
+                            .match(match -> match.headers().containsValue(expectedMatchValue))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -895,7 +894,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsValue("some not existing value")))
+                            .match(match -> match.headers().containsValue("some not existing value"))
                             .respondWithStatus(200)
                             .andTextBody("anyBody")
                             .andNoAdditionalHeaders())
@@ -921,8 +920,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request ->
-                                    request.headersPredicate(h -> h.containsPair("header1", "some not existing value")))
+                            .match(match -> match.headers().containsPair("header1", "some not existing value"))
                             .respondWithStatus(200)
                             .andTextBody("anyBody")
                             .andNoAdditionalHeaders())
@@ -947,8 +945,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request ->
-                                    request.headersPredicate(h -> h.containsPair("header1", "some not existing value")))
+                            .match(match -> match.headers().containsPair("header1", "some not existing value"))
                             .respondWithStatus(200)
                             .andTextBody("anyBody")
                             .andNoAdditionalHeaders())
@@ -972,8 +969,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request ->
-                                    request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
+                            .match(match -> match.headers().containsAllKeys(Set.of("header1", "header2")))
                             .respondWithStatus(200)
                             .andTextBody("anyBody")
                             .andNoAdditionalHeaders())
@@ -997,8 +993,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request ->
-                                    request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
+                            .match(match -> match.headers().containsAllKeys(Set.of("header1", "header2")))
                             .respondWithStatus(200)
                             .andTextBody("anyBody")
                             .andNoAdditionalHeaders())
@@ -1026,8 +1021,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request ->
-                                    request.headersPredicate(h -> h.containsAllKeys(Set.of("header1", "header2"))))
+                            .match(match -> match.headers().containsAllKeys(Set.of("header1", "header2")))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1053,8 +1047,8 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(
-                                    h -> h.containsPair(expectedMatchPair.getKey(), expectedMatchPair.getValue())))
+                            .match(match -> match.headers()
+                                    .containsPair(expectedMatchPair.getKey(), expectedMatchPair.getValue()))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1079,8 +1073,8 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(
-                                    h -> h.containsPairList("header1", List.of("some not existing value"))))
+                            .match(match ->
+                                    match.headers().containsPairList("header1", List.of("some not existing value")))
                             .respondWithStatus(200)
                             .andTextBody("anyBody")
                             .andNoAdditionalHeaders())
@@ -1105,8 +1099,8 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(
-                                    h -> h.containsPairList("header1", List.of("some not existing value"))))
+                            .match(match ->
+                                    match.headers().containsPairList("header1", List.of("some not existing value")))
                             .respondWithStatus(200)
                             .andTextBody("anyBody")
                             .andNoAdditionalHeaders())
@@ -1133,8 +1127,8 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(
-                                    h -> h.containsPairList(expectedMatchPair.getKey(), expectedMatchPair.getValue())))
+                            .match(match -> match.headers()
+                                    .containsPairList(expectedMatchPair.getKey(), expectedMatchPair.getValue()))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1158,7 +1152,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.hasContentType("text/plain")))
+                            .match(match -> match.headers().hasContentType("text/plain"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1184,7 +1178,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                            .match(match -> match.headers().hasContentType("application/json"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1207,7 +1201,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                            .match(match -> match.headers().hasContentType("application/json"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andExactHeaders(Map.of()))
@@ -1234,7 +1228,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                            .match(match -> match.headers().hasContentType("application/json"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andExactHeaders(Map.of()))
@@ -1260,7 +1254,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                            .match(match -> match.headers().hasContentType("application/json"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andExactHeaders(Map.of()))
@@ -1289,7 +1283,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.hasContentType("application/json")))
+                            .match(match -> match.headers().hasContentType("application/json"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andExactHeaders(Map.of()))
@@ -1320,41 +1314,6 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should response with errors if `headersPredicate` throws exceptions")
-        void should_response_with_errors_if_headerspredicate_throws_exceptions() {
-            var matcherException = new RuntimeException("matcher exception");
-            var matcherId = "anyId";
-            ImpServer.httpTemplate()
-                    .matchRequest(spec -> spec.id(matcherId)
-                            .priority(0)
-                            .match(request -> request.headersPredicate(headers -> {
-                                throw matcherException;
-                            }))
-                            .respondWithStatus(200)
-                            .andTextBody("some text")
-                            .andNoAdditionalHeaders())
-                    .rejectNonMatching()
-                    .onRandomPort()
-                    .useServer(impServer -> {
-                        var futureResponses =
-                                sendManyHttpRequests(5, impServer.port(), HttpResponse.BodyHandlers.ofString());
-                        for (var futureResponse : futureResponses) {
-                            var response = futureResponse.join();
-                            assertThat(response.statusCode()).isEqualTo(418);
-                            assertThat(response.body())
-                                    .isEqualTo(
-                                            "Exception was thrown by request predicate with id [%s]. "
-                                                    + "Please check your ImpServer configuration for [%s] request matcher. "
-                                                    + "Thrown error is [%s]: %s",
-                                            matcherId,
-                                            matcherId,
-                                            matcherException.getClass().getName(),
-                                            matcherException.getMessage());
-                        }
-                    });
-        }
-
-        @Test
         @DisplayName("should successfully match by body predicate 'bodyContains'")
         void should_successfully_match_by_body_predicate_bodycontains() {
             var requestBody = "Some Text body";
@@ -1362,7 +1321,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.bodyContains(expectedMatch)))
+                            .match(match -> match.body().bodyContains(expectedMatch))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1387,7 +1346,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.bodyContains("text")))
+                            .match(match -> match.body().bodyContains("test"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1415,7 +1374,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase(expectedMatch)))
+                            .match(match -> match.body().bodyContainsIgnoreCase(expectedMatch))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1440,7 +1399,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.bodyMatches(".*ext.*")))
+                            .match(match -> match.body().bodyMatches(".*ext.*"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1465,7 +1424,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.bodyMatches(".*extt.*")))
+                            .match(match -> match.body().bodyMatches(".*extt.*"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1492,7 +1451,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("texttt")))
+                            .match(match -> match.body().bodyContainsIgnoreCase("texttt"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1520,8 +1479,9 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("text"))
-                                    .headersPredicate(h -> h.containsPair("header1", "value1")))
+                            .match(match -> match.and(
+                                    match.body().bodyContainsIgnoreCase("text"),
+                                    match.headers().containsPair("header1", "value1")))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1552,8 +1512,9 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("text"))
-                                    .headersPredicate(h -> h.containsPair("header1", "value1qweqwe")))
+                            .match(match -> match.and(
+                                    match.body().bodyContainsIgnoreCase("text"),
+                                    match.headers().containsPair("header1", "value1qweqwe")))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1586,8 +1547,9 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.bodyContainsIgnoreCase("texttttt"))
-                                    .headersPredicate(h -> h.containsPair("header1", "value1")))
+                            .match(match -> match.and(
+                                    match.body().bodyContainsIgnoreCase("texttttt"),
+                                    match.headers().containsPair("header1", "value1")))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1619,8 +1581,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request ->
-                                    request.bodyPredicate(b -> b.testBodyString(bodyString -> !bodyString.isEmpty())))
+                            .match(match -> match.body().testBodyString(bodyString -> !bodyString.isEmpty()))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1645,7 +1606,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.testBodyString(String::isEmpty)))
+                            .match(match -> match.body().testBodyString(String::isEmpty))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1674,9 +1635,9 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id(matcherId)
                             .priority(0)
-                            .match(request -> request.bodyPredicate(b -> b.testBodyString(str -> {
+                            .match(match -> match.body().testBodyString(str -> {
                                 throw testBodyStringException;
-                            })))
+                            }))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1707,7 +1668,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.urlMatches(".*local.*")))
+                            .match(match -> match.url().urlMatches(".*local.*"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1732,7 +1693,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.urlMatches("/")))
+                            .match(match -> match.url().urlMatches("/"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1755,7 +1716,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.urlMatches(".*some/.*")))
+                            .match(match -> match.url().urlMatches(".*some/.*"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1782,7 +1743,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.urlContains("me/pa")))
+                            .match(match -> match.url().urlContains("me/pa"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1811,7 +1772,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.urlContains("ome/P")))
+                            .match(match -> match.url().urlContains("ome/P"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1838,7 +1799,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.urlContainsIgnoreCase("ome/p")))
+                            .match(match -> match.url().urlContainsIgnoreCase("ome/p"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1865,7 +1826,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.hasQueryParamKey("query1")))
+                            .match(match -> match.url().hasQueryParamKey("query1"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1893,7 +1854,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.hasQueryParamKey("qw")))
+                            .match(match -> match.url().hasQueryParamKey("qw"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1921,7 +1882,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.hasQueryParamKey("qw")))
+                            .match(match -> match.url().hasQueryParamKey("qw"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1949,7 +1910,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.hasQueryParamKey("query3")))
+                            .match(match -> match.url().hasQueryParamKey("query3"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1979,7 +1940,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.hasQueryParamKey("query1")))
+                            .match(match -> match.url().hasQueryParamKey("query1"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -2008,7 +1969,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param1")))
+                            .match(match -> match.url().hasQueryParam("query1", "param1"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -2036,7 +1997,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param2")))
+                            .match(match -> match.url().hasQueryParam("query1", "param2"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -2066,7 +2027,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.hasQueryParam("query1", "param2")))
+                            .match(match -> match.url().hasQueryParam("query1", "param2"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -2095,7 +2056,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.urlContainsIgnoreCase("ome/ppp")))
+                            .match(match -> match.url().urlContainsIgnoreCase("ome/ppp"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -2124,8 +2085,9 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.urlPredicate(u -> u.urlMatches(".*some/.*"))
-                                    .bodyPredicate(b -> b.bodyContains("text")))
+                            .match(match -> match.and(
+                                    match.url().urlMatches(".*some/.*"),
+                                    match.body().bodyContains("text")))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -2154,15 +2116,14 @@ public class ImpServerIntegrationTest implements FastTest {
             @Language("json")
             var requestBody =
                     """
-                {
-                  "key": "val"
-                }
-                """;
+                        {
+                          "key": "val"
+                        }
+                        """;
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(
-                                    b -> b.jsonPath("$.key").stringEquals("val")))
+                            .match(match -> match.jsonPath("$.key").stringEquals("val"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -2186,15 +2147,14 @@ public class ImpServerIntegrationTest implements FastTest {
             @Language("json")
             var requestBody =
                     """
-                {
-                  "key": "val"
-                }
-                """;
+                        {
+                          "key": "val"
+                        }
+                        """;
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(
-                                    b -> b.jsonPath("$.key").stringEquals("val2")))
+                            .match(match -> match.jsonPath("$.key").stringEquals("val2"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -2215,43 +2175,23 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
+        @SuppressWarnings("LanguageMismatch")
         @DisplayName(
-                "should return error when incorrect jsonpath provided for match by body predicate 'jsonPath' 'stringEquals'")
-        void should_return_error_when_incorrect_jsonpath_provided_for_match_by_body_predicate_jsonpath_stringequals() {
-            @Language("json")
-            var requestBody =
-                    """
-                {
-                  "key": "val"
-                }
-                """;
+                "should fail immediately when incorrect jsonpath provided for match by body predicate 'jsonPath' 'stringEquals'")
+        void
+                should_fail_immediately_when_incorrect_jsonpath_provided_for_match_by_body_predicate_jsonpath_stringequals() {
             @Language("text")
             var jsonPath = "$.ke][]y";
-            @SuppressWarnings("LanguageMismatch")
-            var subject = ImpServer.httpTemplate()
-                    .matchRequest(spec -> spec.id("anyId")
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.bodyPredicate(
-                                    b -> b.jsonPath(jsonPath).stringEquals("val2")))
+                            .match(match -> match.jsonPath(jsonPath).stringEquals("val2"))
                             .respondWithStatus(200)
-                            .andTextBody("response body")
-                            .andNoAdditionalHeaders())
-                    .rejectNonMatching()
-                    .onRandomPort();
-
-            subject.useServer(impServer -> {
-                var response = sendHttpRequestWithBody(
-                                impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
-                        .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.statusCode()).isEqualTo(418);
-                assertThat(response.body())
-                        .isEqualTo(
-                                "Exception was thrown by request predicate with id [anyId]. "
-                                        + "Please check your ImpServer configuration for [anyId] request matcher. "
-                                        + "Thrown error is [com.jayway.jsonpath.InvalidPathException]: Could not parse token starting at position 5. Expected ?, ', 0-9, * ");
-                assertThat(responseHeaders).hasSize(2);
-            });
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .withMessage(
+                            "Provided invalid JsonPath - [ %s ]. Check internal error message for details", jsonPath)
+                    .withCauseInstanceOf(InvalidPathException.class);
         }
 
         @Test
@@ -2260,7 +2200,7 @@ public class ImpServerIntegrationTest implements FastTest {
             ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("matcherId")
                             .priority(1)
-                            .match(match -> {})
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andBodyBasedOnRequest(
                                     "text/plain",
@@ -2290,13 +2230,13 @@ public class ImpServerIntegrationTest implements FastTest {
             ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("matcherId1")
                             .priority(2)
-                            .match(match -> {})
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andTextBody("should not be matched")
                             .andNoAdditionalHeaders())
                     .matchRequest(spec -> spec.id("matcherId2")
                             .priority(1)
-                            .match(match -> {})
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andTextBody(expectedResponseBody)
                             .andNoAdditionalHeaders())
@@ -2320,13 +2260,13 @@ public class ImpServerIntegrationTest implements FastTest {
                     .isThrownBy(() -> ImpServer.httpTemplate()
                             .matchRequest(spec -> spec.id(matcherId)
                                     .priority(2)
-                                    .match(match -> {})
+                                    .match(ImpMatch::everything)
                                     .respondWithStatus(200)
                                     .andTextBody("")
                                     .andNoAdditionalHeaders())
                             .matchRequest(spec -> spec.id(matcherId)
                                     .priority(1)
-                                    .match(match -> {})
+                                    .match(ImpMatch::everything)
                                     .respondWithStatus(200)
                                     .andTextBody("")
                                     .andNoAdditionalHeaders()))
@@ -2346,13 +2286,13 @@ public class ImpServerIntegrationTest implements FastTest {
                     .isThrownBy(() -> ImpServer.httpTemplate()
                             .matchRequest(spec -> spec.id(matcherId1)
                                     .priority(matcherPriority)
-                                    .match(match -> {})
+                                    .match(ImpMatch::everything)
                                     .respondWithStatus(200)
                                     .andTextBody("")
                                     .andNoAdditionalHeaders())
                             .matchRequest(spec -> spec.id(matcherId2)
                                     .priority(matcherPriority)
-                                    .match(match -> {})
+                                    .match(ImpMatch::everything)
                                     .respondWithStatus(200)
                                     .andTextBody("")
                                     .andNoAdditionalHeaders()))
@@ -2372,13 +2312,13 @@ public class ImpServerIntegrationTest implements FastTest {
             ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("matcherId1")
                             .priority(1)
-                            .match(match -> {})
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andTextBody(expectedResponseBody)
                             .andNoAdditionalHeaders())
                     .matchRequest(spec -> spec.id("matcherId2")
                             .priority(2)
-                            .match(match -> {})
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andTextBody("should not be matched")
                             .andNoAdditionalHeaders())
@@ -2607,7 +2547,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var sharedServer = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsValue(expectedMatchValue)))
+                            .match(match -> match.headers().containsValue(expectedMatchValue))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -2803,7 +2743,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var sharedServer = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsKey(expectedHeader)))
+                            .match(match -> match.headers().containsKey(expectedHeader))
                             .respondWithStatus(originalStatus)
                             .andTextBody(originalBody)
                             .andNoAdditionalHeaders())
@@ -2840,7 +2780,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var sharedServer = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(request -> request.headersPredicate(h -> h.containsKey(expectedHeader)))
+                            .match(match -> match.headers().containsKey(expectedHeader))
                             .respondWithStatus(originalStatus)
                             .andTextBody(originalBody)
                             .andNoAdditionalHeaders())
@@ -3520,32 +3460,7 @@ public class ImpServerIntegrationTest implements FastTest {
         void onrequestmatching_when_noop_match_consumer_then_ok() {
             assertThatNoException().isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                     .priority(0)
-                    .match(request -> {})
-                    .respondWithStatus(200)
-                    .andTextBody("")
-                    .andNoAdditionalHeaders()));
-        }
-
-        @Test
-        @DisplayName("'onRequestMatching' when consumer sets null headers predicate, then fail immediately")
-        void onrequestmatching_when_consumer_sets_null_headers_predicate_then_fail_immediately() {
-            //noinspection DataFlowIssue
-            assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
-                            .priority(0)
-                            .match(request -> request.headersPredicate(null))
-                            .respondWithStatus(200)
-                            .andTextBody("")
-                            .andNoAdditionalHeaders()))
-                    .withMessage("nulls are not supported - headersPredicate");
-        }
-
-        @Test
-        @DisplayName("'onRequestMatching' when consumer sets normal headers predicate then ok")
-        void onrequestmatching_when_consumer_sets_normal_headers_predicate_then_ok() {
-            assertThatNoException().isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
-                    .priority(0)
-                    .match(request -> request.headersPredicate(headers -> true))
+                    .match(ImpMatch::everything)
                     .respondWithStatus(200)
                     .andTextBody("")
                     .andNoAdditionalHeaders()));
@@ -3559,7 +3474,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .as("should reject http status code [%d]", invalidHttpStatusCode)
                         .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                                 .priority(0)
-                                .match(request -> {})
+                                .match(ImpMatch::everything)
                                 .respondWithStatus(invalidHttpStatusCode)
                                 .andTextBody("")
                                 .andNoAdditionalHeaders()))
@@ -3575,7 +3490,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         .as("Should work for http status code [%d]", httpStatus.value())
                         .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                                 .priority(0)
-                                .match(request -> request.headersPredicate(headers -> true))
+                                .match(ImpMatch::everything)
                                 .respondWithStatus(httpStatus.value())
                                 .andTextBody("")
                                 .andNoAdditionalHeaders()));
@@ -3589,7 +3504,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(headers -> true))
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andTextBody(null)
                             .andNoAdditionalHeaders()))
@@ -3603,7 +3518,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(headers -> true))
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andJsonBody(null)
                             .andNoAdditionalHeaders()))
@@ -3617,7 +3532,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(headers -> true))
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andXmlBody(null)
                             .andNoAdditionalHeaders()))
@@ -3631,7 +3546,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(headers -> true))
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andCustomContentTypeStream(null, () -> new ByteArrayInputStream(new byte[0]))
                             .andNoAdditionalHeaders()))
@@ -3644,7 +3559,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(headers -> true))
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andCustomContentTypeStream("", () -> new ByteArrayInputStream(new byte[0]))
                             .andNoAdditionalHeaders()))
@@ -3657,7 +3572,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(headers -> true))
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andCustomContentTypeStream("  ", () -> new ByteArrayInputStream(new byte[0]))
                             .andNoAdditionalHeaders()))
@@ -3671,7 +3586,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(headers -> true))
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andCustomContentTypeStream("contenttpye", null)
                             .andNoAdditionalHeaders()))
@@ -3685,7 +3600,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(headers -> true))
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andDataStreamBody(null)
                             .andNoAdditionalHeaders()))
@@ -3700,7 +3615,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(headers -> true))
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andCustomContentTypeStream(null, null)
                             .andNoAdditionalHeaders()))
@@ -3714,7 +3629,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(RuntimeException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> request.headersPredicate(headers -> true))
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andTextBody("")
                             .andAdditionalHeaders(null)))
@@ -3729,7 +3644,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(RuntimeException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> {})
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andTextBody("")
                             .andAdditionalHeaders(headers)))
@@ -3744,7 +3659,7 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(RuntimeException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> {})
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andTextBody("")
                             .andAdditionalHeaders(headers)))
@@ -3760,27 +3675,12 @@ public class ImpServerIntegrationTest implements FastTest {
             assertThatExceptionOfType(RuntimeException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
-                            .match(request -> {})
+                            .match(ImpMatch::everything)
                             .respondWithStatus(200)
                             .andTextBody("")
                             .andAdditionalHeaders(headers)))
                     .withMessage(
                             "null values are not supported in headers, but found null values in entry [ something=null ]");
-        }
-
-        @Test
-        @DisplayName("should fail-fast when attempt to reassign headers matchers")
-        void should_fail_fast_when_attempt_to_reassign_headers_matchers() {
-            assertThatExceptionOfType(IllegalStateException.class)
-                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
-                            .priority(0)
-                            .match(request ->
-                                    request.headersPredicate(headers -> true).headersPredicate(headers -> true))
-                            .respondWithStatus(200)
-                            .andTextBody("")
-                            .andNoAdditionalHeaders()))
-                    .withMessage(
-                            "Attempting to reassign 'headersPredicate'. Assign operations for 'headersPredicate' are not additive and should be done only once.");
         }
     }
 }

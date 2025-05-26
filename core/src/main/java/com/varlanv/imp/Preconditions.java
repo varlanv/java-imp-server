@@ -47,6 +47,15 @@ interface Preconditions {
         return iterable;
     }
 
+    static <T, I extends Iterable<T>> I notEmptyIterable(I iterable, String fieldName) {
+        nonNull(iterable, fieldName);
+        var iterator = iterable.iterator();
+        if (iterator.hasNext()) {
+            return iterable;
+        }
+        throw new IllegalArgumentException(String.format("empty iterables are not supported in %s", fieldName));
+    }
+
     static ImpHttpStatus validHttpStatusCode(int statusCode) {
         var httpStatus = ImpHttpStatus.forCodeNullable(statusCode);
         if (httpStatus == null) {
