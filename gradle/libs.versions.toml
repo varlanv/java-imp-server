@@ -38,4 +38,4 @@ jaywayJsonPath = { group = "com.jayway.jsonpath", name = "json-path", version.re
 internalConvention = { id = "com.varlanv.gradle.internal-gradle-convention-plugin" }
 testKonvence = { id = "com.varlanv.test-konvence", version = "1.0.2" }
 gradlePluginPublish = { id = "com.gradle.plugin-publish", version = "1.3.1" }
-shadow = { id = "com.gradleup.shadow", version = "8.3.5" }
+shadow = { id = "com.gradleup.shadow", version = "8.3.6" }
