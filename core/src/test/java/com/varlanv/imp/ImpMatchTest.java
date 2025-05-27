@@ -235,7 +235,7 @@ class ImpMatchTest implements FastTest {
                                 match.headers().containsValue("value6"),
                                 match.headers().containsValue("value8"))));
 
-        var evaluate = condition.evaluate(requestWithHeaders(headers));
+        var evaluate = condition.toEvaluated(requestWithHeaders(headers));
         System.out.println(evaluate.message.joinToBuilder());
     }
 

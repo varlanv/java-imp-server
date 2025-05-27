@@ -37,39 +37,19 @@ public final class ImpCondition {
 
     @VisibleForTesting
     boolean test(ImpRequestView requestView) {
-        var result = evaluate(requestView).result;
-        return result != null && result;
+        return toEvaluated(requestView).result;
     }
 
-    static final class EvaluateContext {
-
-        final StringList message = new StringList();
-        private final ImpRequestView requestView;
-        private final ImpCondition condition;
-        private final int nestLevel;
-        private final int indentLength;
-
-        @Nullable private Boolean result;
-
-        @Nullable private Boolean knownResult;
-
-        private EvaluateContext(ImpRequestView requestView, ImpCondition condition, int nestLevel, int indentLength) {
-            this.requestView = requestView;
-            this.condition = condition;
-            this.nestLevel = nestLevel;
-            this.indentLength = indentLength;
-        }
-
-        private EvaluateContext next(ImpCondition condition, int indentLength) {
-            return new EvaluateContext(requestView, condition, nestLevel + 1, indentLength);
-        }
+    EvaluatedCondition toEvaluated(ImpRequestView requestView) {
+        var evaluated = evaluate(requestView);
+        return new EvaluatedCondition(evaluated.result != null && evaluated.result, evaluated.message);
     }
 
-    EvaluateContext evaluate(ImpRequestView requestView) {
+    private EvaluateContext evaluate(ImpRequestView requestView) {
         return evaluateRecursive(new EvaluateContext(requestView, this, 0, 0));
     }
 
-    EvaluateContext evaluateRecursive(EvaluateContext evaluateContext) {
+    private EvaluateContext evaluateRecursive(EvaluateContext evaluateContext) {
         var nestLevel = evaluateContext.nestLevel;
         var indentLength = evaluateContext.indentLength;
         if (evaluateContext.condition.kind == Kind.AND) {
@@ -176,5 +156,40 @@ public final class ImpCondition {
         OR,
         CONDITION,
         NOT
+    }
+
+    static final class EvaluateContext {
+
+        final StringList message = new StringList();
+        private final ImpRequestView requestView;
+        private final ImpCondition condition;
+        private final int nestLevel;
+        private final int indentLength;
+
+        @Nullable private Boolean result;
+
+        @Nullable private Boolean knownResult;
+
+        private EvaluateContext(ImpRequestView requestView, ImpCondition condition, int nestLevel, int indentLength) {
+            this.requestView = requestView;
+            this.condition = condition;
+            this.nestLevel = nestLevel;
+            this.indentLength = indentLength;
+        }
+
+        private EvaluateContext next(ImpCondition condition, int indentLength) {
+            return new EvaluateContext(requestView, condition, nestLevel + 1, indentLength);
+        }
+    }
+
+    static final class EvaluatedCondition {
+
+        final boolean result;
+        final StringList message;
+
+        EvaluatedCondition(boolean result, StringList message) {
+            this.result = result;
+            this.message = message;
+        }
     }
 }
