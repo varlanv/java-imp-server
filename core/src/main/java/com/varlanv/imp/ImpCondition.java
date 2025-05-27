@@ -2,6 +2,7 @@ package com.varlanv.imp;
 
 import java.util.List;
 import java.util.function.Supplier;
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.Nullable;
 
@@ -41,114 +42,127 @@ public final class ImpCondition {
     }
 
     EvaluatedCondition toEvaluated(ImpRequestView requestView) {
-        var evaluated = evaluate(requestView);
-        return new EvaluatedCondition(evaluated.result != null && evaluated.result, evaluated.message);
+        var evaluatedContext = evaluate(requestView);
+        // evaluateRecursive now ensures evaluatedContext.result is non-null
+        return new EvaluatedCondition(Boolean.TRUE.equals(evaluatedContext.result), evaluatedContext.message);
     }
 
     private EvaluateContext evaluate(ImpRequestView requestView) {
+        // Initial call, nestLevel and indentLength are 0
         return evaluateRecursive(new EvaluateContext(requestView, this, 0, 0));
     }
 
-    private EvaluateContext evaluateRecursive(EvaluateContext evaluateContext) {
-        var nestLevel = evaluateContext.nestLevel;
-        var indentLength = evaluateContext.indentLength;
-        if (evaluateContext.condition.kind == Kind.AND) {
-            var andMsg = new StringList().addSupplier(() -> {
-                var mark = " ".repeat(nestLevel == 0 ? 0 : indentLength);
-                var isKnownResult = evaluateContext.knownResult != null;
-                return new StringBuilder()
-                        .append(mark)
-                        .append(nestLevel == 0 ? "" : "|———— ")
-                        .append("AND -> ")
-                        .append(isKnownResult ? "N/E" : evaluateContext.result)
-                        .append(System.lineSeparator())
-                        .toString();
-            });
-            var andRes = true;
-            for (var nestedCondition : evaluateContext.condition.nested) {
-                var nextContext = evaluateContext.next(nestedCondition, nestLevel == 0 ? 0 : indentLength + 7);
-                if (evaluateContext.knownResult != null) {
-                    nextContext.knownResult = evaluateContext.knownResult;
-                    nextContext.result = evaluateContext.knownResult;
-                } else if (!andRes) {
-                    nextContext.knownResult = false;
-                    nextContext.result = false;
-                }
-                var nextEvaluated = evaluateRecursive(nextContext);
-                andMsg.addAll(nextEvaluated.message);
-                andRes = nextEvaluated.result != null && nextEvaluated.result && andRes;
-            }
-            evaluateContext.result = andRes;
-            evaluateContext.message.addAll(andMsg);
-            return evaluateContext;
-        } else if (evaluateContext.condition.kind == Kind.OR) {
-            var orMsg = new StringList().addSupplier(() -> {
-                var mark = " ".repeat(nestLevel == 0 ? 0 : indentLength);
-                var isKnownResult = evaluateContext.knownResult != null;
-                return new StringBuilder()
-                        .append(mark)
-                        .append(nestLevel == 0 ? "" : "|———— ")
-                        .append("OR -> ")
-                        .append(isKnownResult ? "N/E" : evaluateContext.result)
-                        .append(System.lineSeparator())
-                        .toString();
-            });
-            var orRes = false;
-            for (var nestedCondition : evaluateContext.condition.nested) {
-                var nextContext = evaluateContext.next(nestedCondition, indentLength == 0 ? 7 : indentLength + 7);
-                if (evaluateContext.knownResult != null) {
-                    nextContext.knownResult = evaluateContext.knownResult;
-                    nextContext.result = evaluateContext.knownResult;
-                } else if (orRes) {
-                    nextContext.knownResult = true;
-                    nextContext.result = true;
-                }
-                var nextEvaluated = evaluateRecursive(nextContext);
-                orMsg.addAll(nextEvaluated.message);
-                orRes = (nextEvaluated.result != null && nextEvaluated.result) || orRes;
-            }
-            evaluateContext.result = orRes;
-            evaluateContext.message.addAll(orMsg);
-            return evaluateContext;
-        } else if (evaluateContext.condition.kind == Kind.CONDITION || evaluateContext.condition.kind == Kind.NOT) {
-            if (evaluateContext.knownResult == null) {
-                var res = false;
-                if (evaluateContext.condition.kind == Kind.CONDITION) {
-                    res = evaluateContext.condition.predicate.test(evaluateContext.requestView);
-                } else {
-                    res = !evaluateContext.condition.predicate.test(evaluateContext.requestView);
-                }
-                evaluateContext.result = res;
-                var resFinal = res;
-                evaluateContext.message.addSupplier(() -> {
-                    return new StringBuilder()
-                            .append(" ".repeat(evaluateContext.indentLength))
-                            .append("|———— ")
-                            .append(String.format(
-                                    "%s -> %s -> " + resFinal,
-                                    evaluateContext.condition.group,
-                                    evaluateContext.condition.context.get(),
-                                    nestLevel))
-                            .append(System.lineSeparator())
-                            .toString();
-                });
-            } else {
-                evaluateContext.message.addSupplier(() -> {
-                    return new StringBuilder()
-                            .append(" ".repeat(indentLength))
-                            .append("|———— ")
-                            .append(String.format(
-                                    "%s -> %s -> N/E",
-                                    evaluateContext.condition.group,
-                                    evaluateContext.condition.context.get(),
-                                    evaluateContext.knownResult))
-                            .append(System.lineSeparator())
-                            .toString();
-                });
-            }
-            return evaluateContext;
+    private EvaluateContext evaluateRecursive(EvaluateContext currentContext) {
+        switch (currentContext.condition.kind) {
+            case AND:
+                return processBranchEvaluation(currentContext, "AND", true, false, (res, childRes) -> res && childRes);
+            case OR:
+                return processBranchEvaluation(currentContext, "OR", false, true, (res, childRes) -> res || childRes);
+            case CONDITION:
+            case NOT:
+                return processLeafEvaluation(currentContext);
+            default:
+                // Should not happen with an enum unless the enum is extended and this switch is not updated
+                throw new IllegalStateException("Unexpected condition kind: " + currentContext.condition.kind);
         }
-        throw new IllegalStateException("Unexpected value: " + evaluateContext.condition.kind);
+    }
+
+    private EvaluateContext processBranchEvaluation(
+            EvaluateContext branchContext,
+            @MagicConstant(stringValues = {"AND", "OR"}) String branchType,
+            boolean initialCumulativeResult,
+            boolean shortCircuitTriggerValue,
+            ConditionAccumulator accumulator) {
+
+        var branchMessages = new StringList();
+        // Add a supplier for the header message of this branch.
+        // branchContext.result will be set correctly before this supplier is evaluated.
+        branchMessages.addSupplier(() -> formatBranchHeaderMessage(branchContext, branchType));
+
+        var cumulativeResult = initialCumulativeResult;
+
+        // If this branch's result is predetermined by a parent's short-circuiting
+        if (branchContext.knownResult != null) {
+            cumulativeResult = branchContext.knownResult;
+        }
+
+        for (var nestedCondition : branchContext.condition.nested) {
+            var childIndentLength = calculateChildIndentLength(branchContext);
+            var childContext = branchContext.next(nestedCondition, childIndentLength);
+
+            if (branchContext.knownResult != null) {
+                // This entire branch is skipped due to parent's short-circuiting
+                childContext.knownResult = branchContext.knownResult;
+                childContext.result = branchContext.knownResult; // Ensure child's result reflects this
+            } else if (cumulativeResult == shortCircuitTriggerValue) {
+                // This branch is short-circuiting its remaining children
+                childContext.knownResult = shortCircuitTriggerValue;
+                childContext.result = shortCircuitTriggerValue; // Ensure child's result reflects this
+            }
+
+            var evaluatedChildContext = evaluateRecursive(childContext);
+            branchMessages.addAll(evaluatedChildContext.message);
+
+            // Only accumulate if this branch itself wasn't short-circuited by a parent
+            if (branchContext.knownResult == null) {
+                // evaluatedChildContext.result is guaranteed to be non-null by evaluateRecursive
+                cumulativeResult = accumulator.apply(
+                        cumulativeResult, evaluatedChildContext.result != null && evaluatedChildContext.result);
+            }
+        }
+
+        branchContext.result = cumulativeResult; // Set the final result for this branch
+        branchContext.message.addAll(branchMessages);
+        return branchContext;
+    }
+
+    private EvaluateContext processLeafEvaluation(EvaluateContext leafContext) {
+        String resultTextForMessage; // Text like "true", "false", or "N/E"
+
+        if (leafContext.knownResult == null) { // Only evaluate if not already determined by the parent
+            var evaluationResult = leafContext.condition.kind
+                    == Kind.CONDITION
+                    == leafContext.condition.predicate.test(leafContext.requestView);
+            leafContext.result = evaluationResult;
+            resultTextForMessage = String.valueOf(evaluationResult);
+        } else {
+            leafContext.result = leafContext.knownResult; // Set result from knownResult
+            resultTextForMessage = "N/E";
+        }
+
+        // Ensure resultTextForMessage is effectively final for the lambda
+        final var finalResultText = resultTextForMessage;
+        leafContext.message.addSupplier(() -> formatLeafMessage(leafContext, finalResultText));
+        return leafContext;
+    }
+
+    private String formatBranchHeaderMessage(
+            EvaluateContext context, @MagicConstant(stringValues = {"AND", "OR"}) String type) {
+        var mark = " ".repeat(context.nestLevel == 0 ? 0 : context.indentLength);
+        // context.result will reflect the outcome of this branch (or knownResult if N/E)
+        // when this supplier is eventually evaluated.
+        return mark + (context.nestLevel == 0 ? "" : "|---> ")
+                + type
+                + ("OR".equals(type) ? " " : "")
+                + " -> "
+                + (context.knownResult != null ? "N/E" : context.result)
+                + System.lineSeparator();
+    }
+
+    private String formatLeafMessage(EvaluateContext context, String resultOutputString) {
+        // resultOutputString is "true", "false", or "N/E"
+        // Supplier is called here, lazily
+        return " ".repeat(context.indentLength) + "|---> "
+                + context.condition.group
+                + " -> "
+                + context.condition.context.get()
+                + " -> "
+                + resultOutputString
+                + System.lineSeparator();
+    }
+
+    private int calculateChildIndentLength(EvaluateContext parentContext) {
+        return parentContext.nestLevel == 0 ? 1 : parentContext.indentLength + 7;
     }
 
     enum Kind {
@@ -163,22 +177,25 @@ public final class ImpCondition {
         final StringList message = new StringList();
         private final ImpRequestView requestView;
         private final ImpCondition condition;
-        private final int nestLevel;
-        private final int indentLength;
+        final int nestLevel; // Renamed for clarity from 'evaluateContext.nestLevel' to 'currentContext.nestLevel'
+        final int indentLength; // Renamed for clarity
 
+        // This field will now always be set to a non-null Boolean by the end of evaluateRecursive
+        // if knownResult was null, or to knownResult if it was non-null.
         @Nullable private Boolean result;
 
-        @Nullable private Boolean knownResult;
+        @Nullable private Boolean knownResult; // If non-null, evaluation is skipped
 
-        private EvaluateContext(ImpRequestView requestView, ImpCondition condition, int nestLevel, int indentLength) {
+        EvaluateContext(ImpRequestView requestView, ImpCondition condition, int nestLevel, int indentLength) {
             this.requestView = requestView;
             this.condition = condition;
             this.nestLevel = nestLevel;
             this.indentLength = indentLength;
         }
 
-        private EvaluateContext next(ImpCondition condition, int indentLength) {
-            return new EvaluateContext(requestView, condition, nestLevel + 1, indentLength);
+        // Creates context for a nested condition
+        EvaluateContext next(ImpCondition nestedCondition, int childIndentLength) {
+            return new EvaluateContext(requestView, nestedCondition, nestLevel + 1, childIndentLength);
         }
     }
 
