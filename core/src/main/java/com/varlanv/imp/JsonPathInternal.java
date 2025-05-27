@@ -18,7 +18,7 @@ final class JsonPathInternal {
             jsonPathFnTmp = jsonPathString -> {
                 try {
                     var compiledJsonPath = JsonPath.compile(jsonPathString);
-                    return new JaywayJsonPathMatch(new CompiledPath(compiledJsonPath));
+                    return new JaywayJsonPathMatch(new CompiledPath(jsonPathString, compiledJsonPath));
                 } catch (InvalidPathException e) {
                     throw new IllegalArgumentException(
                             String.format(
@@ -66,9 +66,11 @@ final class JsonPathInternal {
 
     static class CompiledPath {
 
+        final String stringPath;
         final JsonPath jsonPath;
 
-        CompiledPath(JsonPath jsonPath) {
+        CompiledPath(String stringPath, JsonPath jsonPath) {
+            this.stringPath = stringPath;
             this.jsonPath = jsonPath;
         }
     }

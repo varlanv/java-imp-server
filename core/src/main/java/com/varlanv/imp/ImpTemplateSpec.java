@@ -360,7 +360,7 @@ public final class ImpTemplateSpec {
         }
 
         ResponseCandidate toResponseCandidate() {
-            return new ResponseCandidate(request -> true, () -> ImpResponse.builder()
+            return new ResponseCandidate(ImpMatch.EVERYTHING_INSTANCE, () -> ImpResponse.builder()
                     .trustedStatus(status)
                     .trustedBody(bodyFunction)
                     .trustedHeaders(headersOperator)
