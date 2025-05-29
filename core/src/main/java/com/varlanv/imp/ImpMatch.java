@@ -87,10 +87,7 @@ public final class ImpMatch {
         Method() {}
 
         public ImpCondition is(
-                @MagicConstant(
-                                stringValues = {
-                                    "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT", "PATCH"
-                                })
+                @MagicConstant(stringValues = {"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "PATCH"})
                         String expectedMethod) {
             Preconditions.nonBlank(expectedMethod, "expectedMethod");
             if (ImpMethod.of(expectedMethod) == null) {
@@ -104,10 +101,7 @@ public final class ImpMatch {
         }
 
         public ImpCondition anyOf(
-                @MagicConstant(
-                                stringValues = {
-                                    "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT", "PATCH"
-                                })
+                @MagicConstant(stringValues = {"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "PATCH"})
                         String... expectedMethods) {
             Preconditions.nonNull(expectedMethods, "expectedMethods");
             var expectedMethodsSet = new LinkedHashSet<String>(expectedMethods.length);
@@ -125,6 +119,10 @@ public final class ImpMatch {
                     throw new IllegalArgumentException(
                             String.format("Found duplicate value [%s], please check your configuration.", method));
                 }
+            }
+            if (expectedMethodsSet.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "No values were provided in expectedMethods, please check your configuration.");
             }
             return new ImpCondition(
                     GROUP,
@@ -169,7 +167,7 @@ public final class ImpMatch {
             return new ImpCondition(
                     GROUP,
                     request -> request.method().equals(expectedMethod.name()),
-                    () -> expectedMethod.name() + "()",
+                    () -> expectedMethod.name().toLowerCase() + "()",
                     ImpCondition.Kind.CONDITION);
         }
     }

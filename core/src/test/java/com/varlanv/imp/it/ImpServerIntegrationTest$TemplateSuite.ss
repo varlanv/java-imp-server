@@ -11,6 +11,51 @@ Response status code: 200
 Response headers: {content-length=[12], content-type=[text/plain], date=[<present>]}
 Response body: request body
 
+╔═ should_be_able_to_match_by_all_methods/DELETE ═╗
+Response status code: 200
+Response headers: {content-length=[3], content-type=[text/plain], date=[<present>]}
+Response body: any
+
+╔═ should_be_able_to_match_by_all_methods/GET ═╗
+Response status code: 200
+Response headers: {content-length=[3], content-type=[text/plain], date=[<present>]}
+Response body: any
+
+╔═ should_be_able_to_match_by_all_methods/HEAD ═╗
+Response status code: 200
+Response headers: {content-type=[text/plain], date=[<present>]}
+Response body: 
+
+╔═ should_be_able_to_match_by_all_methods/OPTIONS ═╗
+Response status code: 200
+Response headers: {content-length=[3], content-type=[text/plain], date=[<present>]}
+Response body: any
+
+╔═ should_be_able_to_match_by_all_methods/PATCH ═╗
+Response status code: 200
+Response headers: {content-length=[3], content-type=[text/plain], date=[<present>]}
+Response body: any
+
+╔═ should_be_able_to_match_by_all_methods/POST ═╗
+Response status code: 200
+Response headers: {content-length=[3], content-type=[text/plain], date=[<present>]}
+Response body: any
+
+╔═ should_be_able_to_match_by_all_methods/PUT ═╗
+Response status code: 200
+Response headers: {content-length=[3], content-type=[text/plain], date=[<present>]}
+Response body: any
+
+╔═ should_be_able_to_match_by_all_methods/TRACE ═╗
+Response status code: 200
+Response headers: {content-length=[3], content-type=[text/plain], date=[<present>]}
+Response body: any
+
+╔═ should_be_able_to_match_by_anyof_put_get ═╗
+Response status code: 200
+Response headers: {content-length=[3], content-type=[text/plain], date=[<present>]}
+Response body: any
+
 ╔═ should_be_able_to_match_by_query_haskey_and_haskey_when_both_matches_succeeded ═╗
 Response status code: 200
 Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
@@ -30,6 +75,116 @@ Response body: some text
 Response status code: 200
 Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
 Response body: response body
+
+╔═ should_fail_when_can_t_match_by_method_anyof_put_delete ═╗
+Response status code: 418
+Response headers: {content-length=[515], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Method -> anyOf("[PUT, DELETE]") -> false
+-----------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_can_t_match_by_method_delete ═╗
+Response status code: 418
+Response headers: {content-length=[501], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Method -> delete() -> false
+-----------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_can_t_match_by_method_get ═╗
+Response status code: 418
+Response headers: {content-length=[498], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Method -> get() -> false
+-----------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_can_t_match_by_method_head ═╗
+Response status code: 418
+Response headers: {content-length=[499], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Method -> head() -> false
+-----------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_can_t_match_by_method_is_get ═╗
+Response status code: 418
+Response headers: {content-length=[503], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Method -> is("POST") -> false
+-----------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_can_t_match_by_method_options ═╗
+Response status code: 418
+Response headers: {content-length=[502], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Method -> options() -> false
+-----------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_can_t_match_by_method_patch ═╗
+Response status code: 418
+Response headers: {content-length=[500], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Method -> patch() -> false
+-----------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_can_t_match_by_method_post ═╗
+Response status code: 418
+Response headers: {content-length=[499], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Method -> post() -> false
+-----------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_can_t_match_by_method_put ═╗
+Response status code: 418
+Response headers: {content-length=[498], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Method -> put() -> false
+-----------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_can_t_match_by_method_trace ═╗
+Response status code: 418
+Response headers: {content-length=[500], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Method -> trace() -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_fail_when_don_t_match_by_body_predicate_bodycontains ═╗
 Response status code: 418

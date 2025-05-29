@@ -17,10 +17,7 @@ public final class ImpRequestView {
     private final ImpUri uri;
 
     ImpRequestView(
-            @MagicConstant(
-                            stringValues = {
-                                "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT", "PATCH"
-                            })
+            @MagicConstant(stringValues = {"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "PATCH"})
                     String method,
             Map<String, List<String>> headers,
             ImpSupplier<byte[]> bodySupplier,
@@ -40,7 +37,7 @@ public final class ImpRequestView {
         this.uri = new ImpUri(uri);
     }
 
-    @MagicConstant(stringValues = {"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT", "PATCH"})
+    @MagicConstant(stringValues = {"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "PATCH"})
     public String method() {
         //noinspection MagicConstant
         return method;

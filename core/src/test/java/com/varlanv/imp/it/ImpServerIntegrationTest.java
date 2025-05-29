@@ -1278,6 +1278,320 @@ public class ImpServerIntegrationTest implements FastTest {
             });
         }
 
+        @ParameterizedTest
+        @DisplayName("should be able to match by all methods`")
+        @ValueSource(strings = {"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "PATCH"})
+        void should_be_able_to_match_by_all_methods(String method) {
+            var requestBody = "Some Text body";
+            @SuppressWarnings("MagicConstant")
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().is(method))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method(method, HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk(method);
+            });
+        }
+
+        @Test
+        @DisplayName("should be able to match by `anyOf PUT GET`")
+        void should_be_able_to_match_by_anyof_put_get() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().anyOf("PUT", "GET"))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when can't match by method 'GET'`")
+        void should_fail_when_can_t_match_by_method_get() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().get())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("POST", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when can't match by method 'is GET'`")
+        void should_fail_when_can_t_match_by_method_is_get() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().is("POST"))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when can't match by method 'POST'`")
+        void should_fail_when_can_t_match_by_method_post() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().post())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when can't match by method 'PATCH'`")
+        void should_fail_when_can_t_match_by_method_patch() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().patch())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when can't match by method 'OPTIONS'`")
+        void should_fail_when_can_t_match_by_method_options() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().options())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when can't match by method 'DELETE'`")
+        void should_fail_when_can_t_match_by_method_delete() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().delete())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when can't match by method 'PUT'`")
+        void should_fail_when_can_t_match_by_method_put() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().put())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when can't match by method 'HEAD'`")
+        void should_fail_when_can_t_match_by_method_head() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().head())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when can't match by method 'TRACE'`")
+        void should_fail_when_can_t_match_by_method_trace() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().trace())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when can't match by method 'anyOf PUT DELETE'`")
+        void should_fail_when_can_t_match_by_method_anyof_put_delete() {
+            var requestBody = "Some Text body";
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.method().anyOf("PUT", "DELETE"))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
+                                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
         @Test
         @DisplayName("should successfully match by body predicate 'bodyContainsIgnoreCase'")
         void should_successfully_match_by_body_predicate_bodycontainsignorecase() {
@@ -3734,6 +4048,129 @@ public class ImpServerIntegrationTest implements FastTest {
                             .andAdditionalHeaders(headers)))
                     .withMessage(
                             "null values are not supported in headers, but found null values in entry [ something=null ]");
+        }
+
+        @Test
+        @DisplayName("'matchRequest method is' should fail immediately if null")
+        void matchrequest_method_is_should_fail_immediately_if_null() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.method().is(null))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("'matchRequest method is' should fail immediately if empty")
+        void matchrequest_method_is_should_fail_immediately_if_empty() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.method().is(""))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("'matchRequest method is' should fail immediately if blank")
+        void matchrequest_method_is_should_fail_immediately_if_blank() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.method().is(""))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("'matchRequest method is' should fail immediately if unknown method")
+        void matchrequest_method_is_should_fail_immediately_if_unknown_method() {
+            //noinspection MagicConstant
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.method().is("unknownMethod"))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("'matchRequest method anyOf' should fail immediately if unknown method")
+        void matchrequest_method_anyof_should_fail_immediately_if_unknown_method() {
+            //noinspection MagicConstant
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.method().anyOf("unknownMethod"))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("'matchRequest method anyOf' should fail immediately if null")
+        void matchrequest_method_anyof_should_fail_immediately_if_null() {
+            String[] expectedMethods = null;
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.method().anyOf(expectedMethods))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("'matchRequest method anyOf' should fail immediately if empty")
+        void matchrequest_method_anyof_should_fail_immediately_if_empty() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.method().anyOf())
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("'matchRequest method anyOf' should fail immediately if contains null")
+        void matchrequest_method_anyof_should_fail_immediately_if_contains_null() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.method().anyOf("GET", null))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("'matchRequest method anyOf' should fail immediately if contains duplicates")
+        void matchrequest_method_anyof_should_fail_immediately_if_contains_duplicates() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.method().anyOf("GET", "GET"))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
         }
     }
 

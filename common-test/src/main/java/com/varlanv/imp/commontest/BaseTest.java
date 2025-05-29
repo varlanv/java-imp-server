@@ -178,7 +178,7 @@ public interface BaseTest {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             Stream<Function<Integer, HttpRequest.Builder>> result = Stream.of(
-                            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "TRACE", "CONNECT", "HEAD")
+                            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "TRACE", "HEAD")
                     .map(method -> port -> HttpRequest.newBuilder()
                             .uri(supplyQuiet(() -> new URI(String.format("http://localhost:%d/", port)))));
             return result.map(Arguments::of);
