@@ -66,7 +66,7 @@ final class DefaultImpTemplate implements ImpTemplate {
         byte[] responseBytes;
         int responseStatus;
         try {
-            ResponseCandidate responseCandidate = serverConfig.decision().pick(impRequestView);
+            var responseCandidate = serverConfig.decision().pick(impRequestView);
             if (responseCandidate == null) {
                 serverContext.statistics().incrementMissCount();
                 impResponse = serverConfig.fallback().apply(exchange);

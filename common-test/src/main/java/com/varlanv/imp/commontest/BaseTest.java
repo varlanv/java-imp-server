@@ -207,6 +207,17 @@ public interface BaseTest {
         }
     }
 
+    default <T> CompletableFuture<HttpResponse<T>> sendHttpRequest(
+            int port, HttpResponse.BodyHandler<T> responseBodyHandler) {
+        try {
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)))
+                    .build();
+            return sendHttpRequest(request, responseBodyHandler);
+        } catch (Exception e) {
+            return hide(e);
+        }
+    }
+
     default String responseToString(HttpResponse<?> response) {
         Object body = response.body();
         if (body.getClass() == byte[].class) {
@@ -218,7 +229,7 @@ public interface BaseTest {
         var modifiedHeaders = new LinkedHashMap<String, List<String>>(originalHeaders.size());
         originalHeaders.forEach((key, values) -> {
             var keyLower = key.toLowerCase();
-            if (keyLower.equals("date")) {
+            if ("date".equals(keyLower)) {
                 modifiedHeaders.put(keyLower, List.of("<present>"));
             } else {
                 modifiedHeaders.put(keyLower, values);
@@ -228,17 +239,6 @@ public interface BaseTest {
         return "Response status code: " + response.statusCode() + '\n' + "Response headers: "
                 + modifiedHeaders + '\n' + "Response body: "
                 + body + '\n';
-    }
-
-    default <T> CompletableFuture<HttpResponse<T>> sendHttpRequest(
-            int port, HttpResponse.BodyHandler<T> responseBodyHandler) {
-        try {
-            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)))
-                    .build();
-            return sendHttpRequest(request, responseBodyHandler);
-        } catch (Exception e) {
-            return hide(e);
-        }
     }
 
     default <T> CompletableFuture<HttpResponse<T>> sendHttpRequestWithBody(

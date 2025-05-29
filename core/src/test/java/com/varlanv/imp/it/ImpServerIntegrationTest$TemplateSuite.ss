@@ -18,28 +18,67 @@ Response body: some text
 
 ╔═ should_fail_when_don_t_match_by_body_predicate_bodycontains ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[507], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Body -> contains("test") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_fail_when_fail_to_match_by_body_predicate_bodycontainsignorecase ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[519], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Body -> containsIgnoreCase("texttt") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_fail_when_match_success_match_by_url_predicate_but_fail_to_match_by_body ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[574], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+AND -> false
+ |---> Url -> urlMatches(".*some/.*") -> true
+ |---> Body -> contains("text") -> false
+
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_fail_when_successfully_match_by_body_but_fail_to_match_by_headers ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[599], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+AND -> false
+ |---> Body -> containsIgnoreCase("text") -> true
+ |---> Headers -> containsPair("header1", "header1") -> false
+
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_fail_when_successfully_match_by_headers_but_fail_to_match_by_body ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[602], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+AND -> false
+ |---> Body -> containsIgnoreCase("texttttt") -> false
+ |---> Headers -> containsPair("header1", "header1") -> N/E
+
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_additional_headers_when_matched_user_agent_header_key_by_containskey_and_expect_additional_headers ═╗
 Response status code: 200
@@ -48,98 +87,212 @@ Response body: any
 
 ╔═ should_return_error_wen_fail_to_match_by_url_predicate_urlmatches ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[513], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Url -> urlMatches(".*local.*") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_can_t_match_by_headers_predicate_containspair ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[528], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Headers -> containsPair("header1", "header1") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_can_t_match_by_headers_predicate_containspairlist ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[549], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Headers -> containsPairList("header1, "[some not existing value]") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_can_t_match_by_headers_predicate_containsvalue ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[534], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Headers -> containsValue("some not existing value") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_containsallkeys_specified_but_not_matches_requested_headers ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[531], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Headers -> containsAllKeys("[header1, header2]") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_empty_content_type_in_request_and_containsallkeys_specified ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[531], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Headers -> containsAllKeys("[header1, header2]") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_empty_content_type_in_request_and_containspair_specified ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[528], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Headers -> containsPair("header1", "header1") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_empty_content_type_in_request_and_containspairlist_specified ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[549], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Headers -> containsPairList("header1, "[some not existing value]") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_fail_to_match_by_body_predicate_bodymatches ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[510], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Body -> matches(".*extt.*") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_fail_to_match_by_body_predicate_jsonpath_stringequals ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[521], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+JsonPath -> $.key stringEquals("val2") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_fail_to_match_by_body_predicate_testbodystring ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[518], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Body -> testBodyString(<predicate>) -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_fail_to_match_by_url_predicate_hasqueryparam ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[513], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Url -> hasQueryParam("query1") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_fail_to_match_by_url_predicate_hasqueryparamkey ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[516], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Url -> hasQueryParamKey("query3") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_fail_to_match_by_url_predicate_urlcontains_at_specific_path ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[510], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Url -> urlContains("me/pa") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_fail_to_match_by_url_predicate_urlcontainsignorecase_at_specific_path ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[522], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Url -> urlContainsIgnoreCase("ome/ppp") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_hascontenttype_doesn_t_match ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[528], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Headers -> hasContentType("application/json") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_hascontenttype_specified_but_contenttype_is_null_in_request ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[528], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Headers -> hasContentType("application/json") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_query_is_empty_but_request_to_match_by_url_predicate_hasqueryparam ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[513], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Url -> hasQueryParam("query1") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_query_is_empty_but_request_to_match_by_url_predicate_hasqueryparamkey ═╗
 Response status code: 418
-Response headers: {content-length=[93], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]
+Response headers: {content-length=[516], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Url -> hasQueryParamKey("query1") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_testbodystring_predicate_throws_exception ═╗
 Response status code: 418
@@ -178,13 +331,25 @@ Response body: any
 
 ╔═ should_return_fallback_response_when_none_of_matchers_matched_request_and_expected_json_body ═╗
 Response status code: 418
-Response headers: {content-length=[103], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [some matcher id]
+Response headers: {content-length=[575], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [some matcher id]
+Below is the list of evaluated conditions and their results:
+---------------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = some matcher id, priority = 0
+
+Headers -> containsKey("unknown-not-matched-header") -> false
+---------------------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_fallback_response_when_none_of_matchers_matched_request_and_expected_text_body ═╗
 Response status code: 418
-Response headers: {content-length=[103], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [some matcher id]
+Response headers: {content-length=[575], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [some matcher id]
+Below is the list of evaluated conditions and their results:
+---------------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = some matcher id, priority = 0
+
+Headers -> containsKey("unknown-not-matched-header") -> false
+---------------------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_fallback_when_hascontenttype_specified_but_contenttype_is_empty_list_in_request_and_fallback_specified ═╗
 Response status code: 400

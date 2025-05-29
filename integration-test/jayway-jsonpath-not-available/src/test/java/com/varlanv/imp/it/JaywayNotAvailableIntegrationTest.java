@@ -38,7 +38,7 @@ public class JaywayNotAvailableIntegrationTest implements FastTest {
         ImpServer.httpTemplate()
                 .matchRequest(spec -> spec.id("anyId")
                         .priority(0)
-                        .match(match -> match.body().bodyContains("text"))
+                        .match(match -> match.body().contains("text"))
                         .respondWithStatus(200)
                         .andTextBody(responseBody)
                         .andNoAdditionalHeaders())

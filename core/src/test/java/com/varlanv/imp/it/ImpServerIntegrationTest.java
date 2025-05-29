@@ -1216,7 +1216,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.body().bodyContains(expectedMatch))
+                            .match(match -> match.body().contains(expectedMatch))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1239,7 +1239,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.body().bodyContains("test"))
+                            .match(match -> match.body().contains("test"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1263,7 +1263,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.body().bodyContainsIgnoreCase(expectedMatch))
+                            .match(match -> match.body().containsIgnoreCase(expectedMatch))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1286,7 +1286,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.body().bodyMatches(".*ext.*"))
+                            .match(match -> match.body().matches(".*ext.*"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1309,7 +1309,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.body().bodyMatches(".*extt.*"))
+                            .match(match -> match.body().matches(".*extt.*"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1332,7 +1332,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.body().bodyContainsIgnoreCase("texttt"))
+                            .match(match -> match.body().containsIgnoreCase("texttt"))
                             .respondWithStatus(200)
                             .andTextBody("any")
                             .andNoAdditionalHeaders())
@@ -1357,7 +1357,7 @@ public class ImpServerIntegrationTest implements FastTest {
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
                             .match(match -> match.and(
-                                    match.body().bodyContainsIgnoreCase("text"),
+                                    match.body().containsIgnoreCase("text"),
                                     match.headers().containsPair("header1", "value1")))
                             .respondWithStatus(200)
                             .andTextBody("response body")
@@ -1388,7 +1388,7 @@ public class ImpServerIntegrationTest implements FastTest {
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
                             .match(match -> match.and(
-                                    match.body().bodyContainsIgnoreCase("text"),
+                                    match.body().containsIgnoreCase("text"),
                                     match.headers().containsPair("header1", "value1qweqwe")))
                             .respondWithStatus(200)
                             .andTextBody("response body")
@@ -1419,7 +1419,7 @@ public class ImpServerIntegrationTest implements FastTest {
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
                             .match(match -> match.and(
-                                    match.body().bodyContainsIgnoreCase("texttttt"),
+                                    match.body().containsIgnoreCase("texttttt"),
                                     match.headers().containsPair("header1", "value1")))
                             .respondWithStatus(200)
                             .andTextBody("response body")
@@ -1895,7 +1895,7 @@ public class ImpServerIntegrationTest implements FastTest {
                             .priority(0)
                             .match(match -> match.and(
                                     match.url().urlMatches(".*some/.*"),
-                                    match.body().bodyContains("text")))
+                                    match.body().contains("text")))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1909,9 +1909,6 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [anyId]");
 
                 expectSelfie(responseToString(response)).toMatchDisk();
             });
