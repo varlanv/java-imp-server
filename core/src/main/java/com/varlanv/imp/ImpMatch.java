@@ -59,8 +59,12 @@ public final class ImpMatch {
         return new Body();
     }
 
-    public Url url() {
-        return new Url();
+    public Path path() {
+        return new Path();
+    }
+
+    public Query query() {
+        return new Query();
     }
 
     public JsonPathMatch jsonPath(@Language("jsonpath") String jsonPath) {
@@ -219,57 +223,62 @@ public final class ImpMatch {
         }
     }
 
-    public static final class Url {
+    public static final class Query {
 
-        private static final String GROUP = "Url";
+        private static final String GROUP = "Query";
 
-        Url() {}
+        public ImpCondition hasKey(String key) {
+            Preconditions.nonNull(key, "key");
+            return new ImpCondition(
+                    GROUP,
+                    request -> request.uri().query().containsKey(key),
+                    () -> String.format("hasKey(\"%s\")", key),
+                    ImpCondition.Kind.CONDITION);
+        }
 
-        public ImpCondition urlMatches(@Language("regexp") String pattern) {
+        public ImpCondition hasParam(String key, String value) {
+            Preconditions.nonBlank(key, "key");
+            Preconditions.nonNull(value, "value");
+            return new ImpCondition(
+                    GROUP,
+                    request -> Objects.equals(request.uri().query().get(key), value),
+                    () -> String.format("hasParam(\"%s\")", key),
+                    ImpCondition.Kind.CONDITION);
+        }
+    }
+
+    public static final class Path {
+
+        private static final String GROUP = "Path";
+
+        Path() {}
+
+        public ImpCondition matches(@Language("regexp") String pattern) {
             Preconditions.nonNull(pattern, "pattern");
             var compiledPattern = Pattern.compile(pattern);
             return new ImpCondition(
                     GROUP,
                     request ->
                             compiledPattern.matcher(request.uri().uriString()).matches(),
-                    () -> String.format("urlMatches(\"%s\")", pattern),
+                    () -> String.format("matches(\"%s\")", pattern),
                     ImpCondition.Kind.CONDITION);
         }
 
-        public ImpCondition urlContains(String substring) {
+        public ImpCondition contains(String substring) {
             Preconditions.nonNull(substring, "substring");
             return new ImpCondition(
                     GROUP,
                     request -> request.uri().uriString().contains(substring),
-                    () -> String.format("urlContains(\"%s\")", substring),
+                    () -> String.format("contains(\"%s\")", substring),
                     ImpCondition.Kind.CONDITION);
         }
 
-        public ImpCondition urlContainsIgnoreCase(String substring) {
+        public ImpCondition containsIgnoreCase(String substring) {
             Preconditions.nonNull(substring, "substring");
             return new ImpCondition(
                     GROUP,
                     request -> request.uri().uriString().toLowerCase().contains(substring.toLowerCase()),
-                    () -> String.format("urlContainsIgnoreCase(\"%s\")", substring),
-                    ImpCondition.Kind.CONDITION);
-        }
-
-        public ImpCondition hasQueryParamKey(String key) {
-            Preconditions.nonNull(key, "key");
-            return new ImpCondition(
-                    GROUP,
-                    request -> request.uri().query().containsKey(key),
-                    () -> String.format("hasQueryParamKey(\"%s\")", key),
-                    ImpCondition.Kind.CONDITION);
-        }
-
-        public ImpCondition hasQueryParam(String key, String value) {
-            Preconditions.nonBlank(key, "key");
-            Preconditions.nonNull(value, "value");
-            return new ImpCondition(
-                    GROUP,
-                    request -> Objects.equals(request.uri().query().get(key), value),
-                    () -> String.format("hasQueryParam(\"%s\")", key),
+                    () -> String.format("containsIgnoreCase(\"%s\")", substring),
                     ImpCondition.Kind.CONDITION);
         }
     }

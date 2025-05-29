@@ -43,16 +43,16 @@ Matcher: id = anyId, priority = 0
 Body -> containsIgnoreCase("texttt") -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
-╔═ should_fail_when_match_success_match_by_url_predicate_but_fail_to_match_by_body ═╗
+╔═ should_fail_when_match_success_match_by_path_predicate_but_fail_to_match_by_body ═╗
 Response status code: 418
-Response headers: {content-length=[574], content-type=[text/plain], date=[<present>]}
+Response headers: {content-length=[572], content-type=[text/plain], date=[<present>]}
 Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
 Below is the list of evaluated conditions and their results:
 -----------------------------------------------------------------------------------------------------------------------------
 Matcher: id = anyId, priority = 0
 
 AND -> false
- |---> Url -> urlMatches(".*some/.*") -> true
+ |---> Path -> matches(".*some/.*") -> true
  |---> Body -> contains("text") -> false
 
 -----------------------------------------------------------------------------------------------------------------------------
@@ -89,17 +89,6 @@ AND -> false
 Response status code: 200
 Response headers: {content-length=[3], content-type=[text/plain], date=[<present>], header1=[value1], header2=[value2, value3]}
 Response body: any
-
-╔═ should_return_error_wen_fail_to_match_by_url_predicate_urlmatches ═╗
-Response status code: 418
-Response headers: {content-length=[513], content-type=[text/plain], date=[<present>]}
-Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
-Below is the list of evaluated conditions and their results:
------------------------------------------------------------------------------------------------------------------------------
-Matcher: id = anyId, priority = 0
-
-Url -> urlMatches(".*local.*") -> false
------------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_can_t_match_by_headers_predicate_containspair ═╗
 Response status code: 418
@@ -211,29 +200,29 @@ Matcher: id = anyId, priority = 0
 Body -> testBodyString(<predicate>) -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
-╔═ should_return_error_when_fail_to_match_by_url_predicate_hasqueryparam ═╗
+╔═ should_return_error_when_fail_to_match_by_path_predicate_matches ═╗
 Response status code: 418
-Response headers: {content-length=[513], content-type=[text/plain], date=[<present>]}
+Response headers: {content-length=[511], content-type=[text/plain], date=[<present>]}
 Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
 Below is the list of evaluated conditions and their results:
 -----------------------------------------------------------------------------------------------------------------------------
 Matcher: id = anyId, priority = 0
 
-Url -> hasQueryParam("query1") -> false
+Path -> matches(".*local.*") -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
-╔═ should_return_error_when_fail_to_match_by_url_predicate_hasqueryparamkey ═╗
+╔═ should_return_error_when_fail_to_match_by_query_predicate_haskey ═╗
 Response status code: 418
-Response headers: {content-length=[516], content-type=[text/plain], date=[<present>]}
+Response headers: {content-length=[508], content-type=[text/plain], date=[<present>]}
 Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
 Below is the list of evaluated conditions and their results:
 -----------------------------------------------------------------------------------------------------------------------------
 Matcher: id = anyId, priority = 0
 
-Url -> hasQueryParamKey("query3") -> false
+Query -> hasKey("query3") -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
-╔═ should_return_error_when_fail_to_match_by_url_predicate_urlcontains_at_specific_path ═╗
+╔═ should_return_error_when_fail_to_match_by_query_predicate_hasparam ═╗
 Response status code: 418
 Response headers: {content-length=[510], content-type=[text/plain], date=[<present>]}
 Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
@@ -241,18 +230,29 @@ Below is the list of evaluated conditions and their results:
 -----------------------------------------------------------------------------------------------------------------------------
 Matcher: id = anyId, priority = 0
 
-Url -> urlContains("me/pa") -> false
+Query -> hasParam("query1") -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
-╔═ should_return_error_when_fail_to_match_by_url_predicate_urlcontainsignorecase_at_specific_path ═╗
+╔═ should_return_error_when_fail_to_match_by_url_predicate_urlcontains_at_specific_path ═╗
 Response status code: 418
-Response headers: {content-length=[522], content-type=[text/plain], date=[<present>]}
+Response headers: {content-length=[508], content-type=[text/plain], date=[<present>]}
 Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
 Below is the list of evaluated conditions and their results:
 -----------------------------------------------------------------------------------------------------------------------------
 Matcher: id = anyId, priority = 0
 
-Url -> urlContainsIgnoreCase("ome/ppp") -> false
+Path -> contains("me/pa") -> false
+-----------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_return_error_when_fail_to_match_by_url_predicate_urlcontainsignorecase_at_specific_path ═╗
+Response status code: 418
+Response headers: {content-length=[520], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Path -> containsIgnoreCase("ome/ppp") -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_hascontenttype_doesn_t_match ═╗
@@ -277,26 +277,26 @@ Matcher: id = anyId, priority = 0
 Headers -> hasContentType("application/json") -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
-╔═ should_return_error_when_query_is_empty_but_request_to_match_by_url_predicate_hasqueryparam ═╗
+╔═ should_return_error_when_query_is_empty_but_request_to_match_by_query_predicate_haskey ═╗
 Response status code: 418
-Response headers: {content-length=[513], content-type=[text/plain], date=[<present>]}
+Response headers: {content-length=[508], content-type=[text/plain], date=[<present>]}
 Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
 Below is the list of evaluated conditions and their results:
 -----------------------------------------------------------------------------------------------------------------------------
 Matcher: id = anyId, priority = 0
 
-Url -> hasQueryParam("query1") -> false
+Query -> hasKey("query1") -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
-╔═ should_return_error_when_query_is_empty_but_request_to_match_by_url_predicate_hasqueryparamkey ═╗
+╔═ should_return_error_when_query_is_empty_but_request_to_match_by_query_predicate_hasparam ═╗
 Response status code: 418
-Response headers: {content-length=[516], content-type=[text/plain], date=[<present>]}
+Response headers: {content-length=[510], content-type=[text/plain], date=[<present>]}
 Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
 Below is the list of evaluated conditions and their results:
 -----------------------------------------------------------------------------------------------------------------------------
 Matcher: id = anyId, priority = 0
 
-Url -> hasQueryParamKey("query1") -> false
+Query -> hasParam("query1") -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_testbodystring_predicate_throws_exception ═╗
@@ -421,22 +421,32 @@ Response status code: 200
 Response headers: {content-length=[3], content-type=[text/plain], date=[<present>]}
 Response body: any
 
-╔═ should_successfully_match_by_url_predicate_hasqueryparam ═╗
+╔═ should_successfully_match_by_path_predicate_matches_at_root_path ═╗
 Response status code: 200
 Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
 Response body: response body
 
-╔═ should_successfully_match_by_url_predicate_hasqueryparamkey ═╗
+╔═ should_successfully_match_by_path_predicate_matches_at_specific_path ═╗
 Response status code: 200
 Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
 Response body: response body
 
-╔═ should_successfully_match_by_url_predicate_hasqueryparamkey_when_query_value_is_empty_after ═╗
+╔═ should_successfully_match_by_query_predicate_haskey ═╗
 Response status code: 200
 Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
 Response body: response body
 
-╔═ should_successfully_match_by_url_predicate_hasqueryparamkey_when_query_value_is_not_present ═╗
+╔═ should_successfully_match_by_query_predicate_haskey_when_query_value_is_empty_after ═╗
+Response status code: 200
+Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
+Response body: response body
+
+╔═ should_successfully_match_by_query_predicate_haskey_when_query_value_is_not_present ═╗
+Response status code: 200
+Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
+Response body: response body
+
+╔═ should_successfully_match_by_query_predicate_hasparam ═╗
 Response status code: 200
 Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
 Response body: response body
@@ -447,16 +457,6 @@ Response headers: {content-length=[13], content-type=[text/plain], date=[<presen
 Response body: response body
 
 ╔═ should_successfully_match_by_url_predicate_urlcontainsignorecase_at_specific_path ═╗
-Response status code: 200
-Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
-Response body: response body
-
-╔═ should_successfully_match_by_url_predicate_urlmatches_at_root_path ═╗
-Response status code: 200
-Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
-Response body: response body
-
-╔═ should_successfully_match_by_url_predicate_urlmatches_at_specific_path ═╗
 Response status code: 200
 Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
 Response body: response body

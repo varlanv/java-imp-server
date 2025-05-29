@@ -1515,12 +1515,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should return error wen fail to match by url predicate 'urlMatches'")
-        void should_return_error_wen_fail_to_match_by_url_predicate_urlmatches() {
+        @DisplayName("should return error when fail to match by path predicate 'matches'")
+        void should_return_error_when_fail_to_match_by_path_predicate_matches() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().urlMatches(".*local.*"))
+                            .match(match -> match.path().matches(".*local.*"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1536,12 +1536,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should successfully match by url predicate 'urlMatches' at root path")
-        void should_successfully_match_by_url_predicate_urlmatches_at_root_path() {
+        @DisplayName("should successfully match by path predicate 'matches' at root path")
+        void should_successfully_match_by_path_predicate_matches_at_root_path() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().urlMatches("/"))
+                            .match(match -> match.path().matches("/"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1557,12 +1557,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should successfully match by url predicate 'urlMatches' at specific path")
-        void should_successfully_match_by_url_predicate_urlmatches_at_specific_path() {
+        @DisplayName("should successfully match by path predicate 'matches' at specific path")
+        void should_successfully_match_by_path_predicate_matches_at_specific_path() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().urlMatches(".*some/.*"))
+                            .match(match -> match.path().matches(".*some/.*"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1587,7 +1587,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().urlContains("me/pa"))
+                            .match(match -> match.path().contains("me/pa"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1612,7 +1612,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().urlContains("ome/P"))
+                            .match(match -> match.path().contains("ome/P"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1637,7 +1637,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().urlContainsIgnoreCase("ome/p"))
+                            .match(match -> match.path().containsIgnoreCase("ome/p"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1657,12 +1657,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should successfully match by url predicate 'hasQueryParamKey'")
-        void should_successfully_match_by_url_predicate_hasqueryparamkey() {
+        @DisplayName("should successfully match by query predicate 'hasKey'")
+        void should_successfully_match_by_query_predicate_haskey() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().hasQueryParamKey("query1"))
+                            .match(match -> match.query().hasKey("query1"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1683,12 +1683,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should successfully match by url predicate 'hasQueryParamKey' when query value is not present")
-        void should_successfully_match_by_url_predicate_hasqueryparamkey_when_query_value_is_not_present() {
+        @DisplayName("should successfully match by query predicate 'hasKey' when query value is not present")
+        void should_successfully_match_by_query_predicate_haskey_when_query_value_is_not_present() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().hasQueryParamKey("qw"))
+                            .match(match -> match.query().hasKey("qw"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1709,12 +1709,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should successfully match by url predicate 'hasQueryParamKey' when query value is empty after =")
-        void should_successfully_match_by_url_predicate_hasqueryparamkey_when_query_value_is_empty_after() {
+        @DisplayName("should successfully match by query predicate 'hasKey' when query value is empty after =")
+        void should_successfully_match_by_query_predicate_haskey_when_query_value_is_empty_after() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().hasQueryParamKey("qw"))
+                            .match(match -> match.query().hasKey("qw"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1735,12 +1735,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should return error when fail to match by url predicate 'hasQueryParamKey'")
-        void should_return_error_when_fail_to_match_by_url_predicate_hasqueryparamkey() {
+        @DisplayName("should return error when fail to match by query predicate 'hasKey'")
+        void should_return_error_when_fail_to_match_by_query_predicate_haskey() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().hasQueryParamKey("query3"))
+                            .match(match -> match.query().hasKey("query3"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1761,12 +1761,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should return error when query is empty but request to match by url predicate 'hasQueryParamKey'")
-        void should_return_error_when_query_is_empty_but_request_to_match_by_url_predicate_hasqueryparamkey() {
+        @DisplayName("should return error when query is empty but request to match by query predicate 'hasKey'")
+        void should_return_error_when_query_is_empty_but_request_to_match_by_query_predicate_haskey() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().hasQueryParamKey("query1"))
+                            .match(match -> match.query().hasKey("query1"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1786,12 +1786,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should successfully match by url predicate 'hasQueryParam'")
-        void should_successfully_match_by_url_predicate_hasqueryparam() {
+        @DisplayName("should successfully match by query predicate 'hasParam'")
+        void should_successfully_match_by_query_predicate_hasparam() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().hasQueryParam("query1", "param1"))
+                            .match(match -> match.query().hasParam("query1", "param1"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1812,12 +1812,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should return error when fail to match by url predicate 'hasQueryParam'")
-        void should_return_error_when_fail_to_match_by_url_predicate_hasqueryparam() {
+        @DisplayName("should return error when fail to match by query predicate 'hasParam'")
+        void should_return_error_when_fail_to_match_by_query_predicate_hasparam() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().hasQueryParam("query1", "param2"))
+                            .match(match -> match.query().hasParam("query1", "param2"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1838,12 +1838,12 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should return error when query is empty but request to match by url predicate 'hasQueryParam'")
-        void should_return_error_when_query_is_empty_but_request_to_match_by_url_predicate_hasqueryparam() {
+        @DisplayName("should return error when query is empty but request to match by query predicate 'hasParam'")
+        void should_return_error_when_query_is_empty_but_request_to_match_by_query_predicate_hasparam() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().hasQueryParam("query1", "param2"))
+                            .match(match -> match.query().hasParam("query1", "param2"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1868,7 +1868,7 @@ public class ImpServerIntegrationTest implements FastTest {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
-                            .match(match -> match.url().urlContainsIgnoreCase("ome/ppp"))
+                            .match(match -> match.path().containsIgnoreCase("ome/ppp"))
                             .respondWithStatus(200)
                             .andTextBody("response body")
                             .andNoAdditionalHeaders())
@@ -1888,13 +1888,13 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
-        @DisplayName("should fail when match success match by url predicate but fail to match by body")
-        void should_fail_when_match_success_match_by_url_predicate_but_fail_to_match_by_body() {
+        @DisplayName("should fail when match success match by path predicate but fail to match by body")
+        void should_fail_when_match_success_match_by_path_predicate_but_fail_to_match_by_body() {
             var subject = ImpServer.httpTemplate()
                     .matchRequest(spec -> spec.id("anyId")
                             .priority(0)
                             .match(match -> match.and(
-                                    match.url().urlMatches(".*some/.*"),
+                                    match.path().matches(".*some/.*"),
                                     match.body().contains("text")))
                             .respondWithStatus(200)
                             .andTextBody("response body")
