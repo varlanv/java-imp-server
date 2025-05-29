@@ -1,5 +1,6 @@
 package com.varlanv.imp.it;
 
+import static com.diffplug.selfie.Selfie.expectSelfie;
 import static org.assertj.core.api.Assertions.*;
 
 import com.jayway.jsonpath.InvalidPathException;
@@ -242,13 +243,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                                 .join();
 
-                        assertThat(response.body()).isEqualTo(expected);
-                        assertThat(response.statusCode()).isEqualTo(200);
-                        assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                            assertThat(headers).containsEntry("Content-Type", List.of("application/json"));
-                            assertThat(headers).containsEntry("Content-Length", List.of("19"));
-                            assertThat(headers).containsKey("date");
-                        });
+                        expectSelfie(responseToString(response)).toMatchDisk();
                     });
         }
 
@@ -488,14 +483,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                                 .join();
 
-                        assertThat(response.body()).isEqualTo(someText);
-                        assertThat(response.statusCode()).isEqualTo(200);
-                        assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                            assertThat(headers).containsEntry("Content-Type", List.of("text/plain"));
-                            assertThat(headers)
-                                    .containsEntry("Content-Length", List.of(String.valueOf(someText.length())));
-                            assertThat(headers).containsKey("date");
-                        });
+                        expectSelfie(responseToString(response)).toMatchDisk();
                     });
         }
 
@@ -552,13 +540,7 @@ public class ImpServerIntegrationTest implements FastTest {
                         var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                                 .join();
 
-                        assertThat(response.body()).isEqualTo(expected);
-                        assertThat(response.statusCode()).isEqualTo(200);
-                        assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                            assertThat(headers).containsEntry("Content-Type", List.of("text/plain"));
-                            assertThat(headers).containsEntry("Content-Length", List.of("9"));
-                            assertThat(headers).containsKey("date");
-                        });
+                        expectSelfie(responseToString(response)).toMatchDisk();
                     });
         }
 
@@ -581,16 +563,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [%s]",
-                                matcherId);
-                assertThat(response.statusCode()).isEqualTo(418);
-                assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                    assertThat(headers).containsEntry("Content-Type", List.of("text/plain"));
-                    assertThat(headers).containsKey("Content-Length");
-                    assertThat(headers).containsKey("date");
-                });
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -613,16 +586,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [%s]",
-                                matcherId);
-                assertThat(response.statusCode()).isEqualTo(418);
-                assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                    assertThat(headers).containsEntry("Content-Type", List.of("text/plain"));
-                    assertThat(headers).containsKey("Content-Length");
-                    assertThat(headers).containsKey("date");
-                });
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -648,13 +612,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.body()).isEqualTo(expected);
-                assertThat(response.statusCode()).isEqualTo(200);
-                assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                    assertThat(headers).containsEntry("Content-Type", List.of("application/json"));
-                    assertThat(headers).containsEntry("Content-Length", List.of(expected.length() + ""));
-                    assertThat(headers).containsKey("date");
-                });
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -680,13 +638,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.body()).isEqualTo(expected);
-                assertThat(response.statusCode()).isEqualTo(200);
-                assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                    assertThat(headers).containsEntry("Content-Type", List.of("application/xml"));
-                    assertThat(headers).containsEntry("Content-Length", List.of(expected.length() + ""));
-                    assertThat(headers).containsKey("date");
-                });
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -712,13 +664,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
-                assertThat(response.statusCode()).isEqualTo(200);
-                assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                    assertThat(headers).containsEntry("Content-Type", List.of("application/octet-stream"));
-                    assertThat(headers).containsEntry("Content-Length", List.of(expected.length + ""));
-                    assertThat(headers).containsKey("date");
-                });
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -745,13 +691,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.body()).isEqualTo(new String(expected, StandardCharsets.UTF_8));
-                assertThat(response.statusCode()).isEqualTo(200);
-                assertThat(response.headers().map()).hasSize(3).satisfies(headers -> {
-                    assertThat(headers).containsEntry("Content-Type", List.of(contentType));
-                    assertThat(headers).containsEntry("Content-Length", List.of(expected.length + ""));
-                    assertThat(headers).containsKey("date");
-                });
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -774,8 +714,7 @@ public class ImpServerIntegrationTest implements FastTest {
             subject.useServer(impServer -> {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(response.statusCode()).isEqualTo(expectedStatus);
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -798,11 +737,8 @@ public class ImpServerIntegrationTest implements FastTest {
             subject.useServer(impServer -> {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSizeGreaterThan(additionalHeaders.size());
-                assertThat(responseHeaders).containsAllEntriesOf(additionalHeaders);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -825,12 +761,8 @@ public class ImpServerIntegrationTest implements FastTest {
             subject.useServer(impServer -> {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSize(4);
-                assertThat(responseHeaders).containsAllEntriesOf(exactHeaders);
-                assertThat(responseHeaders).containsKey("content-length");
-                assertThat(responseHeaders).containsKey("date");
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -853,10 +785,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithHeaders(
                                 impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -880,10 +810,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithHeaders(
                                 impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("response body");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -906,10 +834,7 @@ public class ImpServerIntegrationTest implements FastTest {
                                 impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -932,10 +857,7 @@ public class ImpServerIntegrationTest implements FastTest {
                                 impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -956,10 +878,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -980,10 +899,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1007,10 +923,7 @@ public class ImpServerIntegrationTest implements FastTest {
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1032,10 +945,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithHeaders(
                                 impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1059,10 +970,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithHeaders(
                                 impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1086,10 +995,7 @@ public class ImpServerIntegrationTest implements FastTest {
                                 impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1111,10 +1017,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1139,10 +1042,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithHeaders(
                                 impServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1165,10 +1066,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                 Map.of("content-type", List.of("text/plain")),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1188,10 +1087,8 @@ public class ImpServerIntegrationTest implements FastTest {
             subject.useServer(impServer -> {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1211,10 +1108,8 @@ public class ImpServerIntegrationTest implements FastTest {
             subject.useServer(impServer -> {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.statusCode()).isEqualTo(ImpHttpStatus.I_AM_A_TEAPOT.value());
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1239,8 +1134,8 @@ public class ImpServerIntegrationTest implements FastTest {
             subject.useServer(impServer -> {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.statusCode()).isEqualTo(fallbackStatus.value());
-                assertThat(response.body()).isEqualTo(fallbackBody);
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1268,8 +1163,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                 Map.of("Content-Type", List.of()),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.statusCode()).isEqualTo(fallbackStatus.value());
-                assertThat(response.body()).isEqualTo(fallbackBody);
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1297,8 +1192,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                 Map.of("Content-Type", List.of("some", "type")),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.statusCode()).isEqualTo(fallbackStatus.value());
-                assertThat(response.body()).isEqualTo(fallbackBody);
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1332,10 +1227,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1357,12 +1250,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [anyId]");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1385,10 +1274,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1410,10 +1297,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1435,12 +1320,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [anyId]");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1462,12 +1343,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [anyId]");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1497,10 +1374,8 @@ public class ImpServerIntegrationTest implements FastTest {
 
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("response body");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1530,12 +1405,8 @@ public class ImpServerIntegrationTest implements FastTest {
 
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1565,12 +1436,8 @@ public class ImpServerIntegrationTest implements FastTest {
 
                 var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1592,10 +1459,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("any");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1617,12 +1482,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1648,17 +1509,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body())
-                        .isEqualTo(
-                                "Exception was thrown by request predicate with id [%s]. "
-                                        + "Please check your ImpServer configuration for [%s] request matcher. "
-                                        + "Thrown error is [%s]: %s",
-                                matcherId,
-                                matcherId,
-                                testBodyStringException.getClass().getName(),
-                                testBodyStringException.getMessage());
-                assertThat(responseHeaders).hasSize(2);
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1678,12 +1530,8 @@ public class ImpServerIntegrationTest implements FastTest {
             subject.useServer(impServer -> {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1703,10 +1551,8 @@ public class ImpServerIntegrationTest implements FastTest {
             subject.useServer(impServer -> {
                 var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("response body");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1730,10 +1576,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("response body");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1757,12 +1601,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [anyId]");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1786,10 +1626,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("response body");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1813,10 +1651,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("response body");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1841,10 +1677,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("response body");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1869,10 +1703,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("response body");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1897,10 +1729,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("response body");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1925,12 +1755,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [anyId]");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1954,12 +1780,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [anyId]");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -1984,10 +1806,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo("response body");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -2012,12 +1832,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [anyId]");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -2041,12 +1857,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [anyId]");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -2070,12 +1882,8 @@ public class ImpServerIntegrationTest implements FastTest {
                                         .build(),
                                 HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body())
-                        .isEqualTo(
-                                "No matching handler for request. Returning 418 [I'm a teapot]. Available matcher IDs: [anyId]");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -2104,9 +1912,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 assertThat(response.body())
                         .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
                                 + "Available matcher IDs: [anyId]");
-                var responseHeaders = response.headers().map();
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -2134,10 +1941,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("response body");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -2165,12 +1970,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body())
-                        .isEqualTo("No matching handler for request. Returning 418 [I'm a teapot]. "
-                                + "Available matcher IDs: [anyId]");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -2214,10 +2015,8 @@ public class ImpServerIntegrationTest implements FastTest {
                         var response = sendHttpRequestWithBody(
                                         impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
                                 .join();
-                        assertThat(response.body()).isEqualTo(requestBody);
-                        var responseHeaders = response.headers().map();
-                        assertThat(responseHeaders).hasSize(3);
-                        assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                        expectSelfie(responseToString(response)).toMatchDisk();
                     });
         }
 
@@ -2245,10 +2044,8 @@ public class ImpServerIntegrationTest implements FastTest {
                     .useServer(impServer -> {
                         var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                                 .join();
-                        assertThat(response.body()).isEqualTo(expectedResponseBody);
-                        var responseHeaders = response.headers().map();
-                        assertThat(responseHeaders).hasSize(3);
-                        assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                        expectSelfie(responseToString(response)).toMatchDisk();
                     });
         }
 
@@ -2327,10 +2124,8 @@ public class ImpServerIntegrationTest implements FastTest {
                     .useServer(impServer -> {
                         var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
                                 .join();
-                        assertThat(response.body()).isEqualTo(expectedResponseBody);
-                        var responseHeaders = response.headers().map();
-                        assertThat(responseHeaders).hasSize(3);
-                        assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                        expectSelfie(responseToString(response)).toMatchDisk();
                     });
         }
     }
@@ -2454,9 +2249,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.statusCode()).isEqualTo(200);
-                assertThat(response.body()).isEqualTo("some text");
-                assertThat(response.headers().map()).hasSize(3).containsKeys("Content-Type", "Content-Length", "date");
+                expectSelfie(responseToString(response)).toMatchDisk();
             } finally {
                 sharedServer.dispose();
             }
@@ -2475,13 +2268,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.statusCode()).isEqualTo(200);
-                assertThat(response.body()).isEqualTo("some text");
-                assertThat(response.headers().map())
-                        .hasSize(4)
-                        .containsKeys("Content-Type", "Content-Length", "date", "another-header")
-                        .containsEntry("another-header", List.of("some value"))
-                        .containsEntry("content-type", List.of("application/json"));
+                expectSelfie(responseToString(response)).toMatchDisk();
             } finally {
                 sharedServer.dispose();
             }
@@ -2500,13 +2287,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
 
-                assertThat(response.statusCode()).isEqualTo(200);
-                assertThat(response.body()).isEqualTo("some text");
-                assertThat(response.headers().map())
-                        .hasSize(4)
-                        .containsKeys("Content-Type", "Content-Length", "date", "another-header")
-                        .containsEntry("another-header", List.of("some value"))
-                        .containsEntry("content-type", List.of("text/plain"));
+                expectSelfie(responseToString(response)).toMatchDisk();
             } finally {
                 sharedServer.dispose();
             }
@@ -2557,10 +2338,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var response = sendHttpRequestWithHeaders(
                                 sharedServer.port(), sentHeaders, HttpResponse.BodyHandlers.ofString())
                         .join();
-                var responseHeaders = response.headers().map();
-                assertThat(response.body()).isEqualTo("response body");
-                assertThat(responseHeaders).hasSize(3);
-                assertThat(responseHeaders).containsEntry("Content-Type", List.of("text/plain"));
+
+                expectSelfie(responseToString(response)).toMatchDisk();
 
             } finally {
                 sharedServer.dispose();
@@ -2683,11 +2462,9 @@ public class ImpServerIntegrationTest implements FastTest {
         @Test
         @DisplayName("should return to original state after borrowing closure ends")
         void should_return_to_original_state_after_borrowing_closure_ends() {
-            var originalBody = "some text";
-            var originalStatus = 200;
             var sharedServer = ImpServer.httpTemplate()
                     .alwaysRespond(spec ->
-                            spec.withStatus(200).andTextBody(originalBody).andNoAdditionalHeaders())
+                            spec.withStatus(200).andTextBody("some text").andNoAdditionalHeaders())
                     .startSharedOnRandomPort();
 
             try {
@@ -2700,8 +2477,8 @@ public class ImpServerIntegrationTest implements FastTest {
 
                 var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();
-                assertThat(response.body()).isEqualTo(originalBody);
-                assertThat(response.statusCode()).isEqualTo(originalStatus);
+
+                expectSelfie(responseToString(response)).toMatchDisk();
             } finally {
                 sharedServer.dispose();
             }
@@ -2979,12 +2756,7 @@ public class ImpServerIntegrationTest implements FastTest {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.body()).isEqualTo(newBody);
-                            assertThat(response.statusCode()).isEqualTo(newStatus);
-                            assertThat(response.headers().map()).hasSize(4).satisfies(responseHeaders -> {
-                                assertThat(responseHeaders).containsAllEntriesOf(newHeaders);
-                                assertThat(responseHeaders).containsKeys("date", "content-length");
-                            });
+                            expectSelfie(responseToString(response)).toMatchDisk();
                         });
             });
         }
@@ -3003,12 +2775,7 @@ public class ImpServerIntegrationTest implements FastTest {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.body()).isEqualTo(newBody);
-                            assertThat(response.statusCode()).isEqualTo(newStatus);
-                            assertThat(response.headers().map()).hasSize(3).satisfies(responseHeaders -> {
-                                assertThat(responseHeaders).containsEntry("content-type", List.of("text/plain"));
-                                assertThat(responseHeaders).containsKeys("date", "content-length");
-                            });
+                            expectSelfie(responseToString(response)).toMatchDisk();
                         });
             });
         }
@@ -3106,9 +2873,7 @@ public class ImpServerIntegrationTest implements FastTest {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.body()).isEqualTo(newBody);
-                            assertThat(response.headers().map())
-                                    .containsEntry("content-type", List.of("application/json"));
+                            expectSelfie(responseToString(response)).toMatchDisk();
                         });
             });
         }
@@ -3128,9 +2893,7 @@ public class ImpServerIntegrationTest implements FastTest {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.body()).isEqualTo(newBody);
-                            assertThat(response.headers().map())
-                                    .containsEntry("content-type", List.of("application/xml"));
+                            expectSelfie(responseToString(response)).toMatchDisk();
                         });
             });
         }
@@ -3151,9 +2914,7 @@ public class ImpServerIntegrationTest implements FastTest {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.body()).isEqualTo(newBody);
-                            assertThat(response.headers().map())
-                                    .containsEntry("content-type", List.of("application/octet-stream"));
+                            expectSelfie(responseToString(response)).toMatchDisk();
                         });
             });
         }
@@ -3176,8 +2937,7 @@ public class ImpServerIntegrationTest implements FastTest {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.body()).isEqualTo(newBody);
-                            assertThat(response.headers().map()).containsEntry("content-type", List.of(newContentType));
+                            expectSelfie(responseToString(response)).toMatchDisk();
                         });
             });
         }
@@ -3201,13 +2961,7 @@ public class ImpServerIntegrationTest implements FastTest {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.body())
-                                    .isEqualTo(
-                                            "Failed to read response body supplier, provided by `andCustomContentTypeStream` method. "
-                                                    + "Message from exception thrown by provided supplier: %s",
-                                            dataSupplierException.getMessage());
-                            assertThat(response.statusCode()).isEqualTo(418);
-                            assertThat(response.headers().map()).containsEntry("content-type", List.of(newContentType));
+                            expectSelfie(responseToString(response)).toMatchDisk();
                         });
             });
         }
@@ -3229,14 +2983,7 @@ public class ImpServerIntegrationTest implements FastTest {
                             var response = sendHttpRequest(borrowedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.body())
-                                    .isEqualTo(
-                                            "Failed to read response body supplier, provided by `andDataStreamBody` method. "
-                                                    + "Message from exception thrown by provided supplier: %s",
-                                            dataSupplierException.getMessage());
-                            assertThat(response.statusCode()).isEqualTo(418);
-                            assertThat(response.headers().map())
-                                    .containsEntry("content-type", List.of("application/octet-stream"));
+                            expectSelfie(responseToString(response)).toMatchDisk();
                         });
             });
         }
@@ -3259,13 +3006,7 @@ public class ImpServerIntegrationTest implements FastTest {
                             var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
                                     .join();
 
-                            assertThat(response.statusCode()).isEqualTo(400);
-                            assertThat(response.body()).isEqualTo("changed text");
-                            assertThat(response.headers().map())
-                                    .hasSize(3)
-                                    .containsKeys("Content-Type", "Content-Length", "date");
-                            assertThat(borrowedServer.statistics().hitCount()).isOne();
-                            assertThat(borrowedServer.statistics().missCount()).isZero();
+                            expectSelfie(responseToString(response)).toMatchDisk();
                         });
                 assertThat(sharedServer.statistics().hitCount()).isZero();
                 assertThat(sharedServer.statistics().missCount()).isZero();

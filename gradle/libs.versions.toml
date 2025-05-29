@@ -12,6 +12,7 @@ immutablesVersion = "2.7.3"
 jSpecifyVersion = "1.0.0"
 slf4jVersion = "2.0.17"
 jaywayJsonPathVersion = "2.9.0"
+selfieVersion = "2.5.3"
 
 [libraries]
 assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertJ" }
@@ -26,6 +27,7 @@ immutables-values = { group = "org.immutables", name = "value", version.ref = "i
 jSpecify = { group = "org.jspecify", name = "jspecify", version.ref = "jSpecifyVersion" }
 slf4jApi = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4jVersion" }
 jaywayJsonPath = { group = "com.jayway.jsonpath", name = "json-path", version.ref = "jaywayJsonPathVersion" }
+selfie = { group = "com.diffplug.selfie", name = "selfie-runner-junit5", version.ref = "selfieVersion" }
 
 [plugins]
 internalConvention = { id = "com.varlanv.gradle.internal-gradle-convention-plugin" }

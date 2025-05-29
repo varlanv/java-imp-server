@@ -10,9 +10,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -207,6 +205,29 @@ public interface BaseTest {
         } catch (Exception e) {
             return hide(e);
         }
+    }
+
+    default String responseToString(HttpResponse<?> response) {
+        Object body = response.body();
+        if (body.getClass() == byte[].class) {
+            body = new String((byte[]) body, StandardCharsets.UTF_8);
+        } else {
+            body = String.valueOf(body);
+        }
+        var originalHeaders = response.headers().map();
+        var modifiedHeaders = new LinkedHashMap<String, List<String>>(originalHeaders.size());
+        originalHeaders.forEach((key, values) -> {
+            var keyLower = key.toLowerCase();
+            if (keyLower.equals("date")) {
+                modifiedHeaders.put(keyLower, List.of("<present>"));
+            } else {
+                modifiedHeaders.put(keyLower, values);
+            }
+        });
+
+        return "Response status code: " + response.statusCode() + '\n' + "Response headers: "
+                + modifiedHeaders + '\n' + "Response body: "
+                + body + '\n';
     }
 
     default <T> CompletableFuture<HttpResponse<T>> sendHttpRequest(
