@@ -11,6 +11,16 @@ Response status code: 200
 Response headers: {content-length=[12], content-type=[text/plain], date=[<present>]}
 Response body: request body
 
+╔═ should_be_able_to_match_by_query_haskey_and_haskey_when_both_matches_succeeded ═╗
+Response status code: 200
+Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
+Response body: response body
+
+╔═ should_be_able_to_match_by_query_haskey_or_haskey_when_one_first_match_failed_and_second_succeeded ═╗
+Response status code: 200
+Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
+Response body: response body
+
 ╔═ should_be_able_to_start_server_at_specific_port ═╗
 Response status code: 200
 Response headers: {content-length=[9], content-type=[text/plain], date=[<present>]}
@@ -85,10 +95,42 @@ AND -> false
 
 -----------------------------------------------------------------------------------------------------------------------------
 
+╔═ should_generate_correct_error_response_when_has_complex_nested_matchers_that_did_not_match ═╗
+Response status code: 418
+Response headers: {content-length=[869], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+AND -> false
+ |---> OR  -> true
+        |---> Query -> hasKey("qw") -> true
+        |---> AND -> N/E
+               |---> Path -> not containsIgnoreCase("me/p") -> N/E
+ |---> Headers -> not containsValue("whatever") -> true
+ |---> Path -> containsIgnoreCase("asdf") -> false
+ |---> AND -> N/E
+        |---> Path -> not containsIgnoreCase("asdf") -> N/E
+ |---> JsonPath -> $.[0] isFalse() -> N/E
+
+-----------------------------------------------------------------------------------------------------------------------------
+
 ╔═ should_return_additional_headers_when_matched_user_agent_header_key_by_containskey_and_expect_additional_headers ═╗
 Response status code: 200
 Response headers: {content-length=[3], content-type=[text/plain], date=[<present>], header1=[value1], header2=[value2, value3]}
 Response body: any
+
+╔═ should_return_error_response_could_match_by_query_haskey_but_was_negated_by_not ═╗
+Response status code: 418
+Response headers: {content-length=[508], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [anyId]
+Below is the list of evaluated conditions and their results:
+-----------------------------------------------------------------------------------------------------------------------------
+Matcher: id = anyId, priority = 0
+
+Query -> not hasKey("qw") -> false
+-----------------------------------------------------------------------------------------------------------------------------
 
 ╔═ should_return_error_when_can_t_match_by_headers_predicate_containspair ═╗
 Response status code: 418

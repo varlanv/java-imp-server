@@ -1735,6 +1735,122 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
+        @DisplayName("should return error response could match by `query hasKey`, but was negated by `not`")
+        void should_return_error_response_could_match_by_query_haskey_but_was_negated_by_not() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.not(match.query().hasKey("qw")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format(
+                                                "http://localhost:%d/some/path?query1=param1&query2=param2&qw=",
+                                                impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName(
+                "should be able to match by query `hasKey or hasKey` when one first match failed and second succeeded")
+        void should_be_able_to_match_by_query_haskey_or_haskey_when_one_first_match_failed_and_second_succeeded() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.or(
+                                    match.not(match.query().hasKey("qw")),
+                                    match.query().hasKey("qw")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format(
+                                                "http://localhost:%d/some/path?query1=param1&query2=param2&qw=",
+                                                impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should be able to match by query `hasKey and hasKey` when both matches succeeded")
+        void should_be_able_to_match_by_query_haskey_and_haskey_when_both_matches_succeeded() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.and(
+                                    match.not(match.query().hasKey("qweeee")),
+                                    match.query().hasKey("query2")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format(
+                                                "http://localhost:%d/some/path?query1=param1&query2=param2&qw=",
+                                                impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should generate correct error response when has complex nested matchers that did not match")
+        void should_generate_correct_error_response_when_has_complex_nested_matchers_that_did_not_match() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("anyId")
+                            .priority(0)
+                            .match(match -> match.and(
+                                    match.or(
+                                            match.query().hasKey("qw"),
+                                            match.and(match.not(match.path().containsIgnoreCase("me/p")))),
+                                    match.not(match.headers().containsValue("whatever")),
+                                    match.path().containsIgnoreCase("asdf"),
+                                    match.and(match.not(match.path().containsIgnoreCase("asdf"))),
+                                    match.jsonPath("$.[0]").isFalse()))
+                            .respondWithStatus(200)
+                            .andTextBody("response body")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequest(
+                                HttpRequest.newBuilder(new URI(String.format(
+                                                "http://localhost:%d/some/path?query1=param1&query2=param2&qw=",
+                                                impServer.port())))
+                                        .build(),
+                                HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
         @DisplayName("should return error when fail to match by query predicate 'hasKey'")
         void should_return_error_when_fail_to_match_by_query_predicate_haskey() {
             var subject = ImpServer.httpTemplate()

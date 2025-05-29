@@ -122,9 +122,7 @@ public final class ImpCondition {
         String resultTextForMessage; // Text like "true", "false", or "N/E"
 
         if (leafContext.knownResult == null) { // Only evaluate if not already determined by the parent
-            var evaluationResult = leafContext.condition.kind
-                    == Kind.CONDITION
-                    == leafContext.condition.predicate.test(leafContext.requestView);
+            var evaluationResult = leafContext.condition.predicate.test(leafContext.requestView);
             leafContext.result = evaluationResult;
             resultTextForMessage = String.valueOf(evaluationResult);
         } else {
