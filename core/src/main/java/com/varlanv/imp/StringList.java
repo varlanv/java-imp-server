@@ -6,9 +6,9 @@ import java.util.function.Supplier;
 
 final class StringList {
 
-    private final List<Object> parts;
+    private final List<Supplier<String>> parts;
 
-    private StringList(List<Object> parts) {
+    private StringList(List<Supplier<String>> parts) {
         this.parts = parts;
     }
 
@@ -16,38 +16,18 @@ final class StringList {
         this(new ArrayList<>());
     }
 
-    StringList addSupplier(Supplier<String> supplier) {
+    void addSupplier(Supplier<String> supplier) {
         parts.add(supplier);
-        return this;
     }
 
-    StringList addString(String string) {
-        parts.add(string);
-        return this;
-    }
-
-    StringList merge(StringList other) {
-        var newList = new ArrayList<>(parts.size() + other.parts.size());
-        newList.addAll(parts);
-        newList.addAll(other.parts);
-        return new StringList(newList);
-    }
-
-    StringList addAll(StringList other) {
+    void addAll(StringList other) {
         parts.addAll(other.parts);
-        return this;
     }
 
     StringBuilder joinToBuilder() {
         var sb = new StringBuilder();
         for (var part : parts) {
-            if (part instanceof Supplier) {
-                @SuppressWarnings("unchecked")
-                var supplier = (Supplier<String>) part;
-                sb.append(supplier.get());
-            } else {
-                sb.append(part);
-            }
+            sb.append(part.get());
         }
         return sb;
     }

@@ -5,6 +5,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import org.intellij.lang.annotations.MagicConstant;
 
 public final class ImpRequestView {
 
@@ -15,7 +16,15 @@ public final class ImpRequestView {
     private final ImpFn<JsonPathInternal.CompiledPath, JsonPathInternal.ResultRef> jsonPathValueFn;
     private final ImpUri uri;
 
-    ImpRequestView(String method, Map<String, List<String>> headers, ImpSupplier<byte[]> bodySupplier, URI uri) {
+    ImpRequestView(
+            @MagicConstant(
+                            stringValues = {
+                                "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT", "PATCH"
+                            })
+                    String method,
+            Map<String, List<String>> headers,
+            ImpSupplier<byte[]> bodySupplier,
+            URI uri) {
         this.method = method;
         this.headers = headers;
         this.stringBodySupplier = MemoizedSupplier.of(() -> new String(bodySupplier.get(), StandardCharsets.UTF_8));
@@ -31,7 +40,9 @@ public final class ImpRequestView {
         this.uri = new ImpUri(uri);
     }
 
+    @MagicConstant(stringValues = {"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT", "PATCH"})
     public String method() {
+        //noinspection MagicConstant
         return method;
     }
 

@@ -53,6 +53,94 @@ Matcher: id = anyId, priority = 0
 Body -> containsIgnoreCase("texttt") -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
+╔═ should_fail_when_fail_to_match_by_jsonpath_predicate_decimalequals ═╗
+Response status code: 418
+Response headers: {content-length=[539], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [matcherId]
+Below is the list of evaluated conditions and their results:
+---------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = matcherId, priority = 0
+
+JsonPath -> $.stringKey decimalEquals(1) -> false
+---------------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_fail_to_match_by_jsonpath_predicate_isnotpresent ═╗
+Response status code: 418
+Response headers: {content-length=[537], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [matcherId]
+Below is the list of evaluated conditions and their results:
+---------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = matcherId, priority = 0
+
+JsonPath -> $.stringKey isNotPresent() -> false
+---------------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_fail_to_match_by_jsonpath_predicate_isnull ═╗
+Response status code: 418
+Response headers: {content-length=[531], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [matcherId]
+Below is the list of evaluated conditions and their results:
+---------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = matcherId, priority = 0
+
+JsonPath -> $.stringKey isNull() -> false
+---------------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_fail_to_match_by_jsonpath_predicate_ispresent ═╗
+Response status code: 418
+Response headers: {content-length=[537], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [matcherId]
+Below is the list of evaluated conditions and their results:
+---------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = matcherId, priority = 0
+
+JsonPath -> $.stringKey123 isPresent() -> false
+---------------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_fail_to_match_by_jsonpath_predicate_istrue ═╗
+Response status code: 418
+Response headers: {content-length=[531], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [matcherId]
+Below is the list of evaluated conditions and their results:
+---------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = matcherId, priority = 0
+
+JsonPath -> $.stringKey isTrue() -> false
+---------------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_fail_to_match_by_jsonpath_predicate_matches ═╗
+Response status code: 418
+Response headers: {content-length=[545], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [matcherId]
+Below is the list of evaluated conditions and their results:
+---------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = matcherId, priority = 0
+
+JsonPath -> $.stringKey matches("not matches") -> false
+---------------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_fail_to_match_by_jsonpath_predicate_numberequals ═╗
+Response status code: 418
+Response headers: {content-length=[540], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [matcherId]
+Below is the list of evaluated conditions and their results:
+---------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = matcherId, priority = 0
+
+JsonPath -> $.stringKey numberEquals(123) -> false
+---------------------------------------------------------------------------------------------------------------------------------
+
+╔═ should_fail_when_fail_to_match_by_jsonpath_predicate_stringequals ═╗
+Response status code: 418
+Response headers: {content-length=[550], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [matcherId]
+Below is the list of evaluated conditions and their results:
+---------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = matcherId, priority = 0
+
+JsonPath -> $.stringKey stringEquals("not matches") -> false
+---------------------------------------------------------------------------------------------------------------------------------
+
 ╔═ should_fail_when_match_success_match_by_path_predicate_but_fail_to_match_by_body ═╗
 Response status code: 418
 Response headers: {content-length=[572], content-type=[text/plain], date=[<present>]}
@@ -319,6 +407,11 @@ Matcher: id = anyId, priority = 0
 Headers -> hasContentType("application/json") -> false
 -----------------------------------------------------------------------------------------------------------------------------
 
+╔═ should_return_error_when_provided_non_json_request_and_try_to_match_by_jsonpath ═╗
+Response status code: 418
+Response headers: {content-length=[230], date=[<present>]}
+Response body: Exception was thrown by request predicate with id [matcherId]. Please check your ImpServer configuration for [matcherId] request matcher. Thrown error is [java.lang.IllegalStateException]: Failed to parse json string: {"key : val}
+
 ╔═ should_return_error_when_query_is_empty_but_request_to_match_by_query_predicate_haskey ═╗
 Response status code: 418
 Response headers: {content-length=[508], content-type=[text/plain], date=[<present>]}
@@ -400,7 +493,7 @@ Headers -> containsKey("unknown-not-matched-header") -> false
 
 ╔═ should_return_fallback_when_hascontenttype_specified_but_contenttype_is_empty_list_in_request_and_fallback_specified ═╗
 Response status code: 400
-Response headers: {content-length=[8], date=[<present>]}
+Response headers: {content-length=[8], date=[<present>], headerkey=[headerValue1, headerValue2]}
 Response body: fallback
 
 ╔═ should_return_fallback_when_hascontenttype_specified_but_contenttype_is_null_in_request_and_fallback_specified ═╗

@@ -1,8 +1,12 @@
 package com.varlanv.imp;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import org.intellij.lang.annotations.Language;
+import org.intellij.lang.annotations.MagicConstant;
 
 public final class ImpMatch {
 
@@ -23,7 +27,7 @@ public final class ImpMatch {
         return new ImpCondition(
                 ImpCondition.DEFAULT_GROUP,
                 EVERYTHING_INSTANCE.predicate,
-                () -> "",
+                InternalUtils.emptyStringSupplier(),
                 ImpCondition.Kind.AND,
                 List.copyOf(conditionList));
     }
@@ -46,13 +50,17 @@ public final class ImpMatch {
         return new ImpCondition(
                 ImpCondition.DEFAULT_GROUP,
                 EVERYTHING_INSTANCE.predicate,
-                () -> "",
+                InternalUtils.emptyStringSupplier(),
                 ImpCondition.Kind.OR,
                 List.copyOf(conditionList));
     }
 
     public Headers headers() {
         return new Headers();
+    }
+
+    public Method method() {
+        return new Method();
     }
 
     public Body body() {
@@ -70,6 +78,100 @@ public final class ImpMatch {
     public JsonPathMatch jsonPath(@Language("jsonpath") String jsonPath) {
         Preconditions.nonBlank(jsonPath, "jsonpath");
         return JsonPathInternal.forJsonPath(jsonPath);
+    }
+
+    public static final class Method {
+
+        private static final String GROUP = "Method";
+
+        Method() {}
+
+        public ImpCondition is(
+                @MagicConstant(
+                                stringValues = {
+                                    "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT", "PATCH"
+                                })
+                        String expectedMethod) {
+            Preconditions.nonBlank(expectedMethod, "expectedMethod");
+            if (ImpMethod.of(expectedMethod) == null) {
+                throw new IllegalArgumentException(String.format("Unknown HTTP method: \"%s\"", expectedMethod));
+            }
+            return new ImpCondition(
+                    GROUP,
+                    request -> request.method().equals(expectedMethod),
+                    () -> String.format("is(\"%s\")", expectedMethod),
+                    ImpCondition.Kind.CONDITION);
+        }
+
+        public ImpCondition anyOf(
+                @MagicConstant(
+                                stringValues = {
+                                    "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "CONNECT", "PATCH"
+                                })
+                        String... expectedMethods) {
+            Preconditions.nonNull(expectedMethods, "expectedMethods");
+            var expectedMethodsSet = new LinkedHashSet<String>(expectedMethods.length);
+            for (int idx = 0, expectedMethodsLength = expectedMethods.length; idx < expectedMethodsLength; idx++) {
+                var method = expectedMethods[idx];
+                //noinspection ConstantValue
+                if (method == null) {
+                    throw new IllegalArgumentException(String.format(
+                            "Nulls are not supported in expectedMethods, but found null at position [%d]", idx));
+                }
+                if (ImpMethod.of(method) == null) {
+                    throw new IllegalArgumentException(String.format("Unknown HTTP method: \"%s\"", method));
+                }
+                if (!expectedMethodsSet.add(method)) {
+                    throw new IllegalArgumentException(
+                            String.format("Found duplicate value [%s], please check your configuration.", method));
+                }
+            }
+            return new ImpCondition(
+                    GROUP,
+                    request -> expectedMethodsSet.contains(request.method()),
+                    () -> String.format("anyOf(\"%s\")", expectedMethodsSet),
+                    ImpCondition.Kind.CONDITION);
+        }
+
+        public ImpCondition get() {
+            return isInternal(ImpMethod.GET);
+        }
+
+        public ImpCondition post() {
+            return isInternal(ImpMethod.POST);
+        }
+
+        public ImpCondition put() {
+            return isInternal(ImpMethod.PUT);
+        }
+
+        public ImpCondition delete() {
+            return isInternal(ImpMethod.DELETE);
+        }
+
+        public ImpCondition patch() {
+            return isInternal(ImpMethod.PATCH);
+        }
+
+        public ImpCondition head() {
+            return isInternal(ImpMethod.HEAD);
+        }
+
+        public ImpCondition options() {
+            return isInternal(ImpMethod.OPTIONS);
+        }
+
+        public ImpCondition trace() {
+            return isInternal(ImpMethod.TRACE);
+        }
+
+        private ImpCondition isInternal(ImpMethod expectedMethod) {
+            return new ImpCondition(
+                    GROUP,
+                    request -> request.method().equals(expectedMethod.name()),
+                    () -> expectedMethod.name() + "()",
+                    ImpCondition.Kind.CONDITION);
+        }
     }
 
     public static final class Headers {
@@ -226,6 +328,8 @@ public final class ImpMatch {
     public static final class Query {
 
         private static final String GROUP = "Query";
+
+        Query() {}
 
         public ImpCondition hasKey(String key) {
             Preconditions.nonNull(key, "key");

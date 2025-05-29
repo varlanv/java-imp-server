@@ -10,6 +10,7 @@ import com.varlanv.imp.commontest.FastTest;
 import com.varlanv.imp.commontest.LazyCloseAwareStream;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpRequest;
@@ -1114,6 +1115,27 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
+        @DisplayName("should return error when provided non-json request and try to match by jsonPath")
+        void should_return_error_when_provided_non_json_request_and_try_to_match_by_jsonpath() {
+            ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(match -> match.jsonPath("$.[0]").isPresent())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort()
+                    .useServer(server -> {
+                        var response = sendHttpRequestWithBody(
+                                        server.port(), "{\"key : val}", HttpResponse.BodyHandlers.ofString())
+                                .join();
+
+                        expectSelfie(responseToString(response)).toMatchDisk();
+                    });
+        }
+
+        @Test
         @DisplayName(
                 "should return fallback when 'hasContentType' specified, but contentType is null in request and fallback specified")
         void
@@ -1154,7 +1176,8 @@ public class ImpServerIntegrationTest implements FastTest {
                             .andTextBody("any")
                             .andExactHeaders(Map.of()))
                     .fallbackForNonMatching(builder -> builder.status(fallbackStatus.value())
-                            .body(() -> new ByteArrayInputStream(fallbackBody.getBytes(StandardCharsets.UTF_8))))
+                            .body(() -> new ByteArrayInputStream(fallbackBody.getBytes(StandardCharsets.UTF_8)))
+                            .headers(Map.of("headerKey", List.of("headerValue1", "headerValue2"))))
                     .onRandomPort();
 
             subject.useServer(impServer -> {
@@ -1342,6 +1365,182 @@ public class ImpServerIntegrationTest implements FastTest {
             subject.useServer(impServer -> {
                 var response = sendHttpRequestWithBody(
                                 impServer.port(), requestBody, HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when fail to match by jsonpath predicate 'stringEquals'")
+        void should_fail_when_fail_to_match_by_jsonpath_predicate_stringequals() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(match -> match.jsonPath("$.stringKey").stringEquals("not matches"))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), jsonFixture(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when fail to match by jsonpath predicate 'isTrue'")
+        void should_fail_when_fail_to_match_by_jsonpath_predicate_istrue() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(match -> match.jsonPath("$.stringKey").isTrue())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), jsonFixture(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when fail to match by jsonpath predicate 'matches'")
+        void should_fail_when_fail_to_match_by_jsonpath_predicate_matches() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(match -> match.jsonPath("$.stringKey").matches("not matches"))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), jsonFixture(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when fail to match by jsonpath predicate 'isNull'")
+        void should_fail_when_fail_to_match_by_jsonpath_predicate_isnull() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(match -> match.jsonPath("$.stringKey").isNull())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), jsonFixture(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when fail to match by jsonpath predicate 'isPresent'")
+        void should_fail_when_fail_to_match_by_jsonpath_predicate_ispresent() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(match -> match.jsonPath("$.stringKey123").isPresent())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), jsonFixture(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when fail to match by jsonpath predicate 'isNotPresent'")
+        void should_fail_when_fail_to_match_by_jsonpath_predicate_isnotpresent() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(match -> match.jsonPath("$.stringKey").isNotPresent())
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), jsonFixture(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when fail to match by jsonpath predicate 'numberEquals'")
+        void should_fail_when_fail_to_match_by_jsonpath_predicate_numberequals() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(match -> match.jsonPath("$.stringKey").numberEquals(123))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), jsonFixture(), HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
+        @DisplayName("should fail when fail to match by jsonpath predicate 'decimalEquals'")
+        void should_fail_when_fail_to_match_by_jsonpath_predicate_decimalequals() {
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(0)
+                            .match(match -> match.jsonPath("$.stringKey").decimalEquals(BigDecimal.ONE))
+                            .respondWithStatus(200)
+                            .andTextBody("any")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var response = sendHttpRequestWithBody(
+                                impServer.port(), jsonFixture(), HttpResponse.BodyHandlers.ofString())
                         .join();
 
                 expectSelfie(responseToString(response)).toMatchDisk();
@@ -3536,5 +3735,19 @@ public class ImpServerIntegrationTest implements FastTest {
                     .withMessage(
                             "null values are not supported in headers, but found null values in entry [ something=null ]");
         }
+    }
+
+    @Language("json")
+    private static String jsonFixture() {
+        return """
+{
+  "stringKey": "stringVal",
+  "intKey": 123,
+  "nullKey": null,
+  "trueKey": true,
+  "falseKey": false,
+  "stringArrayKey": [ "string1", "string2" ]
+}
+""";
     }
 }

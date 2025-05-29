@@ -28,8 +28,12 @@ final class JsonPathInternal {
                 }
             };
             compiledJsonFnTmp = json -> {
-                var compiledJsonPath = JsonPath.parse(json);
-                return new CompiledJson(compiledJsonPath);
+                try {
+                    var compiledJsonPath = JsonPath.parse(json);
+                    return new CompiledJson(compiledJsonPath);
+                } catch (Exception e) {
+                    throw new IllegalStateException(String.format("Failed to parse json string: %s", json), e);
+                }
             };
         } catch (ClassNotFoundException e) {
             var message = "JsonPath library is not found on classpath. "

@@ -2,6 +2,7 @@ package com.varlanv.imp;
 
 import java.math.BigDecimal;
 import java.util.Objects;
+import org.intellij.lang.annotations.RegExp;
 
 final class JaywayJsonPathMatch implements JsonPathMatch {
 
@@ -61,7 +62,7 @@ final class JaywayJsonPathMatch implements JsonPathMatch {
     }
 
     @Override
-    public ImpCondition matches(String pattern) {
+    public ImpCondition matches(@RegExp String pattern) {
         return new ImpCondition(
                 GROUP,
                 ifType(String.class, val -> val.matches(pattern)),

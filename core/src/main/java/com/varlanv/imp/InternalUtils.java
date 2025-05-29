@@ -6,6 +6,7 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.Unmodifiable;
 
 interface InternalUtils {
@@ -13,6 +14,10 @@ interface InternalUtils {
     @SuppressWarnings("unchecked")
     static <T extends Throwable, R> R hide(Throwable t) throws T {
         throw (T) t;
+    }
+
+    static Supplier<String> emptyStringSupplier() {
+        return () -> "";
     }
 
     static int randomPort() {

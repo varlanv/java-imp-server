@@ -226,7 +226,7 @@ public interface BaseTest {
             body = String.valueOf(body);
         }
         var originalHeaders = response.headers().map();
-        var modifiedHeaders = new LinkedHashMap<String, List<String>>(originalHeaders.size());
+        var modifiedHeaders = new TreeMap<String, List<String>>();
         originalHeaders.forEach((key, values) -> {
             var keyLower = key.toLowerCase();
             if ("date".equals(keyLower)) {
