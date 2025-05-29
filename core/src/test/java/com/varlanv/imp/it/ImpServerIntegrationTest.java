@@ -792,7 +792,7 @@ public class ImpServerIntegrationTest implements FastTest {
 
         @Test
         @DisplayName("should be able to start server with matchers on specific port")
-        void should_successfuly_match_by_headers_predicate_containsvalueqwe() {
+        void should_be_able_to_start_server_with_matchers_on_specific_port() {
             var expectedMatchValue = "value2";
             var sentHeaders = Map.of("header1", List.of("value1", expectedMatchValue));
             var port = randomPort();
@@ -2318,7 +2318,7 @@ public class ImpServerIntegrationTest implements FastTest {
 
         @Test
         @DisplayName("should be able to start shared server with matchers on specific port")
-        void should_successfuly_match_by_headers_predicate_containsvalueqwe() {
+        void should_be_able_to_start_shared_server_with_matchers_on_specific_port() {
             var expectedMatchValue = "value2";
             var sentHeaders = Map.of("header1", List.of("value1", expectedMatchValue));
             var port = randomPort();
