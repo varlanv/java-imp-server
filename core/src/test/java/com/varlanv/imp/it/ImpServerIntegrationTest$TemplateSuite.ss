@@ -16,6 +16,11 @@ Response status code: 200
 Response headers: {content-length=[9], content-type=[text/plain], date=[<present>]}
 Response body: some text
 
+╔═ should_be_able_to_start_server_with_matchers_on_specific_port ═╗
+Response status code: 200
+Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
+Response body: response body
+
 ╔═ should_fail_when_don_t_match_by_body_predicate_bodycontains ═╗
 Response status code: 418
 Response headers: {content-length=[507], content-type=[text/plain], date=[<present>]}
@@ -465,11 +470,6 @@ Response body: any
 Response status code: 200
 Response headers: {content-length=[3], content-type=[text/plain], date=[<present>]}
 Response body: any
-
-╔═ should_successfuly_match_by_headers_predicate_containsvalueqwe ═╗
-Response status code: 200
-Response headers: {content-length=[13], content-type=[text/plain], date=[<present>]}
-Response body: response body
 
 ╔═ should_take_matcher_with_lowest_priority_value_when_multiple_matchers_matched_request_and_matcher_is_first_in_list ═╗
 Response status code: 200

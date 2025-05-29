@@ -31,5 +31,5 @@ selfie = { group = "com.diffplug.selfie", name = "selfie-runner-junit5", version
 
 [plugins]
 internalConvention = { id = "com.varlanv.gradle.internal-gradle-convention-plugin" }
-testKonvence = { id = "com.varlanv.test-konvence", version = "1.0.6" }
+testKonvence = { id = "com.varlanv.test-konvence", version = "1.0.8" }
 shadow = { id = "com.gradleup.shadow", version = "8.3.6" }

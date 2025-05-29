@@ -74,10 +74,11 @@ public final class ImpMatch {
 
         Headers() {}
 
-        public ImpCondition containsAllKeys(Set<String> expectedHeadersKeys) {
+        public ImpCondition containsAllKeys(Iterable<String> expectedHeadersKeys) {
             Preconditions.noNullsInIterable(expectedHeadersKeys, "expectedHeadersKeys");
             Preconditions.notEmptyIterable(expectedHeadersKeys, "expectedHeadersKeys");
-            var expectedHeadersKeysCopy = new LinkedHashSet<>(expectedHeadersKeys);
+            var expectedHeadersKeysCopy = new LinkedHashSet<String>();
+            expectedHeadersKeys.forEach(expectedHeadersKeysCopy::add);
             return new ImpCondition(
                     GROUP,
                     request -> {
