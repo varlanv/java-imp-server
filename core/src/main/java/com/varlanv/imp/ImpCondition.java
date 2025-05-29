@@ -42,14 +42,16 @@ public final class ImpCondition {
     }
 
     EvaluatedCondition toEvaluated(ImpRequestView requestView) {
-        var evaluatedContext = evaluate(requestView);
-        // evaluateRecursive now ensures evaluatedContext.result is non-null
-        return new EvaluatedCondition(Boolean.TRUE.equals(evaluatedContext.result), evaluatedContext.message);
-    }
-
-    private EvaluateContext evaluate(ImpRequestView requestView) {
-        // Initial call, nestLevel and indentLength are 0
-        return evaluateRecursive(new EvaluateContext(requestView, this, 0, 0));
+        if (nested.isEmpty()) {
+            var result = predicate.test(requestView);
+            var stringList = new StringList();
+            stringList.addSupplier(() -> group + " -> " + context.get() + " -> " + result);
+            return new EvaluatedCondition(result, stringList);
+        } else {
+            // Initial call, nestLevel and indentLength are 0
+            var evaluateContext = evaluateRecursive(new EvaluateContext(requestView, this, 0, 0));
+            return new EvaluatedCondition(Boolean.TRUE.equals(evaluateContext.result), evaluateContext.message);
+        }
     }
 
     private EvaluateContext evaluateRecursive(EvaluateContext currentContext) {
@@ -146,7 +148,7 @@ public final class ImpCondition {
                 + ("OR".equals(type) ? " " : "")
                 + " -> "
                 + (context.knownResult != null ? "N/E" : context.result)
-                + System.lineSeparator();
+                + "\n";
     }
 
     private String formatLeafMessage(EvaluateContext context, String resultOutputString) {
@@ -158,7 +160,7 @@ public final class ImpCondition {
                 + context.condition.context.get()
                 + " -> "
                 + resultOutputString
-                + System.lineSeparator();
+                + "\n";
     }
 
     private int calculateChildIndentLength(EvaluateContext parentContext) {

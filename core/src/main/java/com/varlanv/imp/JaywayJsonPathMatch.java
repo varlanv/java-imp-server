@@ -65,7 +65,7 @@ final class JaywayJsonPathMatch implements JsonPathMatch {
         return new ImpCondition(
                 GROUP,
                 ifType(String.class, val -> val.matches(pattern)),
-                () -> String.format("%s matches(%s)", compiledPath.stringPath, pattern),
+                () -> String.format("%s matches(\"%s\")", compiledPath.stringPath, pattern),
                 ImpCondition.Kind.CONDITION);
     }
 
@@ -74,7 +74,7 @@ final class JaywayJsonPathMatch implements JsonPathMatch {
         return new ImpCondition(
                 GROUP,
                 ifType(String.class, val -> Objects.equals(expected, val)),
-                () -> String.format("%s stringEquals(%s)", compiledPath.stringPath, expected),
+                () -> String.format("%s stringEquals(\"%s\")", compiledPath.stringPath, expected),
                 ImpCondition.Kind.CONDITION);
     }
 

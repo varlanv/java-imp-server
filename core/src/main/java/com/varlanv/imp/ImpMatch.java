@@ -32,7 +32,7 @@ public final class ImpMatch {
         Preconditions.nonNull(condition, "condition");
         return new ImpCondition(
                 condition.group,
-                condition.predicate,
+                request -> !condition.predicate.test(request),
                 () -> "not " + condition.context.get(),
                 ImpCondition.Kind.NOT,
                 condition.nested);
@@ -116,7 +116,7 @@ public final class ImpMatch {
                         }
                         return false;
                     },
-                    () -> String.format("containsValue(%s)", expectedValue),
+                    () -> String.format("containsValue(\"%s\")", expectedValue),
                     ImpCondition.Kind.CONDITION);
         }
 
@@ -136,7 +136,7 @@ public final class ImpMatch {
                         }
                         return false;
                     },
-                    () -> String.format("containsPair(%s, %s)", expectedKey, expectedKey),
+                    () -> String.format("containsPair(\"%s\", \"%s\")", expectedKey, expectedKey),
                     ImpCondition.Kind.CONDITION);
         }
 
@@ -150,7 +150,7 @@ public final class ImpMatch {
                         var valuesList = request.headers().get(expectedKey);
                         return valuesList != null && valuesList.equals(expectedValueListCopy);
                     },
-                    () -> String.format("containsPairList(%s, %s)", expectedKey, expectedValueListCopy),
+                    () -> String.format("containsPairList(\"%s, \"%s\")", expectedKey, expectedValueListCopy),
                     ImpCondition.Kind.CONDITION);
         }
 
@@ -185,7 +185,7 @@ public final class ImpMatch {
             return new ImpCondition(
                     GROUP,
                     request -> request.body().contains(substring),
-                    () -> String.format("bodyContains(%s)", substring),
+                    () -> String.format("bodyContains(\"%s\")", substring),
                     ImpCondition.Kind.CONDITION);
         }
 
@@ -195,7 +195,7 @@ public final class ImpMatch {
             return new ImpCondition(
                     GROUP,
                     request -> compiledPattern.matcher(request.body()).matches(),
-                    () -> String.format("bodyMatches(%s)", pattern),
+                    () -> String.format("bodyMatches(\"%s\")", pattern),
                     ImpCondition.Kind.CONDITION);
         }
 
@@ -204,7 +204,7 @@ public final class ImpMatch {
             return new ImpCondition(
                     GROUP,
                     request -> request.body().toLowerCase().contains(substring.toLowerCase()),
-                    () -> String.format("bodyContainsIgnoreCase(%s)", substring),
+                    () -> String.format("bodyContainsIgnoreCase(\"%s\")", substring),
                     ImpCondition.Kind.CONDITION);
         }
 
@@ -231,7 +231,7 @@ public final class ImpMatch {
                     GROUP,
                     request ->
                             compiledPattern.matcher(request.uri().uriString()).matches(),
-                    () -> String.format("urlMatches(%s)", pattern),
+                    () -> String.format("urlMatches(\"%s\")", pattern),
                     ImpCondition.Kind.CONDITION);
         }
 
@@ -240,7 +240,7 @@ public final class ImpMatch {
             return new ImpCondition(
                     GROUP,
                     request -> request.uri().uriString().contains(substring),
-                    () -> String.format("urlContains(%s)", substring),
+                    () -> String.format("urlContains(\"%s\")", substring),
                     ImpCondition.Kind.CONDITION);
         }
 
@@ -249,7 +249,7 @@ public final class ImpMatch {
             return new ImpCondition(
                     GROUP,
                     request -> request.uri().uriString().toLowerCase().contains(substring.toLowerCase()),
-                    () -> String.format("urlContainsIgnoreCase(%s)", substring),
+                    () -> String.format("urlContainsIgnoreCase(\"%s\")", substring),
                     ImpCondition.Kind.CONDITION);
         }
 
@@ -258,7 +258,7 @@ public final class ImpMatch {
             return new ImpCondition(
                     GROUP,
                     request -> request.uri().query().containsKey(key),
-                    () -> String.format("hasQueryParamKey(%s)", key),
+                    () -> String.format("hasQueryParamKey(\"%s\")", key),
                     ImpCondition.Kind.CONDITION);
         }
 
@@ -268,7 +268,7 @@ public final class ImpMatch {
             return new ImpCondition(
                     GROUP,
                     request -> Objects.equals(request.uri().query().get(key), value),
-                    () -> String.format("hasQueryParam(%s)", key),
+                    () -> String.format("hasQueryParam(\"%s\")", key),
                     ImpCondition.Kind.CONDITION);
         }
     }

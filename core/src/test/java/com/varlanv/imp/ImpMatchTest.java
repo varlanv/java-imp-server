@@ -213,6 +213,30 @@ class ImpMatchTest implements FastTest {
 
             assertThat(subject.test(requestWithHeaders(headers))).isTrue();
         }
+
+        @Test
+        @DisplayName("test")
+        void test() {
+            var match = new ImpMatch();
+
+            var condition = match.and(
+                match.headers().containsKey("key1"),
+                match.headers().containsKey("keyasd2"),
+                match.or(
+                    match.not(match.headers().containsKey("key4")),
+                    match.headers().containsKey("key1"),
+                    match.and(
+                        match.headers().containsKey("key2"),
+                        match.headers().containsKey("key3"))),
+                match.and(
+                    match.headers().containsValue("value1"),
+                    match.or(
+                        match.headers().containsValue("value6"),
+                        match.headers().containsValue("value8"))));
+
+            var evaluate = condition.toEvaluated(requestWithHeaders(headers));
+            System.out.println(evaluate.message.joinToBuilder());
+        }
     }
 
     private ImpRequestView requestWithHeaders(Map<String, List<String>> headers) {
