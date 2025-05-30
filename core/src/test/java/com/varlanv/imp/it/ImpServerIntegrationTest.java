@@ -23,7 +23,6 @@ import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.intellij.lang.annotations.Language;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -1614,60 +1613,6 @@ public class ImpServerIntegrationTest implements FastTest {
                         .join();
 
                 expectSelfie(responseToString(response)).toMatchDisk();
-            });
-        }
-
-        @Disabled("todo need to fix this")
-        @Test
-        @DisplayName("should be able to match by negated `or method PUT GET` matchers")
-        void should_be_able_to_match_by_negated_or_method_put_get_matchers() {
-            var requestBody = "Some Text body";
-            var subject = ImpServer.httpTemplate()
-                .matchRequest(spec -> spec.id("anyId")
-                    .priority(0)
-                    .match(match -> match.not(match.or(match.method().post(), match.method().put())))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders())
-                .rejectNonMatching()
-                .onRandomPort();
-
-            subject.useServer(impServer -> {
-                var response = sendHttpRequest(
-                    HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
-                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
-                        .build(),
-                    HttpResponse.BodyHandlers.ofString())
-                    .join();
-
-//                expectSelfie(responseToString(response)).toMatchDisk();
-            });
-        }
-
-        @Disabled("todo need to fix this")
-        @Test
-        @DisplayName("should be able to match by negated `and method PUT GET` matchers")
-        void should_be_able_to_match_by_negated_and_method_put_get_matchers() {
-            var requestBody = "Some Text body";
-            var subject = ImpServer.httpTemplate()
-                .matchRequest(spec -> spec.id("anyId")
-                    .priority(0)
-                    .match(match -> match.not(match.and(match.method().post(), match.method().put())))
-                    .respondWithStatus(200)
-                    .andTextBody("any")
-                    .andNoAdditionalHeaders())
-                .rejectNonMatching()
-                .onRandomPort();
-
-            subject.useServer(impServer -> {
-                var response = sendHttpRequest(
-                    HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", impServer.port())))
-                        .method("GET", HttpRequest.BodyPublishers.ofString(requestBody))
-                        .build(),
-                    HttpResponse.BodyHandlers.ofString())
-                    .join();
-
-//                expectSelfie(responseToString(response)).toMatchDisk();
             });
         }
 
@@ -4300,6 +4245,46 @@ public class ImpServerIntegrationTest implements FastTest {
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
                             .match(match -> match.or(match.and(match.or(match.not(match.everything())))))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("should fail immediately when try negate nested `and` matcher")
+        void should_fail_immediately_when_try_negate_nested_and_matcher() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match ->
+                                    match.or(match.not(match.and(match.headers().containsKey("key")))))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("should fail immediately when try negate `and` matcher")
+        void should_fail_immediately_when_try_negate_and_matcher() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.not(match.and(match.headers().containsKey("key"))))
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andNoAdditionalHeaders()))
+                    .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+        }
+
+        @Test
+        @DisplayName("should fail immediately when try negate `or` matcher")
+        void should_fail_immediately_when_try_negate_or_matcher() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(match -> match.not(match.or(match.headers().containsKey("key"))))
                             .respondWithStatus(200)
                             .andTextBody("")
                             .andNoAdditionalHeaders()))

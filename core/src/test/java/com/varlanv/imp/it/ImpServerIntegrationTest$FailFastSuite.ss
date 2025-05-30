@@ -20,8 +20,14 @@ Unknown HTTP method: "unknownMethod"
 empty iterables are not supported in conditions
 ╔═ should_fail_immediately_when_empty_or_matcher ═╗
 empty iterables are not supported in conditions
+╔═ should_fail_immediately_when_try_negate_and_matcher ═╗
+Negating *And* or *Or* matcher is currently not supported
+╔═ should_fail_immediately_when_try_negate_nested_and_matcher ═╗
+Negating *And* or *Or* matcher is currently not supported
 ╔═ should_fail_immediately_when_try_negate_nested_everything_matcher ═╗
 Negating *Everything* matcher is not allowed
+╔═ should_fail_immediately_when_try_negate_or_matcher ═╗
+Negating *And* or *Or* matcher is currently not supported
 ╔═ should_fail_immediately_when_try_to_negate_everything_matcher ═╗
 Negating *Everything* matcher is not allowed
 ╔═ should_fail_immediately_when_try_to_use_everything_matcher_in_and ═╗

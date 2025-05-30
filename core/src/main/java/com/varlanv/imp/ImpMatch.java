@@ -30,10 +30,12 @@ public final class ImpMatch {
     }
 
     public ImpCondition not(ImpCondition condition) {
+        Preconditions.nonNull(condition, "condition");
         if (condition == EVERYTHING_INSTANCE) {
             throw new IllegalArgumentException("Negating *Everything* matcher is not allowed");
+        } else if (condition.kind == ImpCondition.Kind.AND || condition.kind == ImpCondition.Kind.OR) {
+            throw new IllegalArgumentException("Negating *And* or *Or* matcher is currently not supported");
         }
-        Preconditions.nonNull(condition, "condition");
         return new ImpCondition(
                 condition.group,
                 request -> !condition.predicate.test(request),

@@ -55,17 +55,12 @@ public final class ImpCondition {
     }
 
     private EvaluateContext evaluateRecursive(EvaluateContext currentContext) {
-        switch (currentContext.condition.kind) {
-            case AND:
-                return processBranchEvaluation(currentContext, "AND", true, false, (res, childRes) -> res && childRes);
-            case OR:
-                return processBranchEvaluation(currentContext, "OR", false, true, (res, childRes) -> res || childRes);
-            case CONDITION:
-            case NOT:
-                return processLeafEvaluation(currentContext);
-            default:
-                // Should not happen with an enum unless the enum is extended and this switch is not updated
-                throw new IllegalStateException("Unexpected condition kind: " + currentContext.condition.kind);
+        if (currentContext.condition.kind == Kind.AND) {
+            return processBranchEvaluation(currentContext, "AND", true, false, (res, childRes) -> res && childRes);
+        } else if (currentContext.condition.kind == Kind.OR) {
+            return processBranchEvaluation(currentContext, "OR", false, true, (res, childRes) -> res || childRes);
+        } else {
+            return processLeafEvaluation(currentContext);
         }
     }
 
