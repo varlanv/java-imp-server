@@ -20,10 +20,7 @@ public final class ImpMatch {
     }
 
     public ImpCondition and(ImpCondition... conditions) {
-        Preconditions.nonNull(conditions, "conditions");
-        var conditionList = Arrays.asList(conditions);
-        Preconditions.notEmptyIterable(conditionList, "conditions");
-        Preconditions.noNullsInIterable(conditionList, "conditions");
+        var conditionList = verifiedConditions(conditions);
         return new ImpCondition(
                 ImpCondition.DEFAULT_GROUP,
                 EVERYTHING_INSTANCE.predicate,
@@ -33,6 +30,9 @@ public final class ImpMatch {
     }
 
     public ImpCondition not(ImpCondition condition) {
+        if (condition == EVERYTHING_INSTANCE) {
+            throw new IllegalArgumentException("Negating *Everything* matcher is not allowed");
+        }
         Preconditions.nonNull(condition, "condition");
         return new ImpCondition(
                 condition.group,
@@ -43,10 +43,7 @@ public final class ImpMatch {
     }
 
     public ImpCondition or(ImpCondition... conditions) {
-        Preconditions.nonNull(conditions, "conditions");
-        var conditionList = Arrays.asList(conditions);
-        Preconditions.notEmptyIterable(conditionList, "conditions");
-        Preconditions.noNullsInIterable(conditionList, "conditions");
+        var conditionList = verifiedConditions(conditions);
         return new ImpCondition(
                 ImpCondition.DEFAULT_GROUP,
                 EVERYTHING_INSTANCE.predicate,
@@ -247,7 +244,7 @@ public final class ImpMatch {
 
         public ImpCondition containsPairList(String expectedKey, List<String> expectedValueList) {
             Preconditions.nonBlank(expectedKey, "expectedKey");
-            Preconditions.nonBlank(expectedKey, "expectedValueList");
+            Preconditions.noNullsInIterable(expectedValueList, "expectedValueList");
             var expectedValueListCopy = List.copyOf(expectedValueList);
             return new ImpCondition(
                     GROUP,
@@ -286,7 +283,7 @@ public final class ImpMatch {
         Body() {}
 
         public ImpCondition contains(String substring) {
-            Preconditions.nonNull(substring, "substring");
+            Preconditions.nonBlank(substring, "substring");
             return new ImpCondition(
                     GROUP,
                     request -> request.body().contains(substring),
@@ -295,7 +292,7 @@ public final class ImpMatch {
         }
 
         public ImpCondition matches(@Language("regexp") String pattern) {
-            Preconditions.nonNull(pattern, "pattern");
+            Preconditions.nonBlank(pattern, "pattern");
             var compiledPattern = Pattern.compile(pattern);
             return new ImpCondition(
                     GROUP,
@@ -305,7 +302,7 @@ public final class ImpMatch {
         }
 
         public ImpCondition containsIgnoreCase(String substring) {
-            Preconditions.nonNull(substring, "substring");
+            Preconditions.nonBlank(substring, "substring");
             return new ImpCondition(
                     GROUP,
                     request -> request.body().toLowerCase().contains(substring.toLowerCase()),
@@ -330,7 +327,7 @@ public final class ImpMatch {
         Query() {}
 
         public ImpCondition hasKey(String key) {
-            Preconditions.nonNull(key, "key");
+            Preconditions.nonBlank(key, "key");
             return new ImpCondition(
                     GROUP,
                     request -> request.uri().query().containsKey(key),
@@ -356,7 +353,7 @@ public final class ImpMatch {
         Path() {}
 
         public ImpCondition matches(@Language("regexp") String pattern) {
-            Preconditions.nonNull(pattern, "pattern");
+            Preconditions.nonBlank(pattern, "pattern");
             var compiledPattern = Pattern.compile(pattern);
             return new ImpCondition(
                     GROUP,
@@ -367,7 +364,7 @@ public final class ImpMatch {
         }
 
         public ImpCondition contains(String substring) {
-            Preconditions.nonNull(substring, "substring");
+            Preconditions.nonBlank(substring, "substring");
             return new ImpCondition(
                     GROUP,
                     request -> request.uri().uriString().contains(substring),
@@ -376,12 +373,25 @@ public final class ImpMatch {
         }
 
         public ImpCondition containsIgnoreCase(String substring) {
-            Preconditions.nonNull(substring, "substring");
+            Preconditions.nonBlank(substring, "substring");
             return new ImpCondition(
                     GROUP,
                     request -> request.uri().uriString().toLowerCase().contains(substring.toLowerCase()),
                     () -> String.format("containsIgnoreCase(\"%s\")", substring),
                     ImpCondition.Kind.CONDITION);
         }
+    }
+
+    private static List<ImpCondition> verifiedConditions(ImpCondition[] conditions) {
+        Preconditions.nonNull(conditions, "conditions");
+        var conditionList = Arrays.asList(conditions);
+        Preconditions.notEmptyIterable(conditionList, "conditions");
+        Preconditions.noNullsInIterable(conditionList, "conditions");
+        for (var impCondition : conditionList) {
+            if (impCondition == EVERYTHING_INSTANCE) {
+                throw new IllegalArgumentException("*Everything* matcher is allowed only on top level");
+            }
+        }
+        return conditionList;
     }
 }
