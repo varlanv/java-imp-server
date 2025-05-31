@@ -429,7 +429,7 @@ public final class ImpTemplateSpec {
             this.fallback = fallback;
         }
 
-        public ImpTemplate onPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
+        public ImpTemplate onPort(@Range(from = 1, to = Integer.MAX_VALUE) int port) {
             return buildTemplate(PortSupplier.fixed(port));
         }
 
@@ -437,7 +437,7 @@ public final class ImpTemplateSpec {
             return buildTemplate(PortSupplier.ofSupplier(InternalUtils::randomPort, true));
         }
 
-        public ImpShared startSharedOnPort(@Range(from = 0, to = Integer.MAX_VALUE) int port) {
+        public ImpShared startSharedOnPort(@Range(from = 1, to = Integer.MAX_VALUE) int port) {
             return buildTemplate(PortSupplier.fixed(port)).startShared();
         }
 

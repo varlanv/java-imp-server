@@ -4430,6 +4430,171 @@ public class ImpServerIntegrationTest implements FastTest {
                             .andNoAdditionalHeaders()))
                     .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
         }
+
+        @Test
+        @DisplayName("'startSharedOnPort' should fail immediately if provided negative port")
+        void startsharedonport_should_fail_immediately_if_provided_negative_port() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespond(
+                                    spec -> spec.withStatus(200).andTextBody("").andNoAdditionalHeaders())
+                            .startSharedOnPort(-1))
+                    .withMessage("Port value should be greater than 0. Received -1");
+        }
+
+        @Test
+        @DisplayName("'onPort' should fail immediately if provided negative port")
+        void onport_should_fail_immediately_if_provided_negative_port() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespond(
+                                    spec -> spec.withStatus(200).andTextBody("").andNoAdditionalHeaders())
+                            .onPort(-1))
+                    .withMessage("Port value should be greater than 0. Received -1");
+        }
+
+        @Test
+        @DisplayName("'startSharedOnPort' should fail if provided port 0 and suggest using random port methods")
+        void startsharedonport_should_fail_if_provided_port_0_and_suggest_using_random_port_methods() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespond(
+                                    spec -> spec.withStatus(200).andTextBody("").andNoAdditionalHeaders())
+                            .startSharedOnPort(0))
+                    .withMessage(
+                            "To use server on random port, use onRandomPort() or startSharedOnRandomPort() methods instead of fixed 0 value");
+        }
+
+        @Test
+        @DisplayName("'onPort' should fail if provided port 0 and suggest using random port methods")
+        void onport_should_fail_if_provided_port_0_and_suggest_using_random_port_methods() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .alwaysRespond(
+                                    spec -> spec.withStatus(200).andTextBody("").andNoAdditionalHeaders())
+                            .onPort(0))
+                    .withMessage(
+                            "To use server on random port, use onRandomPort() or startSharedOnRandomPort() methods instead of fixed 0 value");
+        }
+
+        @Test
+        @DisplayName("'fallbackForNonMatching' should fail immediately if provided null fallbackFn")
+        void fallbackfornonmatching_should_fail_immediately_if_provided_null_fallbackfn() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate()
+                            .matchRequest(spec -> spec.id("id")
+                                    .priority(0)
+                                    .match(ImpMatch::everything)
+                                    .respondWithStatus(200)
+                                    .andTextBody("")
+                                    .andNoAdditionalHeaders())
+                            .fallbackForNonMatching(null))
+                    .withMessage("nulls are not supported - fallbackFn");
+        }
+
+        @Test
+        @DisplayName("'andBodyBasedOnRequest' should fail immediately if provided null contentType")
+        void andbodybasedonrequest_should_fail_immediately_if_provided_null_contenttype() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(ImpMatch::everything)
+                            .respondWithStatus(200)
+                            .andBodyBasedOnRequest(null, req -> () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
+
+        @Test
+        @DisplayName("'andBodyBasedOnRequest' should fail immediately if provided empty contentType")
+        void andbodybasedonrequest_should_fail_immediately_if_provided_empty_contenttype() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(ImpMatch::everything)
+                            .respondWithStatus(200)
+                            .andBodyBasedOnRequest("", req -> () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
+
+        @Test
+        @DisplayName("'andBodyBasedOnRequest' should fail immediately if provided blank contentType")
+        void andbodybasedonrequest_should_fail_immediately_if_provided_blank_contenttype() {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(ImpMatch::everything)
+                            .respondWithStatus(200)
+                            .andBodyBasedOnRequest("   ", req -> () -> new ByteArrayInputStream(new byte[0]))
+                            .andNoAdditionalHeaders()))
+                    .withMessage("null or blank strings are not supported - contentType");
+        }
+
+        @Test
+        @DisplayName("'andBodyBasedOnRequest' should fail immediately if provided null bodyFunction")
+        void andbodybasedonrequest_should_fail_immediately_if_provided_null_bodyfunction() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(ImpMatch::everything)
+                            .respondWithStatus(200)
+                            .andBodyBasedOnRequest("contentType", null)
+                            .andNoAdditionalHeaders()))
+                    .withMessage("nulls are not supported - bodyFunction");
+        }
+
+        @Test
+        @DisplayName("'andExactHeaders' should fail immediately if provided null headers")
+        void andexactheaders_should_fail_immediately_if_provided_null_headers() {
+            //noinspection DataFlowIssue
+            assertThatExceptionOfType(RuntimeException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(ImpMatch::everything)
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andExactHeaders(null)))
+                    .withMessage("nulls are not supported - headers");
+        }
+
+        @Test
+        @DisplayName("'andExactHeaders' should fail immediately if provided headers with null keys")
+        void andexactheaders_should_fail_immediately_if_provided_headers_with_null_keys() {
+            var headers = new HashMap<String, List<String>>();
+            headers.put(null, List.of("value"));
+            assertThatExceptionOfType(RuntimeException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(ImpMatch::everything)
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andExactHeaders(headers)))
+                    .withMessage("null key are not supported in headers, but found null key in entry [ null=[value] ]");
+        }
+
+        @Test
+        @DisplayName("'andExactHeaders' should fail immediately if provided headers with null values")
+        void andexactheaders_should_fail_immediately_if_provided_headers_with_null_values() {
+            var headers = new HashMap<String, List<String>>();
+            headers.put("key", null);
+            assertThatExceptionOfType(RuntimeException.class)
+                    .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
+                            .priority(0)
+                            .match(ImpMatch::everything)
+                            .respondWithStatus(200)
+                            .andTextBody("")
+                            .andExactHeaders(headers)))
+                    .withMessage(
+                            "null values are not supported in headers, but found null values in entry [ key=null ]");
+        }
     }
 
     @Language("json")

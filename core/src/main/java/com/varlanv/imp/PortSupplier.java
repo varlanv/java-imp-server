@@ -22,6 +22,13 @@ interface PortSupplier {
     }
 
     static PortSupplier fixed(int port) {
+        if (port < 0) {
+            throw new IllegalArgumentException("Port value should be greater than 0. Received " + port);
+        }
+        if (port == 0) {
+            throw new IllegalArgumentException(
+                    "To use server on random port, use onRandomPort() or startSharedOnRandomPort() methods instead of fixed 0 value");
+        }
         return new PortSupplier() {
 
             @Override

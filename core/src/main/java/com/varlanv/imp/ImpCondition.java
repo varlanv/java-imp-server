@@ -32,10 +32,6 @@ public final class ImpCondition {
         this(group, predicate, context, kind, List.of());
     }
 
-    ImpCondition(ImpPredicate<ImpRequestView> predicate, Kind kind, List<ImpCondition> nested) {
-        this(DEFAULT_GROUP, predicate, () -> "", kind, nested);
-    }
-
     @VisibleForTesting
     boolean test(ImpRequestView requestView) {
         return toEvaluated(requestView).result;
