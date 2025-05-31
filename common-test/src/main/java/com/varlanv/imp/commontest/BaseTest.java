@@ -10,7 +10,11 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.time.Duration;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -30,7 +34,10 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public interface BaseTest {
 
-    HttpClient CLIENT = HttpClient.newHttpClient();
+    HttpClient CLIENT = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
     String SLOW_TEST_TAG = "slow-test";
     String FAST_TEST_TAG = "fast-test";
 
