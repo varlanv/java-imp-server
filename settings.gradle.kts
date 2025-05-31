@@ -38,6 +38,7 @@ include(
         ":common-test",
         ":core",
         ":integration-test:spring",
+        ":integration-test:stress",
         ":integration-test:jayway-jsonpath-not-available",
     )
 )

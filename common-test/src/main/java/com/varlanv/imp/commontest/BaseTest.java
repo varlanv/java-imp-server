@@ -253,6 +253,18 @@ public interface BaseTest {
         }
     }
 
+    default <T> CompletableFuture<HttpResponse<T>> sendHttpRequestWithBytesBody(
+            int port, byte[] body, HttpResponse.BodyHandler<T> responseBodyHandler) {
+        try {
+            var request = HttpRequest.newBuilder(new URI(String.format("http://localhost:%d/", port)))
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                    .build();
+            return sendHttpRequest(request, responseBodyHandler);
+        } catch (Exception e) {
+            return hide(e);
+        }
+    }
+
     default <T> CompletableFuture<HttpResponse<T>>[] sendManyHttpRequests(
             int count, int port, HttpResponse.BodyHandler<T> responseBodyHandler) {
         try {

@@ -61,7 +61,12 @@ final class DefaultImpTemplate implements ImpTemplate {
         byte[] responseBytes;
         int responseStatus;
         try {
-            var requestMethod = ImpMethod.ofStrict(exchange.getRequestMethod());
+            var requestMethod = ImpMethod.of(exchange.getRequestMethod());
+            if (requestMethod == null) {
+                throw new IllegalStateException(String.format(
+                        "Internal error in ImpServer - failed to parse HTTP method [ %s ] from request",
+                        exchange.getRequestMethod()));
+            }
             var impRequestView = new ImpRequestView(
                     requestMethod,
                     exchange.getRequestHeaders(),
