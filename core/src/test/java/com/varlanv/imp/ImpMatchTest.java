@@ -217,7 +217,7 @@ class ImpMatchTest implements FastTest {
 
     private ImpRequestView requestWithHeaders(Map<String, List<String>> headers) {
         try {
-            return new ImpRequestView("GET", headers, () -> new byte[0], new URI(""));
+            return new ImpRequestView(ImpMethod.GET, headers, () -> new byte[0], new URI(""));
         } catch (URISyntaxException e) {
             return BaseTest.hide(e);
         }

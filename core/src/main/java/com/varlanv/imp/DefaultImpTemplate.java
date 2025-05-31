@@ -57,15 +57,16 @@ final class DefaultImpTemplate implements ImpTemplate {
 
     private void process(ImpServerContext serverContext, HttpExchange exchange) throws IOException {
         var serverConfig = serverContext.config();
-        var impRequestView = new ImpRequestView(
-                exchange.getRequestMethod(),
-                exchange.getRequestHeaders(),
-                () -> exchange.getRequestBody().readAllBytes(),
-                exchange.getRequestURI());
         ImpResponse impResponse;
         byte[] responseBytes;
         int responseStatus;
         try {
+            var requestMethod = ImpMethod.ofStrict(exchange.getRequestMethod());
+            var impRequestView = new ImpRequestView(
+                    requestMethod,
+                    exchange.getRequestHeaders(),
+                    () -> exchange.getRequestBody().readAllBytes(),
+                    exchange.getRequestURI());
             var responseCandidate = serverConfig.decision().pick(impRequestView);
             if (responseCandidate == null) {
                 serverContext.statistics().incrementMissCount();
@@ -98,7 +99,7 @@ final class DefaultImpTemplate implements ImpTemplate {
             responseStatus = 418;
         }
         if (responseStatus < 200) {
-            exchange.sendResponseHeaders(responseStatus, 0);
+            exchange.sendResponseHeaders(responseStatus, -1);
             exchange.getResponseBody().close();
         } else {
             exchange.sendResponseHeaders(responseStatus, responseBytes.length);

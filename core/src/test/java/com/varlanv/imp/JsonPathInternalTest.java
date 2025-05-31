@@ -294,7 +294,8 @@ class JsonPathInternalTest implements FastTest {
 
     private ImpRequestView requestViewJson(@Language("json") String json) {
         try {
-            return new ImpRequestView("GET", Map.of(), () -> json.getBytes(StandardCharsets.UTF_8), new URI("/"));
+            return new ImpRequestView(
+                    ImpMethod.GET, Map.of(), () -> json.getBytes(StandardCharsets.UTF_8), new URI("/"));
         } catch (URISyntaxException e) {
             return BaseTest.hide(e);
         }

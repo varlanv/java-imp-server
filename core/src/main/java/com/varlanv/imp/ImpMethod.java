@@ -28,4 +28,13 @@ enum ImpMethod {
     @Nullable static ImpMethod of(String stringValue) {
         return cache.get(stringValue);
     }
+
+    static ImpMethod ofStrict(String method) {
+        var impMethod = cache.get(method);
+        if (impMethod == null) {
+            throw new IllegalStateException(
+                    String.format("Internal error in ImpServer - failed to parse HTTP method [ %s ]", method));
+        }
+        return impMethod;
+    }
 }
