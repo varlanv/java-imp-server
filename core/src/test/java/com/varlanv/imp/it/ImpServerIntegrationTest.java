@@ -1924,6 +1924,45 @@ public class ImpServerIntegrationTest implements FastTest {
         }
 
         @Test
+        @DisplayName("should return error when two matchers failed to match request and no fallback specified")
+        void should_return_error_when_two_matchers_failed_to_match_request_and_no_fallback_specified() {
+            var requestBody = "Some Text body";
+            var requestHeaders = Map.of("header1", List.of("value1"), "header2", List.of("value2"));
+            var subject = ImpServer.httpTemplate()
+                    .matchRequest(spec -> spec.id("matcher1")
+                            .priority(0)
+                            .match(match -> match.and(
+                                    match.body().containsIgnoreCase("text"),
+                                    match.headers().containsPair("header1", "value1qweqwe")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body1")
+                            .andNoAdditionalHeaders())
+                    .matchRequest(spec -> spec.id("matcher2")
+                            .priority(1)
+                            .match(match -> match.and(
+                                    match.body().containsIgnoreCase("text"),
+                                    match.headers().containsPair("header1", "value1qweqwe")))
+                            .respondWithStatus(200)
+                            .andTextBody("response body2")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .onRandomPort();
+
+            subject.useServer(impServer -> {
+                var requestBuilder = HttpRequest.newBuilder(
+                                new URI(String.format("http://localhost:%d/", impServer.port())))
+                        .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8));
+                requestHeaders.forEach((key, valList) -> valList.forEach(val -> requestBuilder.header(key, val)));
+                var request = requestBuilder.build();
+
+                var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                        .join();
+
+                expectSelfie(responseToString(response)).toMatchDisk();
+            });
+        }
+
+        @Test
         @DisplayName("should fail when successfully match by headers but fail to match by body")
         void should_fail_when_successfully_match_by_headers_but_fail_to_match_by_body() {
             var requestBody = "Some Text body";

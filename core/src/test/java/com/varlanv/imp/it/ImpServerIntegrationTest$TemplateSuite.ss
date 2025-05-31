@@ -594,6 +594,27 @@ Response status code: 418
 Response headers: {content-length=[208], date=[<present>]}
 Response body: Exception was thrown by request predicate with id [matcherId]. Please check your ImpServer configuration for [matcherId] request matcher. Thrown error is [java.lang.RuntimeException]: testBodyString exception
 
+╔═ should_return_error_when_two_matchers_failed_to_match_request_and_no_fallback_specified ═╗
+Response status code: 418
+Response headers: {content-length=[875], content-type=[text/plain], date=[<present>]}
+Response body: No matching handler for request. Returning status code 418 to make sure that test fails early. Available matcher IDs: [matcher1, matcher2]
+Below is the list of evaluated conditions and their results:
+------------------------------------------------------------------------------------------------------------------------------------------
+Matcher: id = matcher1, priority = 0
+
+AND -> false
+ |---> Body -> containsIgnoreCase("text") -> true
+ |---> Headers -> containsPair("header1", "header1") -> false
+
+---------------------------------------------------------------------
+Matcher: id = matcher2, priority = 1
+
+AND -> false
+ |---> Body -> containsIgnoreCase("text") -> true
+ |---> Headers -> containsPair("header1", "header1") -> false
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
 ╔═ should_return_expected_response_when_matched_user_agent_header_key_by_containskey ═╗
 Response status code: 200
 Response headers: {content-length=[9], content-type=[text/plain], date=[<present>]}
