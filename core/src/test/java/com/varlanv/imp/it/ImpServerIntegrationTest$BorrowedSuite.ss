@@ -48,4 +48,9 @@ Response status code: 200
 Response headers: {content-length=[9], content-type=[text/plain], date=[<present>]}
 Response body: some text
 
+╔═ when_match_everything_then_return_response ═╗
+Response status code: 200
+Response headers: {content-length=[9], content-type=[text/plain], date=[<present>]}
+Response body: some text
+
 ╔═ [end of file] ═╗

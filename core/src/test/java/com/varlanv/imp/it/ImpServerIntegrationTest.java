@@ -3642,6 +3642,26 @@ public class ImpServerIntegrationTest implements FastTest {
             }
         }
 
+        @Test
+        @DisplayName("when match everything then return response")
+        void when_match_everything_then_return_response() {
+            useDefaultSharedServer(sharedServer -> sharedServer
+                    .borrow()
+                    .matchRequest(spec -> spec.id("matcherId")
+                            .priority(1)
+                            .match(ImpMatch::everything)
+                            .respondWithStatus(200)
+                            .andTextBody("some text")
+                            .andNoAdditionalHeaders())
+                    .rejectNonMatching()
+                    .useServer(impServer -> {
+                        var response = sendHttpRequest(impServer.port(), HttpResponse.BodyHandlers.ofString())
+                                .join();
+
+                        expectSelfie(responseToString(response)).toMatchDisk();
+                    }));
+        }
+
         void useDefaultSharedServer(ThrowingConsumer<ImpShared> consumer) {
             var originalBody = "some text";
             int originalStatus = 200;
