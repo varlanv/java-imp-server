@@ -43,6 +43,28 @@ Response status code: 400
 Response headers: {content-length=[12], content-type=[text/plain], date=[<present>]}
 Response body: changed text
 
+╔═ should_fail_fast_with_exception_when_try_to_use_borrowed_server_at_the_same_time_as_another_thead ═╗
+Concurrent usage of borrowed server detected. It is expected that during borrowing, only code inside `useServer` lambda will interact with the server, but before entering `useServer` lambda, there was 1 in-progress requests running on server. Consider synchronizing access to server before entering `useServer` lambda, or use non-shared server instead.
+╔═ should_match_request_by_header_key_using_containskey_matcher_in_borrowed_server ═╗
+Response status code: 201
+Response headers: {content-length=[21], content-type=[text/plain], date=[<present>]}
+Response body: matched by header key
+
+╔═ should_match_request_by_path_in_borrowed_server ═╗
+Response status code: 201
+Response headers: {content-length=[15], content-type=[text/plain], date=[<present>]}
+Response body: matched by path
+
+╔═ should_prioritize_matchers_by_priority_value_in_borrowed_server ═╗
+Response status code: 200
+Response headers: {content-length=[22], content-type=[text/plain], date=[<present>]}
+Response body: high priority response
+
+╔═ should_return_fallback_response_when_no_matchers_match_the_request_in_borrowed_server ═╗
+Response status code: 404
+Response headers: {content-length=[17], date=[<present>]}
+Response body: fallback response
+
 ╔═ should_return_to_original_state_after_borrowing_closure_ends ═╗
 Response status code: 200
 Response headers: {content-length=[9], content-type=[text/plain], date=[<present>]}

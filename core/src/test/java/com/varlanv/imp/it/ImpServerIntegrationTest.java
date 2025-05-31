@@ -2977,6 +2977,127 @@ public class ImpServerIntegrationTest implements FastTest {
     class BorrowedSuite implements FastTest {
 
         @Test
+        @DisplayName("should match request by header key using containsKey matcher in borrowed server")
+        void should_match_request_by_header_key_using_containskey_matcher_in_borrowed_server() {
+            useDefaultSharedServer(sharedServer -> {
+                var matcherId = "matcherId";
+                var expectedBody = "matched by header key";
+                var expectedStatus = 201;
+
+                var impBorrowed = sharedServer
+                        .borrow()
+                        .matchRequest(spec -> spec.id(matcherId)
+                                .priority(0)
+                                .match(match -> match.headers().containsKey("user-agent"))
+                                .respondWithStatus(expectedStatus)
+                                .andTextBody(expectedBody)
+                                .andNoAdditionalHeaders())
+                        .rejectNonMatching();
+
+                impBorrowed.useServer(server -> {
+                    var response = sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString())
+                            .join();
+
+                    expectSelfie(responseToString(response)).toMatchDisk();
+                });
+            });
+        }
+
+        @Test
+        @DisplayName("should return fallback response when no matchers match the request in borrowed server")
+        void should_return_fallback_response_when_no_matchers_match_the_request_in_borrowed_server() {
+            useDefaultSharedServer(sharedServer -> {
+                var matcherId = "matcherId";
+                var fallbackBody = "fallback response";
+                var fallbackStatus = 404;
+
+                var impBorrowed = sharedServer
+                        .borrow()
+                        .matchRequest(spec -> spec.id(matcherId)
+                                .priority(0)
+                                .match(match -> match.headers().containsKey("non-existent-header"))
+                                .respondWithStatus(200)
+                                .andTextBody("should not be returned")
+                                .andNoAdditionalHeaders())
+                        .fallbackForNonMatching(spec -> spec.status(fallbackStatus)
+                                .body(() -> new ByteArrayInputStream(fallbackBody.getBytes(StandardCharsets.UTF_8))));
+
+                impBorrowed.useServer(server -> {
+                    var response = sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString())
+                            .join();
+
+                    expectSelfie(responseToString(response)).toMatchDisk();
+                });
+            });
+        }
+
+        @Test
+        @DisplayName("should match request by path in borrowed server")
+        void should_match_request_by_path_in_borrowed_server() {
+            useDefaultSharedServer(sharedServer -> {
+                var matcherId = "matcherId";
+                var expectedBody = "matched by path";
+                var expectedStatus = 201;
+                @Language("regexp")
+                var pathToMatch = "/api/users";
+
+                var impBorrowed = sharedServer
+                        .borrow()
+                        .matchRequest(spec -> spec.id(matcherId)
+                                .priority(0)
+                                .match(match -> match.path().matches(pathToMatch))
+                                .respondWithStatus(expectedStatus)
+                                .andTextBody(expectedBody)
+                                .andNoAdditionalHeaders())
+                        .rejectNonMatching();
+
+                impBorrowed.useServer(server -> {
+                    var request = HttpRequest.newBuilder(
+                                    new URI(String.format("http://localhost:%d%s", server.port(), pathToMatch)))
+                            .build();
+                    var response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                            .join();
+
+                    expectSelfie(responseToString(response)).toMatchDisk();
+                });
+            });
+        }
+
+        @Test
+        @DisplayName("should prioritize matchers by priority value in borrowed server")
+        void should_prioritize_matchers_by_priority_value_in_borrowed_server() {
+            useDefaultSharedServer(sharedServer -> {
+                var lowPriorityId = "lowPriorityMatcher";
+                var highPriorityId = "highPriorityMatcher";
+                var lowPriorityBody = "low priority response";
+                var highPriorityBody = "high priority response";
+
+                var impBorrowed = sharedServer
+                        .borrow()
+                        .matchRequest(spec -> spec.id(lowPriorityId)
+                                .priority(10)
+                                .match(match -> match.headers().containsKey("user-agent"))
+                                .respondWithStatus(200)
+                                .andTextBody(lowPriorityBody)
+                                .andNoAdditionalHeaders())
+                        .matchRequest(spec -> spec.id(highPriorityId)
+                                .priority(1)
+                                .match(match -> match.headers().containsKey("user-agent"))
+                                .respondWithStatus(200)
+                                .andTextBody(highPriorityBody)
+                                .andNoAdditionalHeaders())
+                        .rejectNonMatching();
+
+                impBorrowed.useServer(server -> {
+                    var response = sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString())
+                            .join();
+
+                    expectSelfie(responseToString(response)).toMatchDisk();
+                });
+            });
+        }
+
+        @Test
         @DisplayName("should be able to send request while borrowing server")
         void should_be_able_to_send_request_while_borrowing_server() {
             var body = "some text";
@@ -3028,10 +3149,7 @@ public class ImpServerIntegrationTest implements FastTest {
                 sendRequestFuture.join();
                 assertThatThrownBy(() -> impBorrowed.useServer(server -> {}))
                         .isInstanceOf(IllegalStateException.class)
-                        .hasMessage(
-                                "Concurrent usage of borrowed server detected. It is expected that during borrowing, only code inside `useServer`"
-                                        + " lambda will interact with the server, but before entering `useServer` lambda, there was 1 in-progress requests running on server."
-                                        + " Consider synchronizing access to server before entering `useServer` lambda, or use non-shared server instead.");
+                        .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
                 sharedServerResponseFuture.complete("");
                 future.cancel(true);
             } finally {
@@ -3681,7 +3799,7 @@ public class ImpServerIntegrationTest implements FastTest {
     }
 
     @Nested
-    class FailFastSuite {
+    class FailFastSuite implements FastTest {
 
         @Test
         @DisplayName("'alwaysRespondWithStatus' should fail immediately if provided invalid http status")
@@ -4087,6 +4205,7 @@ public class ImpServerIntegrationTest implements FastTest {
         @Test
         @DisplayName("'matchRequest method is' should fail immediately if empty")
         void matchrequest_method_is_should_fail_immediately_if_empty() {
+            //noinspection MagicConstant
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
@@ -4100,6 +4219,7 @@ public class ImpServerIntegrationTest implements FastTest {
         @Test
         @DisplayName("'matchRequest method is' should fail immediately if blank")
         void matchrequest_method_is_should_fail_immediately_if_blank() {
+            //noinspection MagicConstant
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
@@ -4142,7 +4262,7 @@ public class ImpServerIntegrationTest implements FastTest {
         @DisplayName("'matchRequest method anyOf' should fail immediately if null")
         void matchrequest_method_anyof_should_fail_immediately_if_null() {
             String[] expectedMethods = null;
-            //noinspection DataFlowIssue
+            //noinspection DataFlowIssue,ConstantValue
             assertThatExceptionOfType(IllegalArgumentException.class)
                     .isThrownBy(() -> ImpServer.httpTemplate().matchRequest(spec -> spec.id("id")
                             .priority(0)
