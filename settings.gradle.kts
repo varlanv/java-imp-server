@@ -37,9 +37,10 @@ include(
     listOf(
         ":common-test",
         ":core",
-        ":integration-test:spring",
-        ":integration-test:stress",
-        ":integration-test:jayway-jsonpath-not-available",
+        ":testing:spring",
+        ":testing:stress",
+        ":testing:performance",
+        ":testing:jayway-jsonpath-not-available",
     )
 )
 

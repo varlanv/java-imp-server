@@ -34,7 +34,7 @@ public final class ImpCondition {
 
     @VisibleForTesting
     boolean test(ImpRequestView requestView) {
-        return toEvaluated(requestView).result;
+        return kind == Kind.ALWAYS_TRUE || toEvaluated(requestView).result;
     }
 
     EvaluatedCondition toEvaluated(ImpRequestView requestView) {
@@ -160,7 +160,8 @@ public final class ImpCondition {
         AND,
         OR,
         CONDITION,
-        NOT
+        NOT,
+        ALWAYS_TRUE
     }
 
     static final class EvaluateContext {

@@ -11,7 +11,7 @@ import org.intellij.lang.annotations.MagicConstant;
 public final class ImpMatch {
 
     static final ImpCondition EVERYTHING_INSTANCE = new ImpCondition(
-            ImpCondition.DEFAULT_GROUP, request -> true, () -> "*Everything* matcher", ImpCondition.Kind.CONDITION);
+            ImpCondition.DEFAULT_GROUP, request -> true, () -> "*Everything* matcher", ImpCondition.Kind.ALWAYS_TRUE);
 
     ImpMatch() {}
 

@@ -13,6 +13,7 @@ jSpecifyVersion = "1.0.0"
 slf4jVersion = "2.0.17"
 jaywayJsonPathVersion = "2.9.0"
 selfieVersion = "2.5.3"
+mocoVersion = "1.5.0"
 
 [libraries]
 assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertJ" }
@@ -28,6 +29,7 @@ jSpecify = { group = "org.jspecify", name = "jspecify", version.ref = "jSpecifyV
 slf4jApi = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4jVersion" }
 jaywayJsonPath = { group = "com.jayway.jsonpath", name = "json-path", version.ref = "jaywayJsonPathVersion" }
 selfie = { group = "com.diffplug.selfie", name = "selfie-runner-junit5", version.ref = "selfieVersion" }
+moco = { group = "com.github.dreamhead", name = "moco-core", version.ref = "mocoVersion" }
 
 [plugins]
 internalConvention = { id = "com.varlanv.gradle.internal-gradle-convention-plugin" }
