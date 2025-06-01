@@ -37,9 +37,10 @@ include(
     listOf(
         ":common-test",
         ":lib:core",
-        ":lib:bridge",
+        ":lib:bridge-model",
         ":lib:netty-bridge",
         ":lib:apache-bridge",
+        ":lib:jdk-bridge",
         ":lib:shared",
         ":testing:spring",
         ":testing:stress",
