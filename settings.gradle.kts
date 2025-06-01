@@ -36,7 +36,11 @@ includeBuild("internal-convention-plugin")
 include(
     listOf(
         ":common-test",
-        ":core",
+        ":lib:core",
+        ":lib:bridge",
+        ":lib:netty-bridge",
+        ":lib:apache-bridge",
+        ":lib:util",
         ":testing:spring",
         ":testing:stress",
         ":testing:performance",

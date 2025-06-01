@@ -9,5 +9,5 @@ internalConvention {
 }
 
 dependencies {
-    testImplementation(projects.core)
+    testImplementation(projects.lib.core)
 }

@@ -9,6 +9,6 @@ internalConvention {
 }
 
 dependencies {
-    testImplementation(projects.core)
+    testImplementation(projects.lib.core)
     testImplementation(libs.moco)
 }
