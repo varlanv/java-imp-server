@@ -1,7 +1,7 @@
 package com.varlanv.imp;
 
 @FunctionalInterface
-interface ConditionAccumulator {
+interface PredicateAccumulator {
 
     boolean apply(boolean left, boolean right);
 }

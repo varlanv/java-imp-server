@@ -40,7 +40,7 @@ include(
         ":lib:bridge",
         ":lib:netty-bridge",
         ":lib:apache-bridge",
-        ":lib:util",
+        ":lib:shared",
         ":testing:spring",
         ":testing:stress",
         ":testing:performance",

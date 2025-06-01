@@ -65,7 +65,7 @@ public final class ImpCondition {
             @MagicConstant(stringValues = {"AND", "OR"}) String branchType,
             boolean initialCumulativeResult,
             boolean shortCircuitTriggerValue,
-            ConditionAccumulator accumulator) {
+            PredicateAccumulator accumulator) {
 
         var branchMessages = new StringList();
         // Add a supplier for the header message of this branch.
