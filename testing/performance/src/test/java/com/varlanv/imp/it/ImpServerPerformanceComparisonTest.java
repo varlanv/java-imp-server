@@ -22,6 +22,9 @@ class ImpServerPerformanceComparisonTest implements SlowTest {
 
     private static final String requestAndResponse = "asd".repeat(1000);
     private static final int responseStatus = 200;
+    private static final int threadsCount = 5;
+    private static final int tasksPerThreadCount = 20;
+    private static final int tasks = threadsCount * tasksPerThreadCount;
 
     @Test
     @DisplayName("imp simple")
@@ -38,22 +41,41 @@ class ImpServerPerformanceComparisonTest implements SlowTest {
     }
 
     @Test
-    @DisplayName("imp")
-    void imp() {
+    @DisplayName("imp sequential")
+    void imp_sequential() {
         ImpServer.httpTemplate()
                 .alwaysRespond(spec -> spec.withStatus(responseStatus)
                         .andTextBody(requestAndResponse)
                         .andNoAdditionalHeaders())
                 .onRandomPort()
-                .useServer(impServer -> testConcurrent("imp", impServer.port()));
+                .useServer(impServer -> testSequential("imp", impServer.port()));
     }
 
     @Test
-    @DisplayName("moco")
-    void moco() throws Exception {
+    @DisplayName("imp parallel")
+    void imp_parallel() {
+        ImpServer.httpTemplate()
+                .alwaysRespond(spec -> spec.withStatus(responseStatus)
+                        .andTextBody(requestAndResponse)
+                        .andNoAdditionalHeaders())
+                .onRandomPort()
+                .useServer(impServer -> testSequential("imp", impServer.port()));
+    }
+
+    @Test
+    @DisplayName("moco parallel")
+    void moco_parallel() throws Exception {
         var httpServer = Moco.httpServer();
         httpServer.response(Moco.with(requestAndResponse), Moco.status(responseStatus));
         running(httpServer, () -> testConcurrent("moco", httpServer.port()));
+    }
+
+    @Test
+    @DisplayName("moco sequential")
+    void moco_sequential() throws Exception {
+        var httpServer = Moco.httpServer();
+        httpServer.response(Moco.with(requestAndResponse), Moco.status(responseStatus));
+        running(httpServer, () -> testSequential("moco", httpServer.port()));
     }
 
     @Test
@@ -85,9 +107,6 @@ class ImpServerPerformanceComparisonTest implements SlowTest {
     }
 
     private void testConcurrent(String subject, int port) throws Exception {
-        var threadsCount = 5;
-        var tasksPerThreadCount = 20;
-        var tasks = threadsCount * tasksPerThreadCount;
         var executorService = Executors.newFixedThreadPool(threadsCount);
         var timeBefore = System.nanoTime();
         try {
@@ -128,6 +147,20 @@ class ImpServerPerformanceComparisonTest implements SlowTest {
             assertThat(successCount.get()).isEqualTo(tasks);
         } finally {
             executorService.shutdownNow();
+        }
+        System.err.printf(
+                "%s - all tasks completed in: %s%n", subject, Duration.ofNanos(System.nanoTime() - timeBefore));
+    }
+
+    private void testSequential(String subject, int port) {
+        var timeBefore = System.nanoTime();
+        for (var taskIdx = 0; taskIdx < tasks; taskIdx++) {
+            sendHttpRequestWithBody(port, requestAndResponse, HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        assertThat(response.body()).isEqualTo(requestAndResponse);
+                        assertThat(response.statusCode()).isEqualTo(responseStatus);
+                    })
+                    .join();
         }
         System.err.printf(
                 "%s - all tasks completed in: %s%n", subject, Duration.ofNanos(System.nanoTime() - timeBefore));
