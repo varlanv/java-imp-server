@@ -29,6 +29,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 
 @Execution(ExecutionMode.CONCURRENT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -183,7 +184,8 @@ public interface BaseTest {
     class HttpRequestBuilderSource implements ArgumentsProvider {
 
         @Override
-        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters, ExtensionContext context) {
             Stream<Function<Integer, HttpRequest.Builder>> result = Stream.of(
                             "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "TRACE", "HEAD")
                     .map(method -> port -> HttpRequest.newBuilder()
