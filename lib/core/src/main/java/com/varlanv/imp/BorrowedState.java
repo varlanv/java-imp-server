@@ -16,6 +16,25 @@ final class BorrowedState {
         this.isShared = isShared;
     }
 
+    int kek = 1;
+
+    int calc() {
+        switch (kek) {
+            case 1:
+                return 0;
+            case 2:
+                return 1;
+            case 3:
+                return 2;
+            case 4:
+                return 3;
+            case 5:
+                return 4;
+            default:
+                return 5;
+        }
+    }
+
     boolean isShared() {
         return isShared;
     }
