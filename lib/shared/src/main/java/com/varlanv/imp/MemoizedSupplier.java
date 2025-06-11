@@ -23,8 +23,8 @@ final class MemoizedSupplier<T> {
     T get() {
         T val = value;
         if (val == null) {
+            lock.lock();
             try {
-                lock.lock();
                 val = value;
                 if (val == null) {
                     val = delegate.get();

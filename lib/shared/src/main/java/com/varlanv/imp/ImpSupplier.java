@@ -1,11 +1,8 @@
 package com.varlanv.imp;
 
-import java.util.function.Supplier;
-
 @FunctionalInterface
-public interface ImpSupplier<T> extends Supplier<T> {
+public interface ImpSupplier<T> {
 
-    @Override
     default T get() {
         try {
             return unsafeGet();

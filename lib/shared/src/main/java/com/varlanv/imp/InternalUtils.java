@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Unmodifiable;
 
 interface InternalUtils {
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"all", "unchecked"})
     static <T extends Throwable, R> R hide(Throwable t) throws T {
         throw (T) t;
     }

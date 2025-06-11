@@ -1,11 +1,8 @@
 package com.varlanv.imp;
 
-import java.util.function.Function;
-
 @FunctionalInterface
-public interface ImpFn<T, R> extends Function<T, R> {
+public interface ImpFn<T, R> {
 
-    @Override
     default R apply(T t) {
         try {
             return unsafeApply(t);

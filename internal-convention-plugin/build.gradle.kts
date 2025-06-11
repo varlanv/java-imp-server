@@ -29,6 +29,7 @@ repositories {
 }
 
 dependencies {
+    implementation(libs.errorprone.plugin)
     implementation(libs.spotbugs.plugin)
     implementation(libs.spotless.plugin)
     implementation(libs.benmanes.version.plugin)

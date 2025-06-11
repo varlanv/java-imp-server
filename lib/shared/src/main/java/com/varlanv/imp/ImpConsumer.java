@@ -1,11 +1,8 @@
 package com.varlanv.imp;
 
-import java.util.function.Consumer;
-
 @FunctionalInterface
-public interface ImpConsumer<T> extends Consumer<T> {
+public interface ImpConsumer<T> {
 
-    @Override
     default void accept(T t) {
         try {
             unsafeAccept(t);

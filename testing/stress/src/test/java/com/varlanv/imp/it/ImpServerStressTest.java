@@ -46,42 +46,32 @@ class ImpServerStressTest implements SlowTest {
                     var tasks = threadsCount * tasksPerThreadCount;
                     var executorService = Executors.newFixedThreadPool(threadsCount);
                     try {
-                        var latch = new CountDownLatch(tasks);
                         var allReadyLock = new CompletableFuture<>();
                         var successCount = new AtomicInteger();
                         var errorsQueue = new ConcurrentLinkedQueue<Throwable>();
+                        var futures = new CompletableFuture<?>[tasks];
                         for (var taskIdx = 0; taskIdx < tasks; taskIdx++) {
-                            CompletableFuture.runAsync(
-                                    () -> {
-                                        allReadyLock.join();
-                                        sendHttpRequestWithBody(
-                                                        impServer.port(),
-                                                        requestAndResponse,
-                                                        HttpResponse.BodyHandlers.ofString())
-                                                .thenAccept(response -> {
-                                                    try {
-                                                        assertThat(response.body())
-                                                                .isEqualTo(requestAndResponse);
-                                                        assertThat(response.statusCode())
-                                                                .isEqualTo(responseStatus);
-                                                        var cnt = successCount.incrementAndGet();
-                                                        if (cnt % 100 == 0) {
-                                                            System.out.printf("Completed %d tasks%n", cnt);
-                                                        }
-                                                    } finally {
-                                                        latch.countDown();
-                                                    }
-                                                })
-                                                .exceptionally(ex -> {
-                                                    errorsQueue.add(ex);
-                                                    latch.countDown();
-                                                    return null;
-                                                });
-                                    },
-                                    executorService);
+                            futures[taskIdx] = CompletableFuture.runAsync(allReadyLock::join, executorService)
+                                    .thenCompose(ignore -> sendHttpRequestWithBody(
+                                                    impServer.port(),
+                                                    requestAndResponse,
+                                                    HttpResponse.BodyHandlers.ofString())
+                                            .thenAccept(response -> {
+                                                assertThat(response.body()).isEqualTo(requestAndResponse);
+                                                assertThat(response.statusCode())
+                                                        .isEqualTo(responseStatus);
+                                                var cnt = successCount.incrementAndGet();
+                                                if (cnt % 100 == 0) {
+                                                    System.out.printf("Completed %d tasks%n", cnt);
+                                                }
+                                            })
+                                            .exceptionally(ex -> {
+                                                errorsQueue.add(ex);
+                                                return null;
+                                            }));
                         }
                         allReadyLock.complete("");
-                        latch.await();
+                        CompletableFuture.allOf(futures).join();
                         if (!errorsQueue.isEmpty()) {
                             throw new AssertionError("There were errors during stress test", errorsQueue.peek());
                         }

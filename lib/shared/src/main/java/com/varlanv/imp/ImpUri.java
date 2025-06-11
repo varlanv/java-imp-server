@@ -20,7 +20,7 @@ public final class ImpUri {
                 return Map.of();
             }
             var queryMap = new HashMap<String, String>();
-            var split = query.split("&");
+            var split = query.split("&", -1);
             for (var queryEntry : split) {
                 var queryKeyVal = queryEntry.split("=", 2);
                 if (queryKeyVal.length == 2) {

@@ -34,8 +34,8 @@ final class DefaultImpShared implements ImpShared {
 
     @Override
     public void dispose() {
+        stopLock.lock();
         try {
-            stopLock.lock();
             if (isDisposed.compareAndSet(false, true)) {
                 startedServer.dispose();
             }

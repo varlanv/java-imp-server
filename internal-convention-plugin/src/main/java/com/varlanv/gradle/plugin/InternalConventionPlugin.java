@@ -6,6 +6,7 @@ import com.diffplug.spotless.LineEnding;
 import com.github.benmanes.gradle.versions.VersionsPlugin;
 import com.github.spotbugs.snom.SpotBugsExtension;
 import com.github.spotbugs.snom.SpotBugsPlugin;
+import net.ltgt.gradle.errorprone.ErrorPronePlugin;
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -78,7 +79,7 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                 false
             ));
         var internalProperties = Optional.ofNullable((InternalProperties) extensions.findByName(InternalProperties.name()))
-            .orElseGet(() -> new InternalProperties(((VersionCatalogsExtension) extensions.getByName("versionCatalogs")).named("libs")));
+            .orElseGet(() -> new InternalProperties(((VersionCatalogsExtension) extensions.getByName("versionCatalogs"))));
         var internalConventionExtension = Optional.ofNullable((InternalConventionExtension) extensions.findByName(InternalConventionExtension.name()))
             .orElseGet(() -> extensions.create(InternalConventionExtension.name(), InternalConventionExtension.class));
         internalConventionExtension.getIntegrationTestName().convention("integrationTest");
@@ -103,6 +104,41 @@ public final class InternalConventionPlugin implements Plugin<Project> {
         project.afterEvaluate(ignore -> {
                 // Need to run these things after a project evaluated, so that InternalConventionExtension values are initialized
                 // -------------------- Configure Java start --------------------
+                pluginManager.withPlugin("java", plugin -> {
+                    // -------------------- Apply common plugins start --------------------
+                    if (isGradlePlugin) {
+                        pluginManager.apply(JavaGradlePluginPlugin.class);
+                    }
+                    pluginManager.apply(PmdPlugin.class);
+                    pluginManager.apply(CheckstylePlugin.class);
+                    pluginManager.apply(VersionsPlugin.class);
+                    pluginManager.apply(ErrorPronePlugin.class);
+                    if (internalEnvironment.isLocal()) {
+                        pluginManager.apply(IdeaPlugin.class);
+                        extensions.<IdeaModel>configure("idea", idea -> {
+                            idea.getModule().setDownloadJavadoc(true);
+                            idea.getModule().setDownloadSources(true);
+                        });
+                    }
+                    pluginManager.apply(SpotBugsPlugin.class);
+                    extensions.<SpotBugsExtension>configure("spotbugs", spotBugsExtension -> spotBugsExtension
+                        .getExcludeFilter().set(staticAnalyseFolder.resolve("spotbug-exclude.xml").toFile()));
+
+                    pluginManager.apply(SpotlessPlugin.class);
+                    extensions.<SpotlessExtension>configure("spotless", spotlessExtension -> spotlessExtension
+                        .java(spotlessJava -> {
+                            spotlessJava.importOrder();
+                            spotlessJava.removeUnusedImports();
+                            spotlessJava.palantirJavaFormat();
+                            spotlessJava.formatAnnotations();
+                            spotlessJava.encoding("UTF-8");
+                            spotlessJava.endWithNewline();
+                            spotlessJava.setLineEndings(LineEnding.UNIX);
+                            spotlessJava.trimTrailingWhitespace();
+                            spotlessJava.cleanthat();
+                        }));
+                    // -------------------- Apply common plugins end --------------------
+                });
                 pluginManager.withPlugin(
                     "java",
                     plugin -> {
@@ -127,7 +163,7 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                                 ));
                             });
                             tasks.named(mainSourceSet.getJavadocTaskName(), Javadoc.class).configure(javadoc -> {
-                                var javadocOptions =(CoreJavadocOptions) javadoc.getOptions();
+                                var javadocOptions = (CoreJavadocOptions) javadoc.getOptions();
                                 javadocOptions.addStringOption("Xdoclint:none", "-quiet");
                                 extensions.<JavaToolchainService>configure("javaToolchains", javaToolchains -> {
                                     javadoc.getJavadocTool().set(javaToolchains.javadocToolFor(toolchainSpec -> {
@@ -140,66 +176,35 @@ public final class InternalConventionPlugin implements Plugin<Project> {
 
                         // -------------------- Add common dependencies start --------------------
                         var jetbrainsAnnotations = internalProperties.getLib("jetbrains-annotations");
-                        dependencies.add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, jetbrainsAnnotations);
-                        dependencies.add(JavaPlugin.TEST_COMPILE_ONLY_CONFIGURATION_NAME, jetbrainsAnnotations);
-                        dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, internalProperties.getLib("assertj-core"));
-                        dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, internalProperties.getLib("junit-jupiter-api"));
-                        dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, internalProperties.getLib("junit-platform-launcher"));
+                        dependencies.addProvider(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, jetbrainsAnnotations);
+                        dependencies.addProvider(JavaPlugin.TEST_COMPILE_ONLY_CONFIGURATION_NAME, jetbrainsAnnotations);
+                        dependencies.addProvider(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, internalProperties.getLib("assertj-core"));
+                        dependencies.addProvider(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, internalProperties.getLib("junit-jupiter-api"));
+                        dependencies.addProvider(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, internalProperties.getLib("junit-platform-launcher"));
 
                         var jSpecify = internalProperties.getLib("jSpecify");
-                        dependencies.add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, jSpecify);
-                        dependencies.add(JavaPlugin.TEST_COMPILE_ONLY_CONFIGURATION_NAME, jSpecify);
+                        dependencies.addProvider(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, jSpecify);
+                        dependencies.addProvider(JavaPlugin.TEST_COMPILE_ONLY_CONFIGURATION_NAME, jSpecify);
 
                         var immutablesDependency = internalProperties.getLib("immutables-values");
-                        dependencies.add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, immutablesDependency);
-                        dependencies.add(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME, immutablesDependency);
+                        dependencies.addProvider(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, immutablesDependency);
+                        dependencies.addProvider(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME, immutablesDependency);
+                        dependencies.addProvider("errorprone", internalProperties.getLib("errorprone"));
 
                         if (internalConventionExtension.getAddSlf4jApiDependency().get()) {
                             var slf4jApi = internalProperties.getLib("slf4jApi");
-                            dependencies.add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, slf4jApi);
+                            dependencies.addProvider(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, slf4jApi);
                         }
 
-                        dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, internalProperties.getLib("junit-jupiter-api"));
-                        dependencies.add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, internalProperties.getLib("junit-platform-launcher"));
+                        dependencies.addProvider(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, internalProperties.getLib("junit-jupiter-api"));
+                        dependencies.addProvider(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, internalProperties.getLib("junit-platform-launcher"));
 
                         if (!internalEnvironment.isTest() && !projectPath.equals(":common-test")) {
                             dependencies.add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, dependencies.project(Collections.singletonMap("path", ":common-test")));
                         }
 
                         // -------------------- Add common dependencies end --------------------
-                        // -------------------- Apply common plugins start --------------------
-                        if (isGradlePlugin) {
-                            pluginManager.apply(JavaGradlePluginPlugin.class);
-                        }
-                        pluginManager.apply(PmdPlugin.class);
-                        pluginManager.apply(CheckstylePlugin.class);
-                        pluginManager.apply(VersionsPlugin.class);
-                        if (internalEnvironment.isLocal()) {
-                            pluginManager.apply(IdeaPlugin.class);
-                            extensions.<IdeaModel>configure("idea", idea -> {
-                                idea.getModule().setDownloadJavadoc(true);
-                                idea.getModule().setDownloadSources(true);
-                            });
-                        }
-                        pluginManager.apply(SpotBugsPlugin.class);
-                        extensions.<SpotBugsExtension>configure("spotbugs", spotBugsExtension -> spotBugsExtension
-                            .getExcludeFilter().set(staticAnalyseFolder.resolve("spotbug-exclude.xml").toFile()));
 
-                        pluginManager.apply(SpotlessPlugin.class);
-                        extensions.<SpotlessExtension>configure("spotless", spotlessExtension -> spotlessExtension
-                            .java(spotlessJava -> {
-                                spotlessJava.importOrder();
-                                spotlessJava.removeUnusedImports();
-                                spotlessJava.palantirJavaFormat();
-                                spotlessJava.formatAnnotations();
-                                spotlessJava.encoding("UTF-8");
-                                spotlessJava.endWithNewline();
-                                spotlessJava.setLineEndings(LineEnding.UNIX);
-                                spotlessJava.trimTrailingWhitespace();
-                                spotlessJava.cleanthat();
-                            }));
-
-                        // -------------------- Apply common plugins end --------------------
                     }
                 );
                 // -------------------- Configure Java end --------------------
@@ -248,22 +253,22 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                 }
                 // -------------------- Configure publishing end --------------------
 
-            // Prepare aggregate static analysis tasks for future configuration
-            var staticAnalyseMain = tasks.register(
-                "staticAnalyseMain",
-                task -> {
-                    task.setGroup("static analysis");
-                    task.setDescription("Run static analysis on main sources");
-                    task.dependsOn("spotbugsMain");
-                }
-            );
-            var staticAnalyseTest = tasks.register(
-                "staticAnalyseTest",
-                task -> {
-                    task.setGroup("static analysis");
-                    task.setDescription("Run static analysis on test sources");
-                }
-            );
+                // Prepare aggregate static analysis tasks for future configuration
+                var staticAnalyseMain = tasks.register(
+                    "staticAnalyseMain",
+                    task -> {
+                        task.setGroup("static analysis");
+                        task.setDescription("Run static analysis on main sources");
+                        task.dependsOn("spotbugsMain");
+                    }
+                );
+                var staticAnalyseTest = tasks.register(
+                    "staticAnalyseTest",
+                    task -> {
+                        task.setGroup("static analysis");
+                        task.setDescription("Run static analysis on test sources");
+                    }
+                );
                 // -------------------- Configure tests start --------------------
                 pluginManager.withPlugin(
                     "java",

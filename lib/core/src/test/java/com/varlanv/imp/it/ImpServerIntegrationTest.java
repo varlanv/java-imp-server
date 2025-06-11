@@ -31,7 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-public class ImpServerIntegrationTest implements FastTest {
+class ImpServerIntegrationTest implements FastTest {
 
     @Nested
     class TemplateSuite implements FastTest {
@@ -186,32 +186,31 @@ public class ImpServerIntegrationTest implements FastTest {
                             var count = 50;
                             var latchCounter = new CountDownLatch(count);
                             var allReadyLatch = new CountDownLatch(1);
-                            @SuppressWarnings("resource")
                             var executorService = Executors.newFixedThreadPool(count);
+                            var futures = new CompletableFuture<?>[count];
                             try {
                                 for (var i = 0; i < count; i++) {
-                                    executorService.submit(() -> {
-                                        try {
-                                            latchCounter.countDown();
-                                            allReadyLatch.await();
-                                            var request = HttpRequest.newBuilder(new URI(
-                                                            String.format("http://localhost:%d/", impServer.port())))
-                                                    .build();
-                                            sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
-                                                    .join();
-                                        } catch (Exception e) {
-                                            BaseTest.hide(e);
-                                        }
-                                    });
+                                    futures[i] = CompletableFuture.runAsync(
+                                            () -> {
+                                                try {
+                                                    latchCounter.countDown();
+                                                    allReadyLatch.await();
+                                                    var request = HttpRequest.newBuilder(new URI(String.format(
+                                                                    "http://localhost:%d/", impServer.port())))
+                                                            .build();
+                                                    sendHttpRequest(request, HttpResponse.BodyHandlers.ofString())
+                                                            .join();
+                                                } catch (Exception e) {
+                                                    BaseTest.hide(e);
+                                                }
+                                            },
+                                            executorService);
                                 }
                                 if (!latchCounter.await(5, TimeUnit.SECONDS)) {
                                     throw new TimeoutException("Failed to start fixture");
                                 }
                                 allReadyLatch.countDown();
-                                executorService.shutdown();
-                                if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-                                    throw new TimeoutException("Failed to execute fixture");
-                                }
+                                CompletableFuture.allOf(futures).join();
                                 assertThat(impServer.statistics().hitCount()).isEqualTo(count);
                                 assertThat(impServer.statistics().missCount()).isZero();
                             } finally {
@@ -3165,8 +3164,8 @@ public class ImpServerIntegrationTest implements FastTest {
 
         @Test
         @DisplayName(
-                "should fail fast with exception when try to use borrowed server at the same time as another thead")
-        void should_fail_fast_with_exception_when_try_to_use_borrowed_server_at_the_same_time_as_another_thead() {
+                "should fail fast with exception when try to use borrowed server at the same time as another thread")
+        void should_fail_fast_with_exception_when_try_to_use_borrowed_server_at_the_same_time_as_another_thread() {
             var sharedServerResponseFuture = new CompletableFuture<String>();
             var sendRequestFuture = new CompletableFuture<String>();
             var sharedServer = ImpServer.httpTemplate()
@@ -3180,17 +3179,21 @@ public class ImpServerIntegrationTest implements FastTest {
                     .startSharedOnRandomPort();
 
             try (var executor = Executors.newSingleThreadExecutor()) {
-                var future = executor.submit(
-                        () -> sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString()));
-                var impBorrowed = sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(400)
-                        .andTextBody("some borrowed text")
-                        .andNoAdditionalHeaders());
-                sendRequestFuture.join();
-                assertThatThrownBy(() -> impBorrowed.useServer(server -> {}))
-                        .isInstanceOf(IllegalStateException.class)
-                        .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
-                sharedServerResponseFuture.complete("");
-                future.cancel(true);
+                var future =
+                        executor.submit(() -> sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
+                                .join());
+                try {
+                    var impBorrowed = sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(400)
+                            .andTextBody("some borrowed text")
+                            .andNoAdditionalHeaders());
+                    sendRequestFuture.join();
+                    assertThatThrownBy(() -> impBorrowed.useServer(server -> {}))
+                            .isInstanceOf(IllegalStateException.class)
+                            .satisfies(e -> expectSelfie(e.getMessage()).toMatchDisk());
+                    sharedServerResponseFuture.complete("");
+                } finally {
+                    future.cancel(true);
+                }
             } finally {
                 sharedServer.dispose();
             }
@@ -3256,7 +3259,8 @@ public class ImpServerIntegrationTest implements FastTest {
                 var impBorrowed = sharedServer.borrow().alwaysRespond(spec -> spec.withStatus(borrowedStatus)
                         .andTextBody(borrowedTextBody)
                         .andNoAdditionalHeaders());
-                impBorrowed.useServer(server -> sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString()));
+                impBorrowed.useServer(server -> sendHttpRequest(server.port(), HttpResponse.BodyHandlers.ofString())
+                        .join());
 
                 var response = sendHttpRequest(sharedServer.port(), HttpResponse.BodyHandlers.ofString())
                         .join();

@@ -11,10 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -194,7 +191,7 @@ public interface BaseTest {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"all", "unchecked"})
     static <T extends Throwable, R> R hide(Throwable t) throws T {
         throw (T) t;
     }
@@ -237,7 +234,7 @@ public interface BaseTest {
         var originalHeaders = response.headers().map();
         var modifiedHeaders = new TreeMap<String, List<String>>();
         originalHeaders.forEach((key, values) -> {
-            var keyLower = key.toLowerCase();
+            var keyLower = key.toLowerCase(Locale.ROOT);
             if ("date".equals(keyLower)) {
                 modifiedHeaders.put(keyLower, List.of("<present>"));
             } else {

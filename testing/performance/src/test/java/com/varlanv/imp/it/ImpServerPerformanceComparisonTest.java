@@ -10,7 +10,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Disabled;
@@ -106,41 +105,33 @@ class ImpServerPerformanceComparisonTest implements SlowTest {
         System.err.printf("%s - starts in: %s%n", subject, Duration.ofNanos(timeAfter - timeBefore));
     }
 
-    private void testConcurrent(String subject, int port) throws Exception {
+    private void testConcurrent(String subject, int port) {
         var executorService = Executors.newFixedThreadPool(threadsCount);
         var timeBefore = System.nanoTime();
         try {
-            var latch = new CountDownLatch(tasks);
             var allReadyLock = new CompletableFuture<>();
             var successCount = new AtomicInteger();
             var errorsQueue = new ConcurrentLinkedQueue<Throwable>();
+            var futures = new CompletableFuture<?>[tasks];
             for (var taskIdx = 0; taskIdx < tasks; taskIdx++) {
-                CompletableFuture.runAsync(
-                        () -> {
-                            allReadyLock.join();
-                            sendHttpRequestWithBody(port, requestAndResponse, HttpResponse.BodyHandlers.ofString())
-                                    .thenAccept(response -> {
-                                        try {
-                                            assertThat(response.body()).isEqualTo(requestAndResponse);
-                                            assertThat(response.statusCode()).isEqualTo(responseStatus);
-                                            var cnt = successCount.incrementAndGet();
-                                            if (cnt % 50 == 0) {
-                                                System.out.printf("Completed %d tasks%n", cnt);
-                                            }
-                                        } finally {
-                                            latch.countDown();
-                                        }
-                                    })
-                                    .exceptionally(ex -> {
-                                        errorsQueue.add(ex);
-                                        latch.countDown();
-                                        return null;
-                                    });
-                        },
-                        executorService);
+                futures[taskIdx] = CompletableFuture.runAsync(allReadyLock::join, executorService)
+                        .thenCompose(ignore -> sendHttpRequestWithBody(
+                                        port, requestAndResponse, HttpResponse.BodyHandlers.ofString())
+                                .thenAccept(response -> {
+                                    assertThat(response.body()).isEqualTo(requestAndResponse);
+                                    assertThat(response.statusCode()).isEqualTo(responseStatus);
+                                    var cnt = successCount.incrementAndGet();
+                                    if (cnt % 50 == 0) {
+                                        System.out.printf("Completed %d tasks%n", cnt);
+                                    }
+                                })
+                                .exceptionally(ex -> {
+                                    errorsQueue.add(ex);
+                                    return null;
+                                }));
             }
             allReadyLock.complete("");
-            latch.await();
+            CompletableFuture.allOf(futures).join();
             if (!errorsQueue.isEmpty()) {
                 throw new AssertionError("There were errors during stress test", errorsQueue.peek());
             }

@@ -1,9 +1,8 @@
 package com.varlanv.imp;
 
 @FunctionalInterface
-public interface ImpRunnable extends Runnable {
+public interface ImpRunnable {
 
-    @Override
     default void run() {
         try {
             unsafeRun();

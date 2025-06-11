@@ -1,9 +1,6 @@
 package com.varlanv.imp;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Pattern;
 import org.intellij.lang.annotations.Language;
 import org.intellij.lang.annotations.MagicConstant;
@@ -166,7 +163,7 @@ public final class ImpMatch {
             return new ImpCondition(
                     GROUP,
                     request -> request.method().equals(expectedMethod.name()),
-                    () -> expectedMethod.name().toLowerCase() + "()",
+                    () -> expectedMethod.name().toLowerCase(Locale.ROOT) + "()",
                     ImpCondition.Kind.CONDITION);
         }
     }
@@ -307,7 +304,7 @@ public final class ImpMatch {
             Preconditions.nonBlank(substring, "substring");
             return new ImpCondition(
                     GROUP,
-                    request -> request.body().toLowerCase().contains(substring.toLowerCase()),
+                    request -> request.body().toLowerCase(Locale.ROOT).contains(substring.toLowerCase(Locale.ROOT)),
                     () -> String.format("containsIgnoreCase(\"%s\")", substring),
                     ImpCondition.Kind.CONDITION);
         }
@@ -378,7 +375,10 @@ public final class ImpMatch {
             Preconditions.nonBlank(substring, "substring");
             return new ImpCondition(
                     GROUP,
-                    request -> request.uri().uriString().toLowerCase().contains(substring.toLowerCase()),
+                    request -> request.uri()
+                            .uriString()
+                            .toLowerCase(Locale.ROOT)
+                            .contains(substring.toLowerCase(Locale.ROOT)),
                     () -> String.format("containsIgnoreCase(\"%s\")", substring),
                     ImpCondition.Kind.CONDITION);
         }

@@ -43,7 +43,7 @@ Response status code: 400
 Response headers: {content-length=[12], content-type=[text/plain], date=[<present>]}
 Response body: changed text
 
-╔═ should_fail_fast_with_exception_when_try_to_use_borrowed_server_at_the_same_time_as_another_thead ═╗
+╔═ should_fail_fast_with_exception_when_try_to_use_borrowed_server_at_the_same_time_as_another_thread ═╗
 Concurrent usage of borrowed server detected. It is expected that during borrowing, only code inside `useServer` lambda will interact with the server, but before entering `useServer` lambda, there was 1 in-progress requests running on server. Consider synchronizing access to server before entering `useServer` lambda, or use non-shared server instead.
 ╔═ should_match_request_by_header_key_using_containskey_matcher_in_borrowed_server ═╗
 Response status code: 201

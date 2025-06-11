@@ -106,13 +106,13 @@ final class JaywayJsonPathMatch implements JsonPathMatch {
                     var ref = request.jsonPathResultRef(compiledPath);
                     if (ref.isPresent) {
                         if (ref.value instanceof Double) {
-                            return Objects.equals(expected, BigDecimal.valueOf((Double) ref.value));
+                            return expected.compareTo(BigDecimal.valueOf((Double) ref.value)) == 0;
                         } else if (ref.value instanceof BigDecimal) {
-                            return Objects.equals(expected, ref.value);
+                            return expected.compareTo((BigDecimal) ref.value) == 0;
                         } else if (ref.value instanceof Long) {
-                            return Objects.equals(expected, BigDecimal.valueOf((Long) ref.value));
+                            return expected.compareTo(BigDecimal.valueOf((Long) ref.value)) == 0;
                         } else if (ref.value instanceof Integer) {
-                            return Objects.equals(expected, BigDecimal.valueOf((Integer) ref.value));
+                            return expected.compareTo(BigDecimal.valueOf((Integer) ref.value)) == 0;
                         }
                     }
                     return false;

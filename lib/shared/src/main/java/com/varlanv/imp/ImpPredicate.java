@@ -1,9 +1,7 @@
 package com.varlanv.imp;
 
-import java.util.function.Predicate;
-
 @FunctionalInterface
-public interface ImpPredicate<T> extends Predicate<T> {
+public interface ImpPredicate<T> {
 
     static <T> ImpPredicate<T> alwaysTrue() {
         return any -> true;
@@ -13,7 +11,6 @@ public interface ImpPredicate<T> extends Predicate<T> {
         return any -> false;
     }
 
-    @Override
     default boolean test(T t) {
         try {
             return unsafeTest(t);
