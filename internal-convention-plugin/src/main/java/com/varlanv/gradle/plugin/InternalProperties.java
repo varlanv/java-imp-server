@@ -20,20 +20,21 @@ class InternalProperties {
     }
 
     public Provider<MinimalExternalModuleDependency> getLib(String name) {
-        return versionCatalog.findLibrary(name)
-            .orElseThrow(() -> new IllegalStateException("Unable to find library [%s]".formatted(name)));
-
+        return versionCatalog
+                .findLibrary(name)
+                .orElseThrow(() -> new IllegalStateException("Unable to find library [%s]".formatted(name)));
     }
 
     public Provider<PluginDependency> getPlugin(String name) {
-        return versionCatalog.findPlugin("errorProne")
-            .orElseThrow(() -> new IllegalStateException("Unable to find plugin [%s]".formatted(name)));
-
+        return versionCatalog
+                .findPlugin("errorProne")
+                .orElseThrow(() -> new IllegalStateException("Unable to find plugin [%s]".formatted(name)));
     }
 
     public String getVersion(String name) {
-        return versionCatalog.findVersion(name)
-            .map(VersionConstraint::getRequiredVersion)
-            .orElseThrow(() -> new IllegalStateException("Unable to find version [%s]".formatted(name)));
+        return versionCatalog
+                .findVersion(name)
+                .map(VersionConstraint::getRequiredVersion)
+                .orElseThrow(() -> new IllegalStateException("Unable to find version [%s]".formatted(name)));
     }
 }

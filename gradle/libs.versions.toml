@@ -5,9 +5,6 @@ assertJ = "3.27.3"
 jetbrains-annotations = "26.0.2"
 checkstyleTool = "10.24.0"
 pmdTool = "7.13.0"
-benmanesVersion = "0.52.0"
-spotbugsVersion = "6.2.0"
-spotlessVersion = "7.0.4"
 immutablesVersion = "2.10.1"
 jSpecifyVersion = "1.0.0"
 slf4jVersion = "2.0.17"
@@ -18,6 +15,11 @@ errorproneVersion = "2.38.0"
 nullawayVersion = "0.12.7"
 errorpronePluginVersion = "4.2.0"
 nullawayPluginVersion = "2.2.0"
+benmanesPluginVersion = "0.52.0"
+spotbugsPluginVersion = "6.2.0"
+spotlessPluginVersion = "7.0.4"
+testKonvencePluginVersion = "1.0.8"
+shadowPluginVersion = "8.3.6"
 
 [libraries]
 assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertJ" }
@@ -25,13 +27,13 @@ junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter", versi
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junitPlatform" }
 junit-platform-engine = { group = "org.junit.platform", name = "junit-platform-engine", version.ref = "junitPlatform" }
 jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrains-annotations" }
-benmanes-version-plugin = { group = "com.github.ben-manes.versions", name = "com.github.ben-manes.versions.gradle.plugin", version.ref = "benmanesVersion" }
-spotbugs-plugin = { group = "com.github.spotbugs.snom", name = "spotbugs-gradle-plugin", version.ref = "spotbugsVersion" }
+benmanes-version-plugin = { group = "com.github.ben-manes.versions", name = "com.github.ben-manes.versions.gradle.plugin", version.ref = "benmanesPluginVersion" }
+spotbugs-plugin = { group = "com.github.spotbugs.snom", name = "spotbugs-gradle-plugin", version.ref = "spotbugsPluginVersion" }
 errorprone-plugin = { group = "net.ltgt.errorprone", name = "net.ltgt.errorprone.gradle.plugin", version.ref = "errorpronePluginVersion" }
 nullaway-plugin = { group = "net.ltgt.nullaway", name = "net.ltgt.nullaway.gradle.plugin", version.ref = "nullawayPluginVersion" }
 errorprone = { group = "com.google.errorprone", name = "error_prone_core", version.ref = "errorproneVersion" }
 nullaway = { group = "com.uber.nullaway", name = "nullaway", version.ref = "nullawayVersion" }
-spotless-plugin = { group = "com.diffplug.gradle.spotless", name = "com.diffplug.gradle.spotless.gradle.plugin", version.ref = "spotlessVersion" }
+spotless-plugin = { group = "com.diffplug.gradle.spotless", name = "com.diffplug.gradle.spotless.gradle.plugin", version.ref = "spotlessPluginVersion" }
 immutables-values = { group = "org.immutables", name = "value", version.ref = "immutablesVersion" }
 jSpecify = { group = "org.jspecify", name = "jspecify", version.ref = "jSpecifyVersion" }
 slf4jApi = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4jVersion" }
@@ -41,5 +43,6 @@ moco = { group = "com.github.dreamhead", name = "moco-core", version.ref = "moco
 
 [plugins]
 internalConvention = { id = "com.varlanv.gradle.internal-gradle-convention-plugin" }
-testKonvence = { id = "com.varlanv.test-konvence", version = "1.0.8" }
-shadow = { id = "com.gradleup.shadow", version = "8.3.6" }
+testKonvence = { id = "com.varlanv.test-konvence", version.ref = "testKonvencePluginVersion" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotlessPluginVersion" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadowPluginVersion" }

@@ -1,7 +1,24 @@
+import com.diffplug.gradle.spotless.SpotlessExtension
+import com.diffplug.spotless.LineEnding
 import org.gradle.plugins.ide.idea.model.IdeaModel
 
 plugins {
     `java-gradle-plugin`
+    alias(libs.plugins.spotless)
+}
+
+extensions.configure<SpotlessExtension>("spotless") {
+    java {
+        importOrder()
+        removeUnusedImports()
+        palantirJavaFormat()
+        formatAnnotations()
+        encoding("UTF-8")
+        endWithNewline()
+        setLineEndings(LineEnding.UNIX)
+        trimTrailingWhitespace()
+        cleanthat()
+    }
 }
 
 val isCiBuild = providers.environmentVariable("CI").orNull != null
