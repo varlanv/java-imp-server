@@ -15,7 +15,9 @@ jaywayJsonPathVersion = "2.9.0"
 selfieVersion = "2.5.3"
 mocoVersion = "1.5.0"
 errorproneVersion = "2.38.0"
+nullawayVersion = "0.12.7"
 errorpronePluginVersion = "4.2.0"
+nullawayPluginVersion = "2.2.0"
 
 [libraries]
 assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertJ" }
@@ -26,7 +28,9 @@ jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version
 benmanes-version-plugin = { group = "com.github.ben-manes.versions", name = "com.github.ben-manes.versions.gradle.plugin", version.ref = "benmanesVersion" }
 spotbugs-plugin = { group = "com.github.spotbugs.snom", name = "spotbugs-gradle-plugin", version.ref = "spotbugsVersion" }
 errorprone-plugin = { group = "net.ltgt.errorprone", name = "net.ltgt.errorprone.gradle.plugin", version.ref = "errorpronePluginVersion" }
+nullaway-plugin = { group = "net.ltgt.nullaway", name = "net.ltgt.nullaway.gradle.plugin", version.ref = "nullawayPluginVersion" }
 errorprone = { group = "com.google.errorprone", name = "error_prone_core", version.ref = "errorproneVersion" }
+nullaway = { group = "com.uber.nullaway", name = "nullaway", version.ref = "nullawayVersion" }
 spotless-plugin = { group = "com.diffplug.gradle.spotless", name = "com.diffplug.gradle.spotless.gradle.plugin", version.ref = "spotlessVersion" }
 immutables-values = { group = "org.immutables", name = "value", version.ref = "immutablesVersion" }
 jSpecify = { group = "org.jspecify", name = "jspecify", version.ref = "jSpecifyVersion" }

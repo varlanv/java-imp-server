@@ -1,5 +1,6 @@
 package com.varlanv.imp;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.NOPLogger;
@@ -19,7 +20,7 @@ final class ImpLog {
     }
 
     static void error(Exception e) {
-        log.error(e.getMessage(), e);
+        log.error(Objects.requireNonNullElse(e.getMessage(), ""), e);
     }
 
     interface Log {

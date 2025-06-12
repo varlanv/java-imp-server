@@ -1,38 +1,19 @@
 package com.varlanv.imp;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 final class BorrowedState {
 
     private final boolean isShared;
     private final ImpServerContext originalConfig;
-    private final AtomicInteger inProgressRequestCounter = new AtomicInteger();
-    private final AtomicReference<ImpServerContext> mutableConfig = new AtomicReference<>();
+    private final AtomicInteger inProgressRequestCounter;
+    private final Volatile<ImpServerContext> mutableConfig;
 
     BorrowedState(ImpServerContext config, boolean isShared) {
-        this.originalConfig = config;
-        this.mutableConfig.set(config);
         this.isShared = isShared;
-    }
-
-    int kek = 1;
-
-    int calc() {
-        switch (kek) {
-            case 1:
-                return 0;
-            case 2:
-                return 1;
-            case 3:
-                return 2;
-            case 4:
-                return 3;
-            case 5:
-                return 4;
-            default:
-                return 5;
-        }
+        this.originalConfig = config;
+        this.inProgressRequestCounter = new AtomicInteger();
+        this.mutableConfig = new Volatile<>(config);
     }
 
     boolean isShared() {

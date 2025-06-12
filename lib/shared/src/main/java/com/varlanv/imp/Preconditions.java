@@ -65,7 +65,9 @@ interface Preconditions {
     }
 
     static <T> T nonNull(@Nullable T t, String field) {
-        checkNonNull(t, field);
+        if (t == null) {
+            throw new IllegalArgumentException("nulls are not supported - " + field);
+        }
         return t;
     }
 
@@ -74,11 +76,5 @@ interface Preconditions {
             throw new IllegalArgumentException("null or blank strings are not supported - " + field);
         }
         return t;
-    }
-
-    private static void checkNonNull(@Nullable Object t, String field) {
-        if (t == null) {
-            throw new IllegalArgumentException("nulls are not supported - " + field);
-        }
     }
 }

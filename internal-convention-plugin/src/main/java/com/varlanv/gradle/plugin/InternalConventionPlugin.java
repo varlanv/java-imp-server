@@ -7,6 +7,8 @@ import com.github.benmanes.gradle.versions.VersionsPlugin;
 import com.github.spotbugs.snom.SpotBugsExtension;
 import com.github.spotbugs.snom.SpotBugsPlugin;
 import net.ltgt.gradle.errorprone.ErrorPronePlugin;
+import net.ltgt.gradle.nullaway.NullAwayExtension;
+import net.ltgt.gradle.nullaway.NullAwayPlugin;
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -113,6 +115,7 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                     pluginManager.apply(CheckstylePlugin.class);
                     pluginManager.apply(VersionsPlugin.class);
                     pluginManager.apply(ErrorPronePlugin.class);
+                    pluginManager.apply(NullAwayPlugin.class);
                     if (internalEnvironment.isLocal()) {
                         pluginManager.apply(IdeaPlugin.class);
                         extensions.<IdeaModel>configure("idea", idea -> {
@@ -137,6 +140,9 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                             spotlessJava.trimTrailingWhitespace();
                             spotlessJava.cleanthat();
                         }));
+                    extensions.<NullAwayExtension>configure("nullaway", nullAwayExtension -> {
+                        nullAwayExtension.getOnlyNullMarked().set(true);
+                    });
                     // -------------------- Apply common plugins end --------------------
                 });
                 pluginManager.withPlugin(
@@ -190,6 +196,7 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                         dependencies.addProvider(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, immutablesDependency);
                         dependencies.addProvider(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME, immutablesDependency);
                         dependencies.addProvider("errorprone", internalProperties.getLib("errorprone"));
+                        dependencies.addProvider("errorprone", internalProperties.getLib("nullaway"));
 
                         if (internalConventionExtension.getAddSlf4jApiDependency().get()) {
                             var slf4jApi = internalProperties.getLib("slf4jApi");
@@ -204,7 +211,6 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                         }
 
                         // -------------------- Add common dependencies end --------------------
-
                     }
                 );
                 // -------------------- Configure Java end --------------------
