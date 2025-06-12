@@ -104,12 +104,11 @@ public final class InternalConventionPlugin implements Plugin<Project> {
         repositories.add(repositories.mavenCentral());
         // -------------------- Configure repositories end --------------------
 
+        // Need to run these things after a project evaluated,
+        // so that InternalConventionExtension values are initialized
         project.afterEvaluate(ignore -> {
-            // Need to run these things after a project evaluated, so that InternalConventionExtension values are
-            // initialized
-            // -------------------- Configure Java start --------------------
+            // -------------------- Apply common plugins start --------------------
             pluginManager.withPlugin("java", plugin -> {
-                // -------------------- Apply common plugins start --------------------
                 if (isGradlePlugin) {
                     pluginManager.apply(JavaGradlePluginPlugin.class);
                 }
@@ -147,8 +146,8 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                 extensions.<NullAwayExtension>configure("nullaway", nullAwayExtension -> {
                     nullAwayExtension.getOnlyNullMarked().set(true);
                 });
-                // -------------------- Apply common plugins end --------------------
             });
+            // -------------------- Apply common plugins end --------------------
             pluginManager.withPlugin("java", plugin -> {
                 extensions.<JavaPluginExtension>configure("java", java -> {
                     java.withSourcesJar();
@@ -227,8 +226,6 @@ public final class InternalConventionPlugin implements Plugin<Project> {
 
                 // -------------------- Add common dependencies end --------------------
             });
-            // -------------------- Configure Java end --------------------
-
             // -------------------- Configure libraries publishing start --------------------
             if (!isGradlePlugin) {
                 pluginManager.withPlugin("maven-publish", plugin -> {
@@ -397,8 +394,8 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                                     internalConventionExtension
                                             .getIntegrationTestName()
                                             .get())
-                            .map(string -> "checkstyle" + string.substring(0, 1).toUpperCase() + string.substring(1))
-                            .map(taskName -> tasks.named(taskName, Task.class))
+                            .map(testTaskName -> "checkstyle" + capitalize(testTaskName))
+                            .map(checkstyleTaskName -> tasks.named(checkstyleTaskName, Task.class))
                             .collect(Collectors.toList());
 
                     staticAnalyseMain.configure(task -> task.dependsOn(checkstyleMainTask));
