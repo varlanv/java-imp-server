@@ -4,12 +4,9 @@ plugins {
     alias(libs.plugins.testKonvence)
 }
 
-internalConvention {
-    addSlf4jApiDependency = true
-}
-
 dependencies {
     compileOnly(libs.jaywayJsonPath)
+    compileOnly( libs.slf4jApi)
     testImplementation(libs.jaywayJsonPath)
     testImplementation(libs.selfie)
 }

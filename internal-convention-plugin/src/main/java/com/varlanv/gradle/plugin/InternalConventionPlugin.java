@@ -88,7 +88,6 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                         () -> extensions.create(InternalConventionExtension.name(), InternalConventionExtension.class));
         internalConventionExtension.getIntegrationTestName().convention("integrationTest");
         internalConventionExtension.getInternalModule().convention(false);
-        internalConventionExtension.getAddSlf4jApiDependency().convention(false);
         var isGradlePlugin = projectName.endsWith("plugin");
         var javaVersion = 11;
         var jdkVersion = 21;
@@ -205,11 +204,6 @@ public final class InternalConventionPlugin implements Plugin<Project> {
                 dependencies.addProvider(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME, immutablesDependency);
                 dependencies.addProvider("errorprone", internalProperties.getLib("errorprone"));
                 dependencies.addProvider("errorprone", internalProperties.getLib("nullaway"));
-
-                if (internalConventionExtension.getAddSlf4jApiDependency().get()) {
-                    var slf4jApi = internalProperties.getLib("slf4jApi");
-                    dependencies.addProvider(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, slf4jApi);
-                }
 
                 dependencies.addProvider(
                         JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME,
