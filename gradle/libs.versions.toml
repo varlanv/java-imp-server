@@ -27,19 +27,19 @@ junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter", versi
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junitPlatform" }
 junit-platform-engine = { group = "org.junit.platform", name = "junit-platform-engine", version.ref = "junitPlatform" }
 jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrains-annotations" }
-benmanes-version-plugin = { group = "com.github.ben-manes.versions", name = "com.github.ben-manes.versions.gradle.plugin", version.ref = "benmanesPluginVersion" }
-spotbugs-plugin = { group = "com.github.spotbugs.snom", name = "spotbugs-gradle-plugin", version.ref = "spotbugsPluginVersion" }
-errorprone-plugin = { group = "net.ltgt.errorprone", name = "net.ltgt.errorprone.gradle.plugin", version.ref = "errorpronePluginVersion" }
-nullaway-plugin = { group = "net.ltgt.nullaway", name = "net.ltgt.nullaway.gradle.plugin", version.ref = "nullawayPluginVersion" }
-errorprone = { group = "com.google.errorprone", name = "error_prone_core", version.ref = "errorproneVersion" }
-nullaway = { group = "com.uber.nullaway", name = "nullaway", version.ref = "nullawayVersion" }
-spotless-plugin = { group = "com.diffplug.gradle.spotless", name = "com.diffplug.gradle.spotless.gradle.plugin", version.ref = "spotlessPluginVersion" }
 immutables-values = { group = "org.immutables", name = "value", version.ref = "immutablesVersion" }
 jSpecify = { group = "org.jspecify", name = "jspecify", version.ref = "jSpecifyVersion" }
 slf4jApi = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4jVersion" }
 jaywayJsonPath = { group = "com.jayway.jsonpath", name = "json-path", version.ref = "jaywayJsonPathVersion" }
 selfie = { group = "com.diffplug.selfie", name = "selfie-runner-junit5", version.ref = "selfieVersion" }
 moco = { group = "com.github.dreamhead", name = "moco-core", version.ref = "mocoVersion" }
+errorprone = { group = "com.google.errorprone", name = "error_prone_core", version.ref = "errorproneVersion" }
+nullaway = { group = "com.uber.nullaway", name = "nullaway", version.ref = "nullawayVersion" }
+benmanes-version-plugin = { group = "com.github.ben-manes.versions", name = "com.github.ben-manes.versions.gradle.plugin", version.ref = "benmanesPluginVersion" }
+spotbugs-plugin = { group = "com.github.spotbugs.snom", name = "spotbugs-gradle-plugin", version.ref = "spotbugsPluginVersion" }
+errorprone-plugin = { group = "net.ltgt.errorprone", name = "net.ltgt.errorprone.gradle.plugin", version.ref = "errorpronePluginVersion" }
+nullaway-plugin = { group = "net.ltgt.nullaway", name = "net.ltgt.nullaway.gradle.plugin", version.ref = "nullawayPluginVersion" }
+spotless-plugin = { group = "com.diffplug.gradle.spotless", name = "com.diffplug.gradle.spotless.gradle.plugin", version.ref = "spotlessPluginVersion" }
 
 [plugins]
 internalConvention = { id = "com.varlanv.gradle.internal-gradle-convention-plugin" }
