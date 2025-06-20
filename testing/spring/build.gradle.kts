@@ -2,7 +2,7 @@ plugins {
     `java-library`
     alias(libs.plugins.internalConvention)
     alias(libs.plugins.testKonvence)
-    id("org.springframework.boot") version "3.5.0"
+    id("org.springframework.boot") version "3.5.3"
 }
 
 internalConvention {
