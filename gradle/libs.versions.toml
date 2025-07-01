@@ -19,7 +19,7 @@ benmanesPluginVersion = "0.52.0"
 spotbugsPluginVersion = "6.2.0"
 spotlessPluginVersion = "7.0.4"
 testKonvencePluginVersion = "1.0.8"
-shadowPluginVersion = "8.3.6"
+shadowPluginVersion = "8.3.8"
 
 [libraries]
 assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertJ" }
